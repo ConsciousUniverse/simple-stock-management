@@ -1,5 +1,9 @@
 # Simple Stock Management - Server Component
 
+## NEW APP AVAILABLE
+
+This app is now legacy, unmaintained, archived, and should not be used. A newer, more lightweight app with similar basic functionality is now available here: https://github.com/ConsciousUniverse/simpler-stock-management
+
 ## Security Advisory
 
 Please note, this application has not been audited for security and may contain vulnerabilities that could expose data contained on the host system to unauthorized manipulation or disclosure. Deploy at your own risk and on a server that has *no* access to your primary systems, or indeed any system where compromise could reveal personally identifiable information or other sensitive data. For example, a standalone VPS machine. 
