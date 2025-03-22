@@ -11,3 +11,5 @@ db_old.sqlite3
 stockdata.csv
 mapped_stockdata.csv
 import_items.py
+import_shop_items.py
+db_bk.sqlite3

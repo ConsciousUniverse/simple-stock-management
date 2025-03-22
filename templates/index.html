@@ -85,9 +85,9 @@
         }
 
         .btn-info:hover {
-            background-color: var (--primary-color);
+            background-color: var(--text-color);
             border-color: var(--primary-color);
-            color: var(--secondary-color);
+            color: var(--primary-color);
         }
 
         .btn-warning#updateModeToggle:hover {
@@ -172,6 +172,12 @@
 
         a {
             color: var(--secondary-color);
+        }
+
+        .btn-danger:hover {
+            background-color: var(--text-color);
+            border-color: var(--primary-color);
+            color: var(--primary-color);
         }
     </style>
 </head>
@@ -340,8 +346,8 @@
                     <td>${item.item.sku}</td>
                     <td>${item.item.description}</td>
                     <td>${parseFloat(item.item.retail_price).toFixed(2)}</td>
-                    <td>${item.quantity}</td>
-                    <td></td>
+                    <td><input type='number' value='${item.quantity}' class='form-control' id='quantity${tableNum}-${item.item.sku}'></td>
+                    <td class="actions"><button onclick='updateShopItem("${item.item.sku}")' class='btn btn-warning'>Update</button></td>
                 </tr>`;
                     } else if (tableNum === 3) {
                         row = `
@@ -640,6 +646,11 @@
                     $("#authLink").attr("href", "/accounts/login/").text("Login");
                 }
             });
+        }
+
+        function updateShopItem(sku) {
+            const quantity = $(`#quantity2-${CSS.escape(sku)}`).val();
+            console.log(`SKU: ${sku}, Quantity: ${quantity}`);
         }
 
         $(document).ready(function () {
