@@ -57,17 +57,18 @@ The backend is still Django Rest Framework, while the frontend is now plain old 
 
 ## Installation
 
-1. Clone the repo
-2. Copy .env_default to .env
-3. Configure the .env file you just copied. Be sure to set debug to False if publicly accessible, and configure your allowed hosts correctly.
-4. Generate a Django secret key with this one-liner: `python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'`
-5. Set up your web server and gunicorn
-6. Do the database migrations, i.e., from the project root run: `python manage.py makemigrations`, then `python manage.py migrate`
-7. Create the superuser, i.e., from the project root run: `python manage.py createsuperuser`
-9. Login to the admin section with your superuser (e.g., https://your-site.domain/admin) and create your warehouse manager user and shop users.
-10. Still in the admin section, create the 'managers' and 'shop_users' user groups.
-11. Assign the warehouse manager user to the 'managers' group and the shop users to the 'shop_users' group.
-12. Apply appropriate brute-force mitagions to your server, to protect the login (e.g., fail2ban)
+- Clone the repo.
+- Install the python dependences. This project uses pipenv to install in a virtual environment, but a requirements.txt file has also been generated for pip install.
+- Copy .env_default to .env.
+- Configure the .env file you just copied. Be sure to set debug to False if publicly accessible, and configure your allowed hosts correctly.
+- Generate a Django secret key with this one-liner: `python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'`.
+- Set up your web server and gunicorn.
+- Do the database migrations, i.e., from the project root run: `python manage.py makemigrations`, then `python manage.py migrate`.
+- Create the superuser, i.e., from the project root run: `python manage.py createsuperuser`.
+- Login to the admin section with your superuser (e.g., https://your-site.domain/admin) and create your warehouse manager user and shop users.
+- Still in the admin section, create the 'managers' and 'shop_users' user groups.
+- Assign the warehouse manager user to the 'managers' group and the shop users to the 'shop_users' group.
+- Apply appropriate brute-force mitagions to your server, to protect the login (e.g., fail2ban).
 
 Remeber not to host the app on a server containing any personal or other sensitive information, as it has not been vetted for security, and cannot be considered secure!
 
