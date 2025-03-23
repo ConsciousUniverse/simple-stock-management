@@ -300,7 +300,7 @@
         }
 
         function setUpdateModeButtonText(isUpdateModeOn) {
-            $('#updateModeToggle').text(isUpdateModeOn ? 'Leave Update Mode' : 'Enter Update Mode');
+            $('#updateModeToggle').text(isUpdateModeOn ? 'Leave Maintenance Mode' : 'Enter Maintenance Mode');
         }
 
         function fetchItems(tableNum, page = 1, searchQuery = '', sortColumn = '', sortOrder = '') {
@@ -363,8 +363,8 @@
                     <td>${item.item.sku}</td>
                     <td>${item.item.description}</td>
                     <td>${parseFloat(item.item.retail_price).toFixed(2)}</td>
-                    <td><input type='number' value='${item.quantity}' class='form-control' id='quantity${tableNum}-${item.item.sku}'></td>
-                    <td class="actions"><button onclick='updateShopItem("${item.item.sku}")' class='btn btn-warning'>Update</button></td>
+                    <td><input type='number' value='${item.quantity}' class='form-control' id='quantity${tableNum}-${item.item.sku}' disabled></td>
+                    <td class="actions"><button onclick='updateShopItem("${item.item.sku}")' class='btn btn-warning disabled'>Update</button></td>
                 </tr>`;
                     } else if (tableNum === 3) {
                         row = `
@@ -669,6 +669,7 @@
         function updateShopItem(sku) {
             const quantity = $(`#quantity2-${CSS.escape(sku)}`).val();
             console.log(`SKU: ${sku}, Quantity: ${quantity}`);
+            // Functionality to update shop item quantity will be implemented later
         }
 
         $(document).ready(function () {
