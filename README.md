@@ -64,7 +64,7 @@ The backend is still Django Rest Framework, while the frontend is now plain old 
 - Configure the .env file you just copied. Be sure to set debug to False if publicly accessible, and configure your allowed hosts correctly.
 - Generate a Django secret key with this one-liner: `python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'`.
 - Set up your web server and gunicorn.
-- Do the database migrations, i.e., from the project root run: `python manage.py makemigrations`, then `python manage.py migrate`.
+- Do the database migrations, i.e., from the project root run: `python manage.py makemigrations`, `python makemigrations stock_manager`,  then `python manage.py migrate`.
 - Create the superuser, i.e., from the project root run: `python manage.py createsuperuser`.
 - Login to the admin section with your superuser (e.g., https://your-site.domain/admin) and create your warehouse manager user and shop users.
 - Still in the admin section, create the 'managers' and 'shop_users' user groups.
