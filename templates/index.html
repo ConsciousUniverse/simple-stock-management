@@ -33,7 +33,7 @@
         h4,
         h5,
         h6 {
-            color: var(--secondary-color);
+            color: var (--secondary-color);
         }
 
         .footer {
@@ -146,6 +146,11 @@
             /* border-radius: var(--border-radius); */
         }
 
+        .table thead th {
+            background-color: var(--secondary-color);
+            color: var(--primary-color);
+        }
+
         .form-control {
             border-color: var(--primary-color);
             border-radius: var(--border-radius);
@@ -175,7 +180,7 @@
         }
 
         .btn-danger:hover {
-            background-color: var(--text-color);
+            background-color: var (--text-color);
             border-color: var(--primary-color);
             color: var(--primary-color);
         }
@@ -367,10 +372,10 @@
                     ${window.userGroups && !window.userGroups.includes("managers") ? '' : `<td>${item.shop_user.username}</td>`}
                     <td>${item.item.sku}</td>
                     <td>${item.item.description}</td>
-                    <td>${item.quantity}</td>
+                    <td><input type='number' value='${item.quantity}' class='form-control' id='quantity3-${item.item.sku}'></td>
                     <td class="actions">
-                        ${window.userGroups && !window.userGroups.includes("managers") ? '' : `<button onclick='completeTransfer("${item.item.sku}", "${item.shop_user.id}", "${item.quantity}", "false")' class='btn btn-info'>Dispatch</button>`}
-                        <button onclick='completeTransfer("${item.item.sku}", "${item.shop_user.id}", "${item.quantity}", "true")' class='btn btn-danger'>Cancel</button>
+                        ${window.userGroups && !window.userGroups.includes("managers") ? '' : `<button onclick='completeTransfer("${item.item.sku}", "${item.shop_user.id}", document.getElementById("quantity3-${item.item.sku}").value, "false")' class='btn btn-info'>Dispatch</button>`}
+                        <button onclick='completeTransfer("${item.item.sku}", "${item.shop_user.id}", $("#quantity3-${item.item.sku}").val(), "true")' class='btn btn-danger'>Cancel</button>
                     </td>
                 </tr>`;
                     }
@@ -527,6 +532,7 @@
         }
 
         function completeTransfer(sku, shop_user_id, quantity, cancel) {
+            console.log(quantity);
             $.ajax({
                 url: '/api/complete-transfer/',
                 type: 'POST',

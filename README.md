@@ -30,13 +30,13 @@ In addition, regular updates of Python dependencies to the latest versions is ne
 - **Sort**: Sort items by SKU, description, retail price, or quantity.
 
 ### Update Mode
-- **Toggle Update Mode**: Managers can enter and leave update mode to make changes to item details.
-- **Update Items**: Managers can update item descriptions, retail prices, and quantities.
+- **Toggle Update Mode**: Managers can enter and leave update mode to make changes to item details. When update mode is active (i.e., the warehouse stock data is being maintained), transfers by shop users are blocked, to preserve database integrity.
+- **Update Items**: Managers & shop users can update item descriptions, retail prices, and quantities.
 - **Delete Items**: Managers can delete items from the warehouse stock.
 
 ### Transfer Items
 - **Transfer Items**: Shop users can request to transfer items from the warehouse to the shop.
-- **Complete Transfers**: Managers can dispatch or cancel pending transfers from the warehouse to the shops. Warehouse inventory is only reduced - and shop inventory increased - after managers have actioned the dispatch on the system.
+- **Complete Transfers**: Managers can modify, dispatch, and cancel pending transfers from the warehouse to the shops. Warehouse inventory is only reduced - and shop inventory increased - after managers have actioned the dispatch on the system.
 
 ## Live demo
 
