@@ -4,7 +4,7 @@ Simpler Stock Management is a web application designed to help manage warehouse 
 
 Note, this is an early beta release. It is intended for testing only, and is not yet suitable for production deployment.
 
-The earlier version (pre-V5) 'Simple Stock Management' app has been entirely rewritten from scratch. Little-used functionality has been removed and the code is now simpler and [more maintainable](#what-changed). The earlier legacy version is now unmaintained, however the code may still be accessed in the [legacy_v4 branch](https://github.com/consciousuniverse/simple-stock-management/tree/legacy_v4).
+This is an entire rewrite of the earlier (pre-V5) 'Simple Stock Management' app, from scratch. Little-used functionality has been removed and the code is now simpler and [more maintainable](#what-changed). The earlier legacy version is now unmaintained, however the code may still be accessed in the [legacy_v4 branch](https://github.com/consciousuniverse/simple-stock-management/tree/legacy_v4).
 
 ## Security
 
