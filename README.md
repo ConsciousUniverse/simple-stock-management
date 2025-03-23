@@ -2,7 +2,7 @@
 
 ## NEW APP AVAILABLE
 
-This app is now legacy, unmaintained, archived, and should not be used. A newer, more lightweight app with similar basic functionality is now available here: https://github.com/ConsciousUniverse/simpler-stock-management
+This app is now legacy, unmaintained, archived, and should not be used. A newer, more lightweight app with similar basic functionality is now available (version 5), on the [main branch](https://github.com/consciousuniverse/simple-stock-management.git).
 
 ## Security Advisory
 
