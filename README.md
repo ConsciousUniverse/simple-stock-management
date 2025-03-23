@@ -1,8 +1,10 @@
 # Simpler Stock Management (Beta)
 
-This is an early beta release. It is intended for testing only, and is not yet suitable for production deployment.
-
 Simpler Stock Management is a web application designed to help manage warehouse and shop stock efficiently. The application provides features for searching, sorting, updating, and transferring stock items between the warehouse and shops. Data is stored in a local SQLite3 database.
+
+Note, this is an early beta release. It is intended for testing only, and is not yet suitable for production deployment.
+
+The earlier version (pre-V5) 'Simple Stock Management' app has been entirely rewritten from scratch. Little-used functionality has been removed and the code is now simpler and [more maintainable](#what-changed). The earlier legacy version is now unmaintained, however the code may still be accessed in the [legacy_v4 branch](https://github.com/consciousuniverse/simple-stock-management/tree/legacy_v4).
 
 ## Security
 
@@ -42,6 +44,10 @@ In addition, regular updates of Python dependencies to the latest versions is ne
 
 ### Shop view
 ![image](https://github.com/user-attachments/assets/9b18c4df-f92c-435d-a216-cdd492785c10)
+
+## What changed?
+
+The backend is still Django Rest Framework, while the frontend is now plain old jQuery, rather than relying on ReactJS with all its dependencies. The frontend is now integrated into the Django app, as opposed to the previous standalone frontend UI.
 
 ## License
 
