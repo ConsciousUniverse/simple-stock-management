@@ -45,12 +45,10 @@ Coming soon...
 ## Screenshots
 
 ### Warehouse manager's view
-![image](https://github.com/user-attachments/assets/6fdf98ef-eee9-434b-84a9-a07df88dd34b)
-
+![image](https://github.com/user-attachments/assets/955b6f89-7aa5-4551-9829-d65ed2c04920)
 
 ### Shop view
-![image](https://github.com/user-attachments/assets/27f0481b-a14f-45ac-9bb0-b5f304df28d9)
-
+![image](https://github.com/user-attachments/assets/4387f2d4-94e7-4e47-85cb-a547b5e09b58)
 
 ## What changed?
 
