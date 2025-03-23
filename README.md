@@ -40,10 +40,12 @@ In addition, regular updates of Python dependencies to the latest versions is ne
 ## Screenshots
 
 ### Warehouse manager's view
-![image](https://github.com/user-attachments/assets/54ddbe64-7278-4aa7-a0e4-8fced6c42bad)
+![image](https://github.com/user-attachments/assets/6fdf98ef-eee9-434b-84a9-a07df88dd34b)
+
 
 ### Shop view
-![image](https://github.com/user-attachments/assets/9b18c4df-f92c-435d-a216-cdd492785c10)
+![image](https://github.com/user-attachments/assets/27f0481b-a14f-45ac-9bb0-b5f304df28d9)
+
 
 ## What changed?
 
