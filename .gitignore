@@ -13,3 +13,4 @@ mapped_stockdata.csv
 import_items.py
 import_shop_items.py
 db_bk.sqlite3
+settings.py
