@@ -37,6 +37,10 @@ In addition, regular updates of Python dependencies to the latest versions is ne
 - **Transfer Items**: Shop users can request to transfer items from the warehouse to the shop.
 - **Complete Transfers**: Managers can dispatch or cancel pending transfers from the warehouse to the shops. Warehouse inventory is only reduced - and shop inventory increased - after managers have actioned the dispatch on the system.
 
+## Live demo
+
+Coming soon...
+
 ## Screenshots
 
 ### Warehouse manager's view
@@ -55,7 +59,7 @@ The backend is still Django Rest Framework, while the frontend is now plain old 
 
 1. Clone the repo
 2. Copy .env_default to .env
-3. Configure the .env file you just copied. This Be sure to set debug to False if publicly accessible, and configure your allowed hosts correctly, amongst other things.
+3. Configure the .env file you just copied. Be sure to set debug to False if publicly accessible, and configure your allowed hosts correctly.
 4. Generate a Django secret key with this one-liner: `python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'`
 5. Set up your web server and gunicorn
 6 Remeber not to host the app on a server containing any personal or other sensitive information, as it has not been vetted for security, and cannot be considered secure!
