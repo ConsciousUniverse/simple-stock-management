@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d8dad9b5a6085aba737c9b8a3a22ec55709a9fa31956a09678925c463c269304"
+            "sha256": "88c9e62b5cca57115ba56cf684038d38d043f66d56fa8c7489ee14bbcb9d1c1d"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -33,6 +33,25 @@
             "index": "pypi",
             "markers": "python_version >= '3.10'",
             "version": "==5.1.7"
+        },
+        "django-axes": {
+            "extras": [
+                "ipware"
+            ],
+            "hashes": [
+                "sha256:893dacce259d39e8cbcff655c61a008b3b827797c2f733f64fd9baf6bc7256e9",
+                "sha256:a96bd6cdca9fbcbd250cf5ce1d92bfc72f2ce64b928804d9802d30a090406c59"
+            ],
+            "markers": "python_version >= '3.7'",
+            "version": "==7.0.2"
+        },
+        "django-ipware": {
+            "hashes": [
+                "sha256:d9ec43d2bf7cdf216fed8d494a084deb5761a54860a53b2e74346a4f384cff47",
+                "sha256:db16bbee920f661ae7f678e4270460c85850f03c6761a4eaeb489bdc91f64709"
+            ],
+            "markers": "python_version >= '3.8'",
+            "version": "==7.0.1"
         },
         "djangorestframework": {
             "hashes": [
@@ -198,6 +217,14 @@
             ],
             "markers": "python_version >= '3.8'",
             "version": "==1.0.1"
+        },
+        "python-ipware": {
+            "hashes": [
+                "sha256:9117b1c4dddcb5d5ca49e6a9617de2fc66aec2ef35394563ac4eecabdf58c062",
+                "sha256:fc936e6e7ec9fcc107f9315df40658f468ac72f739482a707181742882e36b60"
+            ],
+            "markers": "python_version >= '3.7'",
+            "version": "==3.0.0"
         },
         "setuptools": {
             "hashes": [

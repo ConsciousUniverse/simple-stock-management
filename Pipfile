@@ -9,6 +9,7 @@ django = "*"
 dotenv = "*"
 gunicorn = "*"
 gevent = "*"
+django-axes = {extras = ["ipware"], version = "*"}
 
 [dev-packages]
 pandas = "*"

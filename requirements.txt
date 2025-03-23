@@ -1,5 +1,7 @@
 asgiref==3.8.1
 django==5.1.7
+django-axes==7.0.2
+django-ipware==7.0.1
 djangorestframework==3.15.2
 dotenv==0.9.9
 gevent==24.11.1
@@ -7,6 +9,7 @@ greenlet==3.1.1
 gunicorn==23.0.0
 packaging==24.2
 python-dotenv==1.0.1
+python-ipware==3.0.0
 setuptools==77.0.3
 sqlparse==0.5.3
 zope.event==5.0
