@@ -18,6 +18,7 @@ In addition, regular updates of Python dependencies to the latest versions is ne
 ### User Authentication
 - **Login/Logout**: Users can log in and log out of the application.
 - **User Status**: Displays the logged-in user's status.
+- **Brute Force Protection**: Manager & shop user logins protected from brute-force login attempts.
 
 ### Stock Management
 - **Warehouse Stock**: View and manage items in the warehouse.
