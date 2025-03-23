@@ -34,8 +34,8 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "axes.middleware.AxesMiddleware",
 ]
-AXES_FAILURE_LIMIT = 3
-AXES_COOLOFF_TIME = 1
+AXES_FAILURE_LIMIT = int(os.getenv("AXES_FAILURE_LIMIT"))
+AXES_COOLOFF_TIME = int(os.getenv("AXES_COOLOFF_TIME"))
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
