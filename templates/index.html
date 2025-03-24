@@ -353,397 +353,376 @@
         <div id="paginationControls3" class="pagination-controls"></div>
     </div>
     <script>
-        function getCSRFToken() {
-            return document.cookie.split('; ').find(row => row.startsWith('csrftoken='))?.split('=')[1];
-        }
+        (() => {
+            'use strict';
 
-        function sortTable(tableNum, column) {
-            let currentOrder = $(`#itemTable${tableNum}`).data('sortOrder') || 'asc';
-            let newOrder = currentOrder === 'asc' ? 'desc' : 'asc';
-            $(`#itemTable${tableNum}`).data('sortOrder', newOrder);
-            $(`#itemTable${tableNum}`).data('sortColumn', column);
-            fetchItems(tableNum, 1, $(`#searchBox${tableNum}`).val(), column, newOrder);
-        }
+            /** Helper: Get CSRF token from cookies */
+            const getCSRFToken = () => {
+                return document.cookie.split('; ')
+                    .find(row => row.startsWith('csrftoken='))?.split('=')[1];
+            };
 
-        function setUpdateModeButtonText(isUpdateModeOn) {
-            $('#updateModeToggle').prop('checked', isUpdateModeOn);
-        }
+            /** Sorting functionality: toggles sort order and refetches items */
+            const sortTable = (tableNum, column) => {
+                const $table = $(`#itemTable${tableNum}`);
+                const currentOrder = $table.data('sortOrder') || 'asc';
+                const newOrder = currentOrder === 'asc' ? 'desc' : 'asc';
+                $table.data('sortOrder', newOrder).data('sortColumn', column);
+                const searchVal = $(`#searchBox${tableNum}`).val();
+                fetchItems(tableNum, 1, searchVal, column, newOrder);
+            };
 
-        function fetchItems(tableNum, page = 1, searchQuery = '', sortColumn = '', sortOrder = '') {
-            let apiUrl;
-            if (tableNum === 1) {
-                apiUrl = '/api/items/';
-            } else if (tableNum === 2) {
-                apiUrl = '/api/shop_items/';
-            } else if (tableNum === 3) {
-                apiUrl = '/api/transfer_items/';
-                if (window.userGroups && window.userGroups.includes("shop_users")) {
-                    apiUrl += `?shop_user_username=${window.loggedInUsername}`;
-                }
-            }
-            apiUrl += `${apiUrl.includes('?') ? '&' : '?'}page=${page}&search=${encodeURIComponent(searchQuery)}`;
-            if (sortColumn) {
-                apiUrl += `&ordering=${sortOrder === 'asc' ? '' : '-'}${sortColumn}`;
-            }
+            /** Sets the state of the update mode toggle button */
+            const setUpdateModeButtonText = isUpdateModeOn => {
+                $('#updateModeToggle').prop('checked', isUpdateModeOn);
+            };
 
-            $.get(apiUrl, function (data) {
-                let tableBody;
+            /** Fetches items via AJAX and populates the corresponding table */
+            const fetchItems = (tableNum, page = 1, searchQuery = '', sortColumn = '', sortOrder = '') => {
+                let apiUrl = '';
                 if (tableNum === 1) {
-                    tableBody = $('#itemTable1');
+                    apiUrl = '/api/items/';
                 } else if (tableNum === 2) {
-                    tableBody = $('#itemTable2');
+                    apiUrl = '/api/shop_items/';
                 } else if (tableNum === 3) {
-                    tableBody = $('#itemTable3');
+                    apiUrl = '/api/transfer_items/';
+                    if (window.userGroups && window.userGroups.includes("shop_users")) {
+                        apiUrl += `?shop_user_username=${window.loggedInUsername}`;
+                    }
                 }
-                tableBody.empty();
+                const separator = apiUrl.includes('?') ? '&' : '?';
+                apiUrl += `${separator}page=${page}&search=${encodeURIComponent(searchQuery)}`;
+                if (sortColumn) {
+                    apiUrl += `&ordering=${sortOrder === 'asc' ? '' : '-'}${sortColumn}`;
+                }
 
-                const isUpdateModeOn = $('#updateModeToggle').data('updateMode');
-                data.results.forEach(item => {
-                    let row;
-                    if (tableNum === 1) {
-                        let descriptionField = window.userGroups && window.userGroups.includes("managers") && isUpdateModeOn ?
-                            `<input type='text' value='${item.description}' class='form-control' id='description${tableNum}-${item.sku}'>` :
-                            item.description;
-                        let retailPriceField = window.userGroups && window.userGroups.includes("managers") && isUpdateModeOn ?
-                            `<input type='text' value='${parseFloat(item.retail_price).toFixed(2)}' class='form-control' id='retail_price${tableNum}-${item.sku}'>` :
-                            parseFloat(item.retail_price).toFixed(2);
-                        let quantityField = window.userGroups && window.userGroups.includes("managers") ?
-                            `<input type='number' value='${item.quantity}' class='form-control' id='quantity${tableNum}-${item.sku}' ${isUpdateModeOn ? '' : 'disabled'}>` :
-                            item.quantity;
-                        let transferQuantityField = window.userGroups && window.userGroups.includes("shop_users") && !isUpdateModeOn ?
-                            `<input type='number' placeholder='Enter transfer quantity' class='form-control' id='xfer_quantity1-${item.sku}'>` :
-                            '';
+                $.get(apiUrl, data => {
+                    let $tableBody;
+                    if (tableNum === 1) $tableBody = $('#itemTable1');
+                    else if (tableNum === 2) $tableBody = $('#itemTable2');
+                    else if (tableNum === 3) $tableBody = $('#itemTable3');
 
-                        row = `
-                <tr>
-                    <td>${item.sku}</td>
-                    <td>${descriptionField}</td>
-                    <td>${retailPriceField}</td>
-                    <td>${quantityField}</td>
-                    ${window.userGroups && window.userGroups.includes("shop_users") && !isUpdateModeOn ? `<td>${transferQuantityField}</td>` : ''}
-                    <td class="actions"></td>
-                </tr>`;
-                    } else if (tableNum === 2) {
-                        row = `
-                <tr>
-                    <td>${item.item.sku}</td>
-                    <td>${item.item.description}</td>
-                    <td>${parseFloat(item.item.retail_price).toFixed(2)}</td>
-                    <td><input type='number' value='${item.quantity}' class='form-control' id='quantity${tableNum}-${item.item.sku}' disabled></td>
-                    <td class="actions"><button onclick='updateShopItem("${item.item.sku}")' class='btn btn-warning disable'>Update</button></td>
-                </tr>`;
-                    } else if (tableNum === 3) {
-                        row = `
-                <tr>
-                    ${window.userGroups && !window.userGroups.includes("managers") ? '' : `<td>${item.shop_user.username}</td>`}
-                    <td>${item.item.sku}</td>
-                    <td>${item.item.description}</td>
-                    <td><input type='number' value='${item.quantity}' class='form-control' id='quantity3-${item.item.sku}'></td>
-                    <td class="actions">
+                    $tableBody.empty();
+
+                    const isUpdateModeOn = $('#updateModeToggle').data('updateMode');
+                    data.results.forEach(item => {
+                        let row = '';
+                        if (tableNum === 1) {
+                            const descriptionField = (window.userGroups && window.userGroups.includes("managers") && isUpdateModeOn)
+                                ? `<input type='text' value='${item.description}' class='form-control' id='description1-${item.sku}'>`
+                                : item.description;
+                            const retailPriceField = (window.userGroups && window.userGroups.includes("managers") && isUpdateModeOn)
+                                ? `<input type='text' value='${parseFloat(item.retail_price).toFixed(2)}' class='form-control' id='retail_price1-${item.sku}'>`
+                                : parseFloat(item.retail_price).toFixed(2);
+                            const quantityField = (window.userGroups && window.userGroups.includes("managers"))
+                                ? `<input type='number' value='${item.quantity}' class='form-control' id='quantity1-${item.sku}' ${isUpdateModeOn ? '' : 'disabled'}>`
+                                : item.quantity;
+                            const transferQuantityField = (window.userGroups && window.userGroups.includes("shop_users") && !isUpdateModeOn)
+                                ? `<input type='number' placeholder='Enter transfer quantity' class='form-control' id='xfer_quantity1-${item.sku}'>`
+                                : '';
+                            row = `
+                    <tr>
+                      <td>${item.sku}</td>
+                      <td>${descriptionField}</td>
+                      <td>${retailPriceField}</td>
+                      <td>${quantityField}</td>
+                      ${window.userGroups && window.userGroups.includes("shop_users") && !isUpdateModeOn ? `<td>${transferQuantityField}</td>` : ''}
+                      <td class="actions"></td>
+                    </tr>`;
+                        } else if (tableNum === 2) {
+                            row = `
+                    <tr>
+                      <td>${item.item.sku}</td>
+                      <td>${item.item.description}</td>
+                      <td>${parseFloat(item.item.retail_price).toFixed(2)}</td>
+                      <td><input type='number' value='${item.quantity}' class='form-control' id='quantity2-${item.item.sku}' disabled></td>
+                      <td class="actions"><button onclick='updateShopItem("${item.item.sku}")' class='btn btn-warning disable'>Update</button></td>
+                    </tr>`;
+                        } else if (tableNum === 3) {
+                            row = `
+                    <tr>
+                      ${window.userGroups && !window.userGroups.includes("managers") ? '' : `<td>${item.shop_user.username}</td>`}
+                      <td>${item.item.sku}</td>
+                      <td>${item.item.description}</td>
+                      <td><input type='number' value='${item.quantity}' class='form-control' id='quantity3-${item.item.sku}'></td>
+                      <td class="actions">
                         ${window.userGroups && !window.userGroups.includes("managers") ? '' : `<button onclick='completeTransfer("${item.item.sku}", "${item.shop_user.id}", document.getElementById("quantity3-${item.item.sku}").value, "false")' class='btn btn-info'>Dispatch</button>`}
                         <button onclick='completeTransfer("${item.item.sku}", "${item.shop_user.id}", $("#quantity3-${item.item.sku}").val(), "true")' class='btn btn-danger'>Cancel</button>
-                    </td>
-                </tr>`;
-                    }
-                    tableBody.append(row);
+                      </td>
+                    </tr>`;
+                        }
+                        $tableBody.append(row);
 
-                    // Show update and delete buttons only for managers in update mode
-                    if (tableNum === 1 && window.userGroups && window.userGroups.includes("managers")) {
-                        $(`#itemTable1 tr:last .actions`).append(`
-                            <button onclick='updateItem("${item.sku}", ${tableNum})' class='btn btn-warning' ${isUpdateModeOn ? '' : 'disabled'}>Update</button>
-                            <button onclick='deleteItem("${item.sku}", ${tableNum})' class='btn btn-danger' ${isUpdateModeOn ? '' : 'disabled'}>Delete</button>
-                        `);
-                    }
-
-                    // Show transfer button only for shop_users when update mode is off
-                    if (tableNum === 1 && window.userGroups && window.userGroups.includes("shop_users")) {
-                        $(`#itemTable1 tr:last .actions`).append(`
-                            <button onclick='transferItem("${item.sku}")' class='btn btn-info' ${isUpdateModeOn ? 'disabled' : ''}>Transfer</button>
-                        `);
-                    }
+                        // For managers in update mode: attach update and delete buttons in table 1
+                        if (tableNum === 1 && window.userGroups && window.userGroups.includes("managers")) {
+                            $tableBody.find('tr:last .actions').append(`
+                    <button onclick='updateItem("${item.sku}", 1)' class='btn btn-warning' ${isUpdateModeOn ? '' : 'disabled'}>Update</button>
+                    <button onclick='deleteItem("${item.sku}", 1)' class='btn btn-danger' ${isUpdateModeOn ? '' : 'disabled'}>Delete</button>
+                  `);
+                        }
+                        // For shop_users: attach transfer button in table 1
+                        if (tableNum === 1 && window.userGroups && window.userGroups.includes("shop_users")) {
+                            $tableBody.find('tr:last .actions').append(`
+                    <button onclick='transferItem("${item.sku}")' class='btn btn-info' ${isUpdateModeOn ? 'disabled' : ''}>Transfer</button>
+                  `);
+                        }
+                    });
+                    setupPagination(tableNum, data, sortColumn, sortOrder);
                 });
-                setupPagination(tableNum, data, sortColumn, sortOrder);
-            });
-        }
+            };
 
-        function setupPagination(tableNum, data, sortColumn = '', sortOrder = '') {
-            let paginationDiv;
-            if (tableNum === 1) {
-                paginationDiv = $('#paginationControls1');
-            } else if (tableNum === 2) {
-                paginationDiv = $('#paginationControls2');
-            } else if (tableNum === 3) {
-                paginationDiv = $('#paginationControls3');
-            }
-            paginationDiv.empty();
+            /** Build and attach pagination controls */
+            const setupPagination = (tableNum, data, sortColumn = '', sortOrder = '') => {
+                let $paginationDiv;
+                if (tableNum === 1) $paginationDiv = $('#paginationControls1');
+                else if (tableNum === 2) $paginationDiv = $('#paginationControls2');
+                else if (tableNum === 3) $paginationDiv = $('#paginationControls3');
 
-            let paginationHtml = '<nav aria-label="Page navigation"><ul class="pagination justify-content-center">';
+                $paginationDiv.empty();
+                let paginationHtml = '<nav aria-label="Page navigation"><ul class="pagination justify-content-center">';
 
-            let currentPage = data.current_page;
-            let totalPages = data.total_pages;
-            let startPage = Math.floor((currentPage - 1) / 5) * 5 + 1;
-            let endPage = Math.min(startPage + 4, totalPages);
+                const currentPage = data.current_page;
+                const totalPages = data.total_pages;
+                const startPage = Math.floor((currentPage - 1) / 5) * 5 + 1;
+                const endPage = Math.min(startPage + 4, totalPages);
 
-            if (currentPage > 5) {
-                paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="fetchItems(${tableNum}, ${startPage - 5}, $('#searchBox${tableNum}').val(), '${sortColumn}', '${sortOrder}')">Previous</a></li>`;
-            }
+                if (currentPage > 5) {
+                    paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="fetchItems(${tableNum}, ${startPage - 5}, $('#searchBox${tableNum}').val(), '${sortColumn}', '${sortOrder}')">Previous</a></li>`;
+                }
+                for (let i = startPage; i <= endPage; i++) {
+                    paginationHtml += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+                                  <a class="page-link" href="#" onclick="fetchItems(${tableNum}, ${i}, $('#searchBox${tableNum}').val(), '${sortColumn}', '${sortOrder}')">${i}</a>
+                                 </li>`;
+                }
+                if (endPage < totalPages) {
+                    paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="fetchItems(${tableNum}, ${startPage + 5}, $('#searchBox${tableNum}').val(), '${sortColumn}', '${sortOrder}')">Next</a></li>`;
+                }
+                paginationHtml += '</ul></nav>';
+                $paginationDiv.append(paginationHtml);
 
-            for (let i = startPage; i <= endPage; i++) {
-                paginationHtml += `<li class="page-item ${i === currentPage ? 'active' : ''}"><a class="page-link" href="#" onclick="fetchItems(${tableNum}, ${i}, $('#searchBox${tableNum}').val(), '${sortColumn}', '${sortOrder}')">${i}</a></li>`;
-            }
+                // Reattach event listeners to pagination links
+                $paginationDiv.find('a.page-link').off('click').on('click', function (event) {
+                    event.preventDefault();
+                    const page = $(this).attr('onclick').match(/fetchItems\(\d+, (\d+),/)[1];
+                    fetchItems(tableNum, page, $(`#searchBox${tableNum}`).val(), sortColumn, sortOrder);
+                });
+            };
 
-            if (endPage < totalPages) {
-                paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="fetchItems(${tableNum}, ${startPage + 5}, $('#searchBox${tableNum}').val(), '${sortColumn}', '${sortOrder}')">Next</a></li>`;
-            }
-
-            paginationHtml += '</ul></nav>';
-            paginationDiv.append(paginationHtml);
-
-            // Reattach event listeners to pagination links
-            paginationDiv.find('a.page-link').off('click').on('click', function (event) {
-                event.preventDefault();
-                let page = $(this).attr('onclick').match(/fetchItems\(\d+, (\d+),/)[1];
-                fetchItems(tableNum, page, $(`#searchBox${tableNum}`).val(), sortColumn, sortOrder);
-            });
-        }
-
-        function addItem() {
-            let retailPrice = $('#retail_price').val();
-            if (!/^\d+(\.\d{1,2})?$/.test(retailPrice)) {
-                alert('Retail price must be a valid number with up to 2 decimal places.');
-                return;
-            }
-            $.ajax({
-                url: '/api/items/',
-                type: 'POST',
-                contentType: 'application/json',
-                headers: { 'X-CSRFToken': getCSRFToken() },
-                data: JSON.stringify({
+            /** Add a new item using AJAX POST */
+            const addItem = () => {
+                const retailPrice = $('#retail_price').val();
+                if (!/^\d+(\.\d{1,2})?$/.test(retailPrice)) {
+                    alert('Retail price must be a valid number with up to 2 decimal places.');
+                    return;
+                }
+                const data = {
                     sku: $('#sku').val(),
                     description: $('#description').val(),
-                    retail_price: $('#retail_price').val(),
+                    retail_price: retailPrice,
                     quantity: $('#quantity').val()
-                }),
-                success: function () {
-                    fetchItems(1);
-                    fetchItems(2);
-                    fetchItems(3);
-                    // Clear the Add Item form
-                    $('#sku').val('');
-                    $('#description').val('');
-                    $('#retail_price').val('');
-                    $('#quantity').val('');
-                }
-            });
-        }
-
-        function updateItem(sku, tableNum) {
-            let price = $(`#retail_price${tableNum}-${CSS.escape(sku)}`).val();
-            if (!/^\d+(\.\d{1,2})?$/.test(price)) {
-                alert('Retail price must be a valid number with up to 2 decimal places.');
-                return;
-            }
-            let qnt = $(`#quantity${tableNum}-${CSS.escape(sku)}`).val();
-            let desc = $(`#description${tableNum}-${CSS.escape(sku)}`).val();
-            let apiUrl = tableNum === 1 ? `/api/items/${sku}/` : `/api/shop_items/${sku}/`;
-            $.ajax({
-                url: apiUrl,
-                type: 'PUT',
-                contentType: 'application/json',
-                headers: { 'X-CSRFToken': getCSRFToken() },
-                data: JSON.stringify({
-                    sku: sku,
-                    description: desc,
-                    retail_price: price,
-                    quantity: qnt
-                }),
-                success: function () {
-                    fetchItems(tableNum);  // Ensure the correct table is refreshed
-                }
-            });
-        }
-
-        function deleteItem(sku, tableNum) {
-            let apiUrl = tableNum === 1 ? `/api/items/${sku}/` : `/api/shop_items/${sku}/`;
-            $.ajax({
-                url: apiUrl,
-                type: 'DELETE',
-                headers: { 'X-CSRFToken': getCSRFToken() },
-                success: function () {
-                    fetchItems(tableNum);  // Ensure the correct table is refreshed
-                }
-            });
-        }
-
-        function transferItem(sku) {
-            let transferQuantity = $(`#xfer_quantity1-${CSS.escape(sku)}`).val();
-            $.ajax({
-                url: '/api/transfer/',
-                type: 'POST',
-                contentType: 'application/json',
-                headers: { 'X-CSRFToken': getCSRFToken() },
-                data: JSON.stringify({
-                    sku: sku,
-                    transfer_quantity: transferQuantity
-                }),
-                success: function () {
-                    fetchItems(1);
-                    fetchItems(2);
-                    fetchItems(3);
-                },
-                error: function (xhr) {
-                    alert(xhr.responseJSON.detail);
-                }
-            });
-        }
-
-        function completeTransfer(sku, shop_user_id, quantity, cancel) {
-            $.ajax({
-                url: '/api/complete-transfer/',
-                type: 'POST',
-                contentType: 'application/json',
-                headers: { 'X-CSRFToken': getCSRFToken() },
-                data: JSON.stringify({
-                    sku: sku,
-                    shop_user_id: shop_user_id,
-                    quantity: quantity,
-                    cancel: cancel
-                }),
-                success: function () {
-                    fetchItems(1);
-                    fetchItems(2);
-                    fetchItems(3);
-                },
-                error: function (xhr) {
-                    alert(xhr.responseJSON.detail);
-                }
-            });
-        }
-
-        function toggleUpdateMode() {
-            const updateModeButton = $('#updateModeToggle');
-            const isUpdateModeOn = updateModeButton.prop('checked');
-            const currentPage = $('#paginationControls1 .page-item.active .page-link').text(); // Get the current page number
-
-            if (isUpdateModeOn) {
-                // Save all changes before leaving update mode
-                $('#itemTable1 tr').each(function () {
-                    const sku = $(this).find('td:first').text();
-                    const desc = $(`#description1-${CSS.escape(sku)}`).val();
-                    const price = $(`#retail_price1-${CSS.escape(sku)}`).val();
-                    const qnt = $(`#quantity1-${CSS.escape(sku)}`).val();
-                    if (desc !== undefined && price !== undefined && qnt !== undefined) {
-                        updateItem(sku, 1);
-                    }
-                });
-            }
-            setUpdateModeButtonText(isUpdateModeOn);
-            $.ajax({
-                url: '/api/toggle_update_mode/',
-                type: 'POST',
-                contentType: 'application/json',
-                headers: { 'X-CSRFToken': getCSRFToken() },
-                data: JSON.stringify({
-                    update_mode: isUpdateModeOn
-                }),
-                success: function (response) {
-                    $('#updateModeToggle').data('updateMode', isUpdateModeOn); // Update the data attribute
-                    fetchItems(1, currentPage); // Ensure table1 remains on the same page
-                    if (response.edit_lock) {
-                        $('.btn-info').attr('disabled', true);
-                    } else {
-                        $('.btn-info').attr('disabled', false);
-                    }
-                }
-            });
-        }
-
-        function tailor_dashboard(groups, username) {
-            window.userGroups = groups;  // Store user groups globally
-            window.loggedInUsername = username;  // Store logged-in username globally
-            if (groups && groups.includes("managers")) {
-                $(".shop-stock").hide();
-                $(".warehouse-stock").addClass("col-md-12");
-                $(".warehouse-stock").removeClass("col-md-6");
-                $("#addItemSection").removeClass("d-none");
-                $("#updateModeSwitch").removeClass("d-none");
-                // Fetch the current edit_lock status from the server
+                };
                 $.ajax({
-                    url: '/api/get_edit_lock_status/',
-                    type: 'GET',
-                    success: function (response) {
-                        setUpdateModeButtonText(response.edit_lock);
-                        $('#updateModeToggle').data('updateMode', response.edit_lock);
-                    },
-                    error: function (xhr) {
-                        console.error("Failed to fetch edit lock status:", xhr.responseText);
+                    url: '/api/items/',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    headers: { 'X-CSRFToken': getCSRFToken() },
+                    data: JSON.stringify(data),
+                    success: () => {
+                        [1, 2, 3].forEach(num => fetchItems(num));
+                        $('#sku, #description, #retail_price, #quantity').val('');
                     }
                 });
-            } else {
-                $(".shop-stock").show();
-                if (groups.includes("shop_users")) {
-                    $("th:contains('Shop User')").hide();  // Hide the "Shop User" column header
-                    $("#itemTable3 tr").each(function () {
-                        $(this).find("td:first").hide();  // Hide the first column in each row
+            };
+
+            /** Update an item using AJAX PUT */
+            const updateItem = (sku, tableNum) => {
+                const price = $(`#retail_price${tableNum}-${CSS.escape(sku)}`).val();
+                if (!/^\d+(\.\d{1,2})?$/.test(price)) {
+                    alert('Retail price must be a valid number with up to 2 decimal places.');
+                    return;
+                }
+                const data = {
+                    sku: sku,
+                    description: $(`#description${tableNum}-${CSS.escape(sku)}`).val(),
+                    retail_price: price,
+                    quantity: $(`#quantity${tableNum}-${CSS.escape(sku)}`).val()
+                };
+                const apiUrl = tableNum === 1 ? `/api/items/${sku}/` : `/api/shop_items/${sku}/`;
+                $.ajax({
+                    url: apiUrl,
+                    type: 'PUT',
+                    contentType: 'application/json',
+                    headers: { 'X-CSRFToken': getCSRFToken() },
+                    data: JSON.stringify(data),
+                    success: () => fetchItems(tableNum)
+                });
+            };
+
+            /** Delete an item using AJAX DELETE */
+            const deleteItem = (sku, tableNum) => {
+                const apiUrl = tableNum === 1 ? `/api/items/${sku}/` : `/api/shop_items/${sku}/`;
+                $.ajax({
+                    url: apiUrl,
+                    type: 'DELETE',
+                    headers: { 'X-CSRFToken': getCSRFToken() },
+                    success: () => fetchItems(tableNum)
+                });
+            };
+
+            /** Transfer an item using AJAX POST */
+            const transferItem = sku => {
+                const transferQuantity = $(`#xfer_quantity1-${CSS.escape(sku)}`).val();
+                $.ajax({
+                    url: '/api/transfer/',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    headers: { 'X-CSRFToken': getCSRFToken() },
+                    data: JSON.stringify({ sku, transfer_quantity: transferQuantity }),
+                    success: () => [1, 2, 3].forEach(num => fetchItems(num)),
+                    error: xhr => alert(xhr.responseJSON.detail)
+                });
+            };
+
+            /** Complete or cancel a transfer using AJAX POST */
+            const completeTransfer = (sku, shop_user_id, quantity, cancel) => {
+                $.ajax({
+                    url: '/api/complete-transfer/',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    headers: { 'X-CSRFToken': getCSRFToken() },
+                    data: JSON.stringify({ sku, shop_user_id, quantity, cancel }),
+                    success: () => [1, 2, 3].forEach(num => fetchItems(num)),
+                    error: xhr => alert(xhr.responseJSON.detail)
+                });
+            };
+
+            /** Toggle update mode and optionally update items */
+            const toggleUpdateMode = () => {
+                const $updateToggle = $('#updateModeToggle');
+                const isUpdateModeOn = $updateToggle.prop('checked');
+                const currentPage = $('#paginationControls1 .page-item.active .page-link').text(); // current page number
+
+                if (isUpdateModeOn) {
+                    $('#itemTable1 tr').each(function () {
+                        const sku = $(this).find('td:first').text();
+                        const desc = $(`#description1-${CSS.escape(sku)}`).val();
+                        const price = $(`#retail_price1-${CSS.escape(sku)}`).val();
+                        const qnt = $(`#quantity1-${CSS.escape(sku)}`).val();
+                        if (desc !== undefined && price !== undefined && qnt !== undefined) {
+                            updateItem(sku, 1);
+                        }
                     });
                 }
-            }
-            // Remove 'Transfer Qnt' column header if user is not in shop_users group
-            if (!groups.includes("shop_users")) {
-                $("th:contains('Transfer Qnt')").hide();
-            }
-        }
+                setUpdateModeButtonText(isUpdateModeOn);
+                $.ajax({
+                    url: '/api/toggle_update_mode/',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    headers: { 'X-CSRFToken': getCSRFToken() },
+                    data: JSON.stringify({ update_mode: isUpdateModeOn }),
+                    success: response => {
+                        $('#updateModeToggle').data('updateMode', isUpdateModeOn);
+                        fetchItems(1, currentPage);
+                        $('.btn-info').attr('disabled', response.edit_lock ? true : false);
+                    }
+                });
+            };
 
-        function checkAuthStatus() {
-            $.ajax({
-                url: '/api/auth/user/',
-                method: 'GET',
-                xhrFields: { withCredentials: true },  // Ensures session cookies are sent
-                success: function (data) {
-                    if (data.username) {
-                        $("#userStatus").text(`Logged in as: ${data.username}`);
-                        tailor_dashboard(data.groups, data.username);
-                        $("#authLink").text("Logout").off("click").on("click", function (event) {
-                            event.preventDefault();
-                            $.ajax({
-                                url: "/accounts/logout/",
-                                type: "POST",
-                                headers: { "X-CSRFToken": getCSRFToken() },
-                                success: function () {
-                                    location.reload();
-                                },
-                                error: function (xhr, status, error) {
-                                    console.error("Logout failed:", xhr.responseText);
-                                }
-                            });
+            /** Tailor the dashboard view based on user groups */
+            const tailor_dashboard = (groups, username) => {
+                window.userGroups = groups;
+                window.loggedInUsername = username;
+                if (groups && groups.includes("managers")) {
+                    $(".shop-stock").hide();
+                    $(".warehouse-stock").addClass("col-md-12").removeClass("col-md-6");
+                    $("#addItemSection, #updateModeSwitch").removeClass("d-none");
+                    $.ajax({
+                        url: '/api/get_edit_lock_status/',
+                        type: 'GET',
+                        success: response => {
+                            setUpdateModeButtonText(response.edit_lock);
+                            $('#updateModeToggle').data('updateMode', response.edit_lock);
+                        },
+                        error: xhr => console.error("Failed to fetch edit lock status:", xhr.responseText)
+                    });
+                } else {
+                    $(".shop-stock").show();
+                    if (groups.includes("shop_users")) {
+                        $("th:contains('Shop User')").hide();
+                        $("#itemTable3 tr").each(function () {
+                            $(this).find("td:first").hide();
                         });
-                    } else {
+                    }
+                }
+                if (!groups.includes("shop_users")) {
+                    $("th:contains('Transfer Qnt')").hide();
+                }
+            };
+
+            /** Check authentication status and update the UI accordingly */
+            const checkAuthStatus = () => {
+                $.ajax({
+                    url: '/api/auth/user/',
+                    method: 'GET',
+                    xhrFields: { withCredentials: true },
+                    success: data => {
+                        if (data.username) {
+                            $("#userStatus").text(`Logged in as: ${data.username}`);
+                            tailor_dashboard(data.groups, data.username);
+                            $("#authLink").text("Logout")
+                                .off("click")
+                                .on("click", event => {
+                                    event.preventDefault();
+                                    $.ajax({
+                                        url: "/accounts/logout/",
+                                        type: "POST",
+                                        headers: { "X-CSRFToken": getCSRFToken() },
+                                        success: () => location.reload(),
+                                        error: (xhr, status, error) => console.error("Logout failed:", xhr.responseText)
+                                    });
+                                });
+                        } else {
+                            $("#userStatus").text("");
+                            $("#authLink").attr("href", "/accounts/login/").text("Login");
+                        }
+                    },
+                    error: (xhr, status, error) => {
+                        console.error("Auth check failed:", xhr.responseText);
                         $("#userStatus").text("");
                         $("#authLink").attr("href", "/accounts/login/").text("Login");
                     }
-                },
-                error: function (xhr, status, error) {
-                    console.error("Auth check failed:", xhr.responseText);
-                    $("#userStatus").text("");
-                    $("#authLink").attr("href", "/accounts/login/").text("Login");
-                }
+                });
+            };
+
+            /** Dummy function: Update shop item (to be implemented later) */
+            const updateShopItem = sku => {
+                const quantity = $(`#quantity2-${CSS.escape(sku)}`).val();
+                console.log(`SKU: ${sku}, Quantity: ${quantity}`);
+                // Update functionality to be implemented later
+            };
+
+            // Expose functions needed by inline handlers to global scope.
+            window.sortTable = sortTable;
+            window.fetchItems = fetchItems;
+            window.updateItem = updateItem;
+            window.deleteItem = deleteItem;
+            window.transferItem = transferItem;
+            window.completeTransfer = completeTransfer;
+            window.toggleUpdateMode = toggleUpdateMode;
+            window.updateShopItem = updateShopItem;
+            window.tailor_dashboard = tailor_dashboard;
+            window.checkAuthStatus = checkAuthStatus;
+
+            // Document ready: initialize event handlers and fetch data
+            $(document).ready(() => {
+                checkAuthStatus();
+                [1, 2, 3].forEach(num => fetchItems(num));
+                $('#addItem').click(addItem);
+                // The inline onclick events in generated HTML remain unchanged.
             });
-        }
-
-        function updateShopItem(sku) {
-            const quantity = $(`#quantity2-${CSS.escape(sku)}`).val();
-            console.log(`SKU: ${sku}, Quantity: ${quantity}`);
-            // Functionality to update shop item quantity will be implemented later
-        }
-
-        $(document).ready(function () {
-            checkAuthStatus();
-            fetchItems(1);
-            fetchItems(2);
-            fetchItems(3);
-            $('#addItem').click(addItem);
-        });
+        })();
     </script>
+
     <footer class="text-center mt-5 footer">
         <small>Simpler Stock Manager v5.0-beta. (c)2025 <a href="https://github.com/consciousuniverse"
                 target="_blank">Dan
