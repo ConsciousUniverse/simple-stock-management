@@ -85,7 +85,7 @@
         }
 
         .btn-info:hover {
-            background-color: var(--text-color);
+            background-color: var (--text-color);
             border-color: var(--primary-color);
             color: var(--primary-color);
         }
@@ -196,6 +196,11 @@
             border-color: var(--primary-color) !important;
             color: var(--secondary-color) !important;
         }
+
+        .btn-warning#updateModeToggle.update-mode-on {
+            background-color: red;
+            color: white;
+        }
     </style>
 </head>
 
@@ -300,7 +305,8 @@
         }
 
         function setUpdateModeButtonText(isUpdateModeOn) {
-            $('#updateModeToggle').text(isUpdateModeOn ? 'Leave Maintenance Mode' : 'Enter Maintenance Mode');
+            $('#updateModeToggle').text(isUpdateModeOn ? 'Unlock' : 'Edit Lock');
+            $('#updateModeToggle').toggleClass('update-mode-on', isUpdateModeOn);
         }
 
         function fetchItems(tableNum, page = 1, searchQuery = '', sortColumn = '', sortOrder = '') {
@@ -331,7 +337,7 @@
                 }
                 tableBody.empty();
 
-                const isUpdateModeOn = $('#updateModeToggle').text().includes('Leave');
+                const isUpdateModeOn = $('#updateModeToggle').data('updateMode');
                 data.results.forEach(item => {
                     let row;
                     if (tableNum === 1) {
@@ -364,7 +370,7 @@
                     <td>${item.item.description}</td>
                     <td>${parseFloat(item.item.retail_price).toFixed(2)}</td>
                     <td><input type='number' value='${item.quantity}' class='form-control' id='quantity${tableNum}-${item.item.sku}' disabled></td>
-                    <td class="actions"><button onclick='updateShopItem("${item.item.sku}")' class='btn btn-warning disabled'>Update</button></td>
+                    <td class="actions"><button onclick='updateShopItem("${item.item.sku}")' class='btn btn-warning disable'>Update</button></td>
                 </tr>`;
                     } else if (tableNum === 3) {
                         row = `
@@ -557,7 +563,7 @@
 
         function toggleUpdateMode() {
             const updateModeButton = $('#updateModeToggle');
-            const isUpdateModeOn = updateModeButton.text().includes('Leave');
+            const isUpdateModeOn = updateModeButton.data('updateMode');
             const currentPage = $('#paginationControls1 .page-item.active .page-link').text(); // Get the current page number
 
             if (isUpdateModeOn) {
@@ -573,6 +579,7 @@
                 });
             }
             setUpdateModeButtonText(!isUpdateModeOn);
+            updateModeButton.data('updateMode', !isUpdateModeOn);
             $.ajax({
                 url: '/api/toggle_update_mode/',
                 type: 'POST',
@@ -607,6 +614,7 @@
                     type: 'GET',
                     success: function (response) {
                         setUpdateModeButtonText(response.edit_lock);
+                        $('#updateModeToggle').data('updateMode', response.edit_lock);
                     },
                     error: function (xhr) {
                         console.error("Failed to fetch edit lock status:", xhr.responseText);
