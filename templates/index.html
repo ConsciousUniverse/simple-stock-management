@@ -142,7 +142,7 @@
 
         .table th,
         .table td {
-            background-color: var(--text-color);
+            background-color: var (--text-color);
             /* border-radius: var(--border-radius); */
         }
 
@@ -201,6 +201,64 @@
             background-color: red;
             color: white;
         }
+
+        .btn-success {
+            background-color: green;
+            border-color: green;
+            color: white;
+        }
+
+        .btn-danger {
+            background-color: red;
+            border-color: red;
+            color: white;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--secondary-color);
+            /* Keep background gold */
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: var(--primary-color);
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--secondary-color);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(26px);
+        }
     </style>
 </head>
 
@@ -231,7 +289,10 @@
             <div class="d-flex justify-content-between mb-2">
                 <input type="text" id="searchBox1" class="form-control" placeholder="Search Warehouse Items..."
                     onkeyup="fetchItems(1, 1, this.value)">
-                <button id="updateModeToggle" class="btn btn-warning ms-2 d-none" onclick="toggleUpdateMode()"></button>
+                <label id="updateModeSwitch" class="toggle-switch ms-2 d-none">
+                    <input type="checkbox" id="updateModeToggle" onclick="toggleUpdateMode()">
+                    <span class="slider"></span>
+                </label>
             </div>
             <table class='table table-bordered'>
                 <thead>
@@ -305,8 +366,7 @@
         }
 
         function setUpdateModeButtonText(isUpdateModeOn) {
-            $('#updateModeToggle').text(isUpdateModeOn ? 'Unlock' : 'Edit Lock');
-            $('#updateModeToggle').toggleClass('update-mode-on', isUpdateModeOn);
+            $('#updateModeToggle').prop('checked', isUpdateModeOn);
         }
 
         function fetchItems(tableNum, page = 1, searchQuery = '', sortColumn = '', sortOrder = '') {
@@ -347,8 +407,8 @@
                         let retailPriceField = window.userGroups && window.userGroups.includes("managers") && isUpdateModeOn ?
                             `<input type='text' value='${parseFloat(item.retail_price).toFixed(2)}' class='form-control' id='retail_price${tableNum}-${item.sku}'>` :
                             parseFloat(item.retail_price).toFixed(2);
-                        let quantityField = window.userGroups && window.userGroups.includes("managers") && isUpdateModeOn ?
-                            `<input type='number' value='${item.quantity}' class='form-control' id='quantity${tableNum}-${item.sku}'>` :
+                        let quantityField = window.userGroups && window.userGroups.includes("managers") ?
+                            `<input type='number' value='${item.quantity}' class='form-control' id='quantity${tableNum}-${item.sku}' ${isUpdateModeOn ? '' : 'disabled'}>` :
                             item.quantity;
                         let transferQuantityField = window.userGroups && window.userGroups.includes("shop_users") && !isUpdateModeOn ?
                             `<input type='number' placeholder='Enter transfer quantity' class='form-control' id='xfer_quantity1-${item.sku}'>` :
@@ -388,15 +448,15 @@
                     tableBody.append(row);
 
                     // Show update and delete buttons only for managers in update mode
-                    if (tableNum === 1 && window.userGroups && window.userGroups.includes("managers") && isUpdateModeOn) {
+                    if (tableNum === 1 && window.userGroups && window.userGroups.includes("managers")) {
                         $(`#itemTable1 tr:last .actions`).append(`
-                            <button onclick='updateItem("${item.sku}", ${tableNum})' class='btn btn-warning'>Update</button>
-                            <button onclick='deleteItem("${item.sku}", ${tableNum})' class='btn btn-danger'>Delete</button>
+                            <button onclick='updateItem("${item.sku}", ${tableNum})' class='btn btn-warning' ${isUpdateModeOn ? '' : 'disabled'}>Update</button>
+                            <button onclick='deleteItem("${item.sku}", ${tableNum})' class='btn btn-danger' ${isUpdateModeOn ? '' : 'disabled'}>Delete</button>
                         `);
                     }
 
                     // Show transfer button only for shop_users when update mode is off
-                    if (tableNum === 1 && window.userGroups && window.userGroups.includes("shop_users") && !isUpdateModeOn) {
+                    if (tableNum === 1 && window.userGroups && window.userGroups.includes("shop_users")) {
                         $(`#itemTable1 tr:last .actions`).append(`
                             <button onclick='transferItem("${item.sku}")' class='btn btn-info' ${isUpdateModeOn ? 'disabled' : ''}>Transfer</button>
                         `);
@@ -538,7 +598,6 @@
         }
 
         function completeTransfer(sku, shop_user_id, quantity, cancel) {
-            console.log(quantity);
             $.ajax({
                 url: '/api/complete-transfer/',
                 type: 'POST',
@@ -563,7 +622,7 @@
 
         function toggleUpdateMode() {
             const updateModeButton = $('#updateModeToggle');
-            const isUpdateModeOn = updateModeButton.data('updateMode');
+            const isUpdateModeOn = updateModeButton.prop('checked');
             const currentPage = $('#paginationControls1 .page-item.active .page-link').text(); // Get the current page number
 
             if (isUpdateModeOn) {
@@ -578,17 +637,17 @@
                     }
                 });
             }
-            setUpdateModeButtonText(!isUpdateModeOn);
-            updateModeButton.data('updateMode', !isUpdateModeOn);
+            setUpdateModeButtonText(isUpdateModeOn);
             $.ajax({
                 url: '/api/toggle_update_mode/',
                 type: 'POST',
                 contentType: 'application/json',
                 headers: { 'X-CSRFToken': getCSRFToken() },
                 data: JSON.stringify({
-                    update_mode: !isUpdateModeOn
+                    update_mode: isUpdateModeOn
                 }),
                 success: function (response) {
+                    $('#updateModeToggle').data('updateMode', isUpdateModeOn); // Update the data attribute
                     fetchItems(1, currentPage); // Ensure table1 remains on the same page
                     if (response.edit_lock) {
                         $('.btn-info').attr('disabled', true);
@@ -607,7 +666,7 @@
                 $(".warehouse-stock").addClass("col-md-12");
                 $(".warehouse-stock").removeClass("col-md-6");
                 $("#addItemSection").removeClass("d-none");
-                $("#updateModeToggle").removeClass("d-none");
+                $("#updateModeSwitch").removeClass("d-none");
                 // Fetch the current edit_lock status from the server
                 $.ajax({
                     url: '/api/get_edit_lock_status/',
@@ -629,13 +688,10 @@
                     });
                 }
             }
-
             // Remove 'Transfer Qnt' column header if user is not in shop_users group
             if (!groups.includes("shop_users")) {
                 $("th:contains('Transfer Qnt')").hide();
             }
-
-
         }
 
         function checkAuthStatus() {
@@ -689,7 +745,8 @@
         });
     </script>
     <footer class="text-center mt-5 footer">
-        <small>Simpler Stock Manager v5.0-beta. (c)2025 <a href="https://github.com/consciousuniverse" target="_blank">Dan
+        <small>Simpler Stock Manager v5.0-beta. (c)2025 <a href="https://github.com/consciousuniverse"
+                target="_blank">Dan
                 Bright</a>. License GPLv3.</small>
     </footer>
 </body>
