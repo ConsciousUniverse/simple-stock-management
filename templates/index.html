@@ -612,6 +612,16 @@
                             updateItem(sku, 1);
                         }
                     });
+                } else {
+                    $('#itemTable1 tr').each(function () {
+                        const sku = $(this).find('td:first').text();
+                        const desc = $(`#description1-${CSS.escape(sku)}`).val();
+                        const price = $(`#retail_price1-${CSS.escape(sku)}`).val();
+                        const qnt = $(`#quantity1-${CSS.escape(sku)}`).val();
+                        if (desc !== undefined && price !== undefined && qnt !== undefined) {
+                            updateItem(sku, 1);
+                        }
+                    });
                 }
                 setUpdateModeButtonText(isUpdateModeOn);
                 $.ajax({
