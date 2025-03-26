@@ -76,7 +76,8 @@ class ShopItemViewSet(viewsets.ModelViewSet):
         search_query = self.request.query_params.get("search", None)
         if search_query:
             queryset = queryset.filter(
-                Q(item__description__icontains=search_query) | Q(item__sku__icontains=search_query)
+                Q(item__description__icontains=search_query)
+                | Q(item__sku__icontains=search_query)
             )  # 🔍 Search filter
         ordering = self.request.query_params.get("ordering", None)
         if ordering:
@@ -105,7 +106,8 @@ class TransferItemViewSet(viewsets.ModelViewSet):
         search_query = self.request.query_params.get("search", None)
         if search_query:
             queryset = queryset.filter(
-                Q(item__description__icontains=search_query) | Q(item__sku__icontains=search_query)
+                Q(item__description__icontains=search_query)
+                | Q(item__sku__icontains=search_query)
             )  # 🔍 Search filter
         ordering = self.request.query_params.get("ordering", None)
         if ordering:
@@ -222,18 +224,18 @@ def transfer_item(request):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
-def toggle_update_mode(request):
+def set_edit_lock_status(request):
     if not request.user.groups.filter(name="managers").exists():
         return Response(
             {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
         )
 
-    update_mode = request.data.get("update_mode", False)
+    edit_lock_status = request.data.get("edit_lock_status", False)
     admin, created = Admin.objects.get_or_create(id=1)
-    admin.edit_lock = update_mode
+    admin.edit_lock = edit_lock_status
     admin.save()
     return Response(
-        {"detail": f"Update mode {'enabled' if update_mode else 'disabled'}."},
+        {"edit_lock": admin.edit_lock},
         status=status.HTTP_200_OK,
     )
 
@@ -241,9 +243,6 @@ def toggle_update_mode(request):
 @csrf_exempt
 def get_edit_lock_status(request):
     if request.method == "GET":
-        try:
-            admin = Admin.objects.first()
-            return JsonResponse({"edit_lock": admin.edit_lock})
-        except Admin.DoesNotExist:
-            return JsonResponse({"edit_lock": False})
+        edit_lock = Admin.is_edit_locked()
+        return JsonResponse({"edit_lock": edit_lock})
     return JsonResponse({"error": "Invalid request method"}, status=400)

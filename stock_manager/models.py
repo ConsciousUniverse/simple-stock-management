@@ -10,6 +10,11 @@ User.add_to_class("__str__", lambda self: self.username)
 class Admin(models.Model):
     edit_lock = models.BooleanField(default=False)
 
+    @staticmethod
+    def is_edit_locked():
+        admin = Admin.objects.first()
+        return admin.edit_lock if admin else False
+
 
 class Item(models.Model):
     sku = models.CharField(primary_key=True, unique=True, editable=True, max_length=100)
@@ -32,7 +37,7 @@ class Item(models.Model):
     def transfer_to_shop(
         self, shop_user, transfer_quantity, complete=False, cancel=False
     ):
-        if Admin.objects.first().edit_lock:
+        if Admin.is_edit_locked():
             raise ValueError(
                 "Transfers are disabled as the warehouse is being maintained. Please try again later."
             )

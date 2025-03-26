@@ -1,13 +1,13 @@
 <!DOCTYPE html>
-<html lang='en'>
+<html lang="en">
 
 <head>
     {% load static %}
-    <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simpler Stock Management</title>
-    <link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css' rel='stylesheet'>
-    <script src='https://code.jquery.com/jquery-3.6.0.min.js'></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         :root {
             --primary-color: #003200;
@@ -33,7 +33,7 @@
         h4,
         h5,
         h6 {
-            color: var (--secondary-color);
+            color: var(--secondary-color);
         }
 
         .footer {
@@ -55,12 +55,12 @@
 
         .btn-outline-primary {
             color: var(--secondary-color);
-            border-color: var (--secondary-color);
+            border-color: var(--secondary-color);
             border-radius: var(--border-radius);
         }
 
         .btn-outline-primary:hover {
-            background-color: var (--secondary-color);
+            background-color: var(--secondary-color);
             color: var(--primary-color);
         }
 
@@ -73,19 +73,19 @@
 
         .btn-warning:hover {
             background-color: var(--primary-color);
-            border-color: var(--primary-color);
+            border-color: var (--primary-color);
             color: var(--secondary-color);
         }
 
         .btn-info {
             background-color: var(--secondary-color);
             border-color: var(--secondary-color);
-            color: var (--primary-color);
+            color: var(--primary-color);
             border-radius: var(--border-radius);
         }
 
         .btn-info:hover {
-            background-color: var (--text-color);
+            background-color: var(--text-color);
             border-color: var(--primary-color);
             color: var(--primary-color);
         }
@@ -99,7 +99,6 @@
             background-color: var(--secondary-color);
             border-color: var(--secondary-color);
             color: var(--primary-color);
-            /* Changed from var(--text-color) to var(--primary-color) */
             border-radius: var(--border-radius);
         }
 
@@ -107,7 +106,6 @@
             background-color: var(--text-color);
             border-color: var(--primary-color);
             color: var(--primary-color) !important;
-            /* Ensure the color is white on mouseover */
         }
 
         .btn-outline-primary#authLink {
@@ -125,7 +123,6 @@
         .pagination .page-link {
             background-color: var(--secondary-color);
             color: var(--primary-color);
-            /* Changed from var(--text-color) to var(--primary-color) */
             border-color: var(--secondary-color);
             border-radius: var(--border-radius);
         }
@@ -142,8 +139,7 @@
 
         .table th,
         .table td {
-            background-color: var (--text-color);
-            /* border-radius: var(--border-radius); */
+            background-color: var(--text-color);
         }
 
         .table thead th {
@@ -158,7 +154,6 @@
 
         #transfersPendingSection {
             margin-top: 50px;
-            /* Add margin between Transfers Pending section and the Add button element above it */
         }
 
         @keyframes spin {
@@ -180,7 +175,7 @@
         }
 
         .btn-danger:hover {
-            background-color: var (--text-color);
+            background-color: var(--text-color);
             border-color: var(--primary-color);
             color: var(--primary-color);
         }
@@ -235,7 +230,6 @@
             right: 0;
             bottom: 0;
             background-color: var(--secondary-color);
-            /* Keep background gold */
             transition: .4s;
             border-radius: 34px;
         }
@@ -280,7 +274,7 @@
     </style>
 </head>
 
-<body class='container mt-5'>
+<body class="container mt-5">
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
         <a class="navbar-brand" href="#">
@@ -301,9 +295,9 @@
             </ul>
         </div>
     </nav>
-    <h2 class='mb-4'>Warehouse Stock</h2>
-    <div class='row'>
-        <div class='col-12 warehouse-stock mb-4'>
+    <h2 class="mb-4">Warehouse Stock</h2>
+    <div class="row">
+        <div class="col-12 warehouse-stock mb-4">
             <div class="d-flex justify-content-between mb-2">
                 <input type="text" id="searchBox1" class="form-control" placeholder="Search Warehouse Items..."
                     onkeyup="fetchItems(1, 1, this.value)">
@@ -312,7 +306,7 @@
                     <span class="slider"></span>
                 </label>
             </div>
-            <table class='table table-bordered'>
+            <table class="table table-bordered">
                 <thead>
                     <tr>
                         <th onclick="sortTable(1, 'sku')">SKU</th>
@@ -323,15 +317,15 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id='itemTable1'></tbody>
+                <tbody id="itemTable1"></tbody>
             </table>
             <div id="paginationControls1" class="pagination-controls"></div>
         </div>
-        <div class='col-12 shop-stock'>
+        <div class="col-12 shop-stock">
             <h2>Shop Stock</h2>
             <input type="text" id="searchBox2" class="form-control mb-2" placeholder="Search Shop Items..."
                 onkeyup="fetchItems(2, 1, this.value)">
-            <table class='table table-bordered'>
+            <table class="table table-bordered">
                 <thead>
                     <tr>
                         <th onclick="sortTable(2, 'sku')">SKU</th>
@@ -341,23 +335,23 @@
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody id='itemTable2'></tbody>
+                <tbody id="itemTable2"></tbody>
             </table>
             <div id="paginationControls2" class="pagination-controls"></div>
         </div>
     </div>
     <div id="addItemSection" class="d-none">
         <h3>Add Item</h3>
-        <input type='text' id='sku' placeholder='SKU' class='form-control mb-2'>
-        <input type='text' id='description' placeholder='Description' class='form-control mb-2'>
-        <input type='number' step='0.01' min='0.00' id='retail_price' placeholder='Retail Price'
-            class='form-control mb-2'>
-        <input type='number' min='0' id='quantity' placeholder='Quantity' class='form-control mb-2'>
-        <button id='addItem' class='btn btn-primary'>Add</button>
+        <input type="text" id="sku" placeholder="SKU" class="form-control mb-2">
+        <input type="text" id="description" placeholder="Description" class="form-control mb-2">
+        <input type="number" step="0.01" min="0.00" id="retail_price" placeholder="Retail Price"
+            class="form-control mb-2">
+        <input type="number" min="0" id="quantity" placeholder="Quantity" class="form-control mb-2">
+        <button id="addItem" class="btn btn-primary">Add</button>
     </div>
     <div id="transfersPendingSection">
         <h3>Transfers Pending</h3>
-        <table class='table table-bordered'>
+        <table class="table table-bordered">
             <thead>
                 <tr>
                     <th onclick="sortTable(3, 'shop_user__username')">Shop User</th>
@@ -367,13 +361,27 @@
                     <th>Actions</th>
                 </tr>
             </thead>
-            <tbody id='itemTable3'></tbody>
+            <tbody id="itemTable3"></tbody>
         </table>
         <div id="paginationControls3" class="pagination-controls"></div>
     </div>
     <script>
         (() => {
             'use strict';
+            // Global variable to hold the edit lock status.
+            window.editLock = false;
+            /** Get the edit lock status from the server on load */
+            const get_edit_lock_status = () => {
+                $.ajax({
+                    url: '/api/get_edit_lock_status/',
+                    type: 'GET',
+                    success: response => {
+                        window.editLock = response.edit_lock;
+                        updateUIBasedOnEditLock();
+                    },
+                    error: xhr => console.error("Failed to fetch edit lock status:", xhr.responseText)
+                });
+            };
 
             /** Helper: Get CSRF token from cookies */
             const getCSRFToken = () => {
@@ -391,12 +399,12 @@
                 fetchItems(tableNum, 1, searchVal, column, newOrder);
             };
 
-            /** Sets the state of the update mode toggle button */
-            const setUpdateModeButtonState = isUpdateModeOn => {
-                $('#updateModeToggle').prop('checked', isUpdateModeOn);
+            /** Update the update mode toggle button state based on window.editLock */
+            const setUpdateModeButtonState = () => {
+                $('#updateModeToggle').prop('checked', window.editLock);
             };
 
-            /** Fetches items via AJAX and populates the corresponding table */
+            /** Fetch items via AJAX and populate the corresponding table */
             const fetchItems = (tableNum, page = 1, searchQuery = '', sortColumn = '', sortOrder = '') => {
                 let apiUrl = '';
                 if (tableNum === 1) {
@@ -420,69 +428,68 @@
                     if (tableNum === 1) $tableBody = $('#itemTable1');
                     else if (tableNum === 2) $tableBody = $('#itemTable2');
                     else if (tableNum === 3) $tableBody = $('#itemTable3');
-
                     $tableBody.empty();
-
-                    const isUpdateModeOn = $('#updateModeToggle').data('updateMode');
                     data.results.forEach(item => {
                         let row = '';
                         if (tableNum === 1) {
-                            const descriptionField = (window.userGroups && window.userGroups.includes("managers") && isUpdateModeOn)
-                                ? `<input type='text' value='${item.description}' class='form-control' id='description1-${item.sku}'>`
+                            // For managers, allow editing only if editLock is true.
+                            const descriptionField = (window.userGroups && window.userGroups.includes("managers") && window.editLock)
+                                ? `<input type="text" value="${item.description}" class="form-control" id="description1-${item.sku}">`
                                 : item.description;
-                            const retailPriceField = (window.userGroups && window.userGroups.includes("managers") && isUpdateModeOn)
-                                ? `<input type='text' value='${parseFloat(item.retail_price).toFixed(2)}' class='form-control' id='retail_price1-${item.sku}'>`
+                            const retailPriceField = (window.userGroups && window.userGroups.includes("managers") && window.editLock)
+                                ? `<input type="text" value="${parseFloat(item.retail_price).toFixed(2)}" class="form-control" id="retail_price1-${item.sku}">`
                                 : parseFloat(item.retail_price).toFixed(2);
+                            // Warehouse quantity field is disabled if editLock is false.
                             const quantityField = (window.userGroups && window.userGroups.includes("managers"))
-                                ? `<input type='number' min='0' value='${item.quantity}' class='form-control' id='quantity1-${item.sku}' ${isUpdateModeOn ? '' : 'disabled'}>`
+                                ? window.editLock ? `<input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity1-${item.sku}">` : item.quantity
                                 : item.quantity;
-                            const transferQuantityField = (window.userGroups && window.userGroups.includes("shop_users") && !isUpdateModeOn)
-                                ? `<input type='number' min='0' placeholder='Enter transfer quantity' class='form-control' id='xfer_quantity1-${item.sku}'>`
+                            const transferQuantityField = (window.userGroups && window.userGroups.includes("shop_users"))
+                                ? `<input type="number" min="0" placeholder="Enter transfer quantity" class="form-control" id="xfer_quantity1-${item.sku}">`
                                 : '';
                             row = `
-                    <tr>
-                      <td>${item.sku}</td>
-                      <td>${descriptionField}</td>
-                      <td>${retailPriceField}</td>
-                      <td>${quantityField}</td>
-                      ${window.userGroups && window.userGroups.includes("shop_users") && !isUpdateModeOn ? `<td>${transferQuantityField}</td>` : ''}
-                      <td class="actions"></td>
-                    </tr>`;
+                <tr>
+                  <td>${item.sku}</td>
+                  <td>${descriptionField}</td>
+                  <td>${retailPriceField}</td>
+                  <td>${quantityField}</td>
+                  ${window.userGroups && window.userGroups.includes("shop_users") ? `<td>${transferQuantityField}</td>` : ''}
+                  <td class="actions"></td>
+                </tr>`;
                         } else if (tableNum === 2) {
                             row = `
-                    <tr>
-                      <td>${item.item.sku}</td>
-                      <td>${item.item.description}</td>
-                      <td>${parseFloat(item.item.retail_price).toFixed(2)}</td>
-                      <td><input type='number' min='0' value='${item.quantity}' class='form-control' id='quantity2-${item.item.sku}' disabled></td>
-                      <td class="actions"><button onclick='updateShopItem("${item.item.sku}")' class='btn btn-warning disabled'>Update</button></td>
-                    </tr>`;
+                <tr>
+                  <td>${item.item.sku}</td>
+                  <td>${item.item.description}</td>
+                  <td>${parseFloat(item.item.retail_price).toFixed(2)}</td>
+                  <td><input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity2-${item.item.sku}" disabled></td>
+                  <td class="actions"><button onclick="updateShopItem('${item.item.sku}')" class="btn btn-warning disabled">Update</button></td>
+                </tr>`;
                         } else if (tableNum === 3) {
                             row = `
-                    <tr>
-                      ${window.userGroups && !window.userGroups.includes("managers") ? '' : `<td>${item.shop_user.username}</td>`}
-                      <td>${item.item.sku}</td>
-                      <td>${item.item.description}</td>
-                      <td><input type='number' min='0' value='${item.quantity}' class='form-control' id='quantity3-${item.item.sku}'></td>
-                      <td class="actions">
-                        ${window.userGroups && !window.userGroups.includes("managers") ? '' : `<button onclick='completeTransfer("${item.item.sku}", "${item.shop_user.id}", document.getElementById("quantity3-${item.item.sku}").value, "false")' class='btn btn-info'>Dispatch</button>`}
-                        <button onclick='completeTransfer("${item.item.sku}", "${item.shop_user.id}", $("#quantity3-${item.item.sku}").val(), "true")' class='btn btn-danger'>Cancel</button>
-                      </td>
-                    </tr>`;
+                <tr>
+                  ${window.userGroups && !window.userGroups.includes("managers") ? '' : `<td>${item.shop_user.username}</td>`}
+                  <td>${item.item.sku}</td>
+                  <td>${item.item.description}</td>
+                  <td><input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity3-${item.item.sku}"></td>
+                  <td class="actions">
+                    ${window.userGroups && !window.userGroups.includes("managers") ? '' : `<button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.id}', document.getElementById('quantity3-${item.item.sku}').value, 'false')" class="btn btn-info">Dispatch</button>`}
+                    <button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.id}', $('#quantity3-${item.item.sku}').val(), 'true')" class="btn btn-danger">Cancel</button>
+                  </td>
+                </tr>`;
                         }
                         $tableBody.append(row);
 
-                        // For managers in update mode: attach delete button in table 1
+                        // For managers: attach delete button in table 1, disabled if editLock is false.
                         if (tableNum === 1 && window.userGroups && window.userGroups.includes("managers")) {
                             $tableBody.find('tr:last .actions').append(`
-                    <button onclick='deleteItem("${item.sku}", 1)' class='btn btn-danger' ${isUpdateModeOn ? '' : 'disabled'}>Delete</button>
-                  `);
+                <button onclick="deleteItem('${item.sku}', 1)" class="btn btn-danger" ${window.editLock ? '' : 'disabled'}>Delete</button>
+              `);
                         }
-                        // For shop_users: attach transfer button in table 1
+                        // For shop_users: attach transfer button in table 1 (disabled when in edit mode).
                         if (tableNum === 1 && window.userGroups && window.userGroups.includes("shop_users")) {
                             $tableBody.find('tr:last .actions').append(`
-                    <button onclick='transferItem("${item.sku}")' class='btn btn-info' ${isUpdateModeOn ? 'disabled' : ''}>Transfer</button>
-                  `);
+                <button onclick="transferItem('${item.sku}')" class="btn btn-info" ${window.editLock ? 'disabled' : ''}>Transfer</button>
+              `);
                         }
                     });
                     setupPagination(tableNum, data, sortColumn, sortOrder);
@@ -614,23 +621,16 @@
                 });
             };
 
-            /** Toggle update mode and optionally update items */
+            /** Toggle update mode.
+             *  This updates the global window.editLock variable and the toggle UI.
+             *  It also updates all items and notifies the server.
+             */
             const toggleUpdateMode = () => {
-                const $updateToggle = $('#updateModeToggle');
-                const isUpdateModeOn = $updateToggle.prop('checked');
-                const currentPage = $('#paginationControls1 .page-item.active .page-link').text(); // current page number
+                // Update the global edit lock status based on the checkbox.
+                let current_lock_status = $('#updateModeToggle').prop('checked');
 
-                if (isUpdateModeOn) {
-                    $('#itemTable1 tr').each(function () {
-                        const sku = $(this).find('td:first').text();
-                        const desc = $(`#description1-${CSS.escape(sku)}`).val();
-                        const price = $(`#retail_price1-${CSS.escape(sku)}`).val();
-                        const qnt = $(`#quantity1-${CSS.escape(sku)}`).val();
-                        if (desc !== undefined && price !== undefined && qnt !== undefined) {
-                            updateItem(sku, 1);
-                        }
-                    });
-                } else {
+                // Loop through table 1 rows and update any editable fields if they exist.
+                if (current_lock_status == false) {
                     $('#itemTable1 tr').each(function () {
                         const sku = $(this).find('td:first').text();
                         const desc = $(`#description1-${CSS.escape(sku)}`).val();
@@ -641,31 +641,23 @@
                         }
                     });
                 }
-                setUpdateModeButtonState(isUpdateModeOn);
+
+                // Notify the server of the update mode change.
                 $.ajax({
-                    url: '/api/toggle_update_mode/',
+                    url: '/api/set_edit_lock_status/',
                     type: 'POST',
                     contentType: 'application/json',
                     headers: { 'X-CSRFToken': getCSRFToken() },
-                    data: JSON.stringify({ update_mode: isUpdateModeOn }),
+                    data: JSON.stringify({ edit_lock_status: current_lock_status }),
                     success: response => {
-                        $('#updateModeToggle').data('updateMode', isUpdateModeOn);
+                        // Update the global variable in case the server modifies the status.
+                        window.editLock = response.edit_lock;
+                        updateUIBasedOnEditLock();
+                        const currentPage = $('#paginationControls1 .page-item.active .page-link').text();
                         fetchItems(1, currentPage);
-                        $('.btn-info').attr('disabled', response.edit_lock ? true : false);
                     }
                 });
-            };
-
-            const get_edit_lock_status = () => {
-                $.ajax({
-                    url: '/api/get_edit_lock_status/',
-                    type: 'GET',
-                    success: response => {
-                        setUpdateModeButtonState(response.edit_lock);
-                        $('#updateModeToggle').data('updateMode', response.edit_lock);
-                    },
-                    error: xhr => console.error("Failed to fetch edit lock status:", xhr.responseText)
-                });
+                get_edit_lock_status();  // set the global variable to new value
             };
 
             /** Tailor the dashboard view based on user groups */
@@ -676,7 +668,6 @@
                     $(".shop-stock").hide();
                     $(".warehouse-stock").addClass("col-md-12").removeClass("col-md-6");
                     $("#addItemSection, #updateModeSwitch").removeClass("d-none");
-                    get_edit_lock_status();
                 } else {
                     $(".shop-stock").show();
                     if (groups.includes("shop_users")) {
@@ -730,7 +721,15 @@
             const updateShopItem = sku => {
                 const quantity = $(`#quantity2-${CSS.escape(sku)}`).val();
                 console.log(`SKU: ${sku}, Quantity: ${quantity}`);
-                // Update functionality to be implemented later
+                // Update functionality to be implemented later.
+            };
+
+            /** Update the UI based on the edit lock status */
+            const updateUIBasedOnEditLock = () => {
+                const isLocked = window.editLock;
+                // Disable/enable fields and buttons based on edit lock
+                $('#itemTable1 input, #itemTable1 button').prop('disabled', !isLocked);
+                $('#updateModeToggle').prop('checked', isLocked);
             };
 
             // Expose functions needed by inline handlers to global scope.
@@ -745,20 +744,20 @@
             window.tailor_dashboard = tailor_dashboard;
             window.checkAuthStatus = checkAuthStatus;
 
-            // Document ready: initialize event handlers and fetch data
+            // Document ready: initialize event handlers and fetch data.
             $(document).ready(() => {
                 checkAuthStatus();
+                get_edit_lock_status();
                 [1, 2, 3].forEach(num => fetchItems(num));
                 $('#addItem').click(addItem);
-                // The inline onclick events in generated HTML remain unchanged.
+                $('#updateModeToggle').change(toggleUpdateMode); // Attach toggle handler
             });
         })();
     </script>
 
     <footer class="text-center mt-5 footer">
         <small>Simpler Stock Manager v5.0-beta. (c)2025 <a href="https://github.com/consciousuniverse"
-                target="_blank">Dan
-                Bright</a>. License GPLv3.</small>
+                target="_blank">Dan Bright</a>. License GPLv3.</small>
     </footer>
 </body>
 
