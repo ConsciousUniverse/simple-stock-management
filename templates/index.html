@@ -60,7 +60,7 @@
         }
 
         .btn-outline-primary:hover {
-            background-color: var(--secondary-color);
+            background-color: var (--secondary-color);
             color: var(--primary-color);
         }
 
@@ -444,8 +444,7 @@
                                 ? window.editLock ? `<input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity1-${item.sku}">` : item.quantity
                                 : item.quantity;
                             const transferQuantityField = (window.userGroups && window.userGroups.includes("shop_users"))
-                                ? `<input type="number" min="0" placeholder="Enter transfer quantity" class="form-control" id="xfer_quantity1-${item.sku}">`
-                                : '';
+                                ? !window.editLock ? `<input type="number" min="0" placeholder="Enter transfer quantity" class="form-control" id="xfer_quantity1-${item.sku}">` : '<small>Warehouse under maintenance, please try again later.</small>' : '';
                             row = `
                 <tr>
                   <td>${item.sku}</td>
@@ -692,6 +691,8 @@
                         if (data.username) {
                             $("#userStatus").html(`Hello ${data.username}<br/><a id="change_pw_link" href="{% url 'password_change' %}">Change my password</a>`);
                             tailor_dashboard(data.groups, data.username);
+                            // Ensure fetchItems is called only after tailor_dashboard completes
+                            [1, 2, 3].forEach(num => fetchItems(num));
                             $("#authLink").text("Logout")
                                 .off("click")
                                 .on("click", event => {
