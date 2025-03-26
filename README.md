@@ -30,7 +30,7 @@ In addition, regular updates of Python dependencies to the latest versions is ne
 - **Sort**: Sort items by SKU, description, retail price, or quantity.
 
 ### Update Mode
-- **Toggle Update Mode**: Managers can enter and leave update mode to make changes to item details. When update mode is active (i.e., the warehouse stock data is being maintained), transfers by shop users are blocked, to preserve database integrity.
+- **Toggle Update Mode**: Managers can enter and leave update mode to make changes to item details, by toggling the switch on the top right of the 'Warehouse Stock' table. When update mode is active (i.e., the warehouse stock data is being maintained), transfers by shop users are blocked, to preserve database integrity.
 - **Update Items**: Managers & shop users can update item descriptions, retail prices, and quantities.
 - **Delete Items**: Managers can delete items from the warehouse stock.
 
