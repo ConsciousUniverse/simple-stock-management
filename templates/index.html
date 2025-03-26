@@ -259,6 +259,24 @@
         input:checked+.slider:before {
             transform: translateX(26px);
         }
+
+        #userStatus {
+            display: block;
+            padding: 10px;
+            color: var(--primary-color) !important;
+            background-color: var(--text-color) !important;
+            border-radius: var(--border-radius);
+        }
+
+        #change_pw_link {
+            font-size: 0.7em;
+            color: var(--primary-color) !important;
+            text-decoration: none;
+        }
+
+        #change_pw_link:hover {
+            color: var(--secondary-color) !important;
+        }
     </style>
 </head>
 
@@ -332,7 +350,8 @@
         <h3>Add Item</h3>
         <input type='text' id='sku' placeholder='SKU' class='form-control mb-2'>
         <input type='text' id='description' placeholder='Description' class='form-control mb-2'>
-        <input type='number' step='0.01' min='0.00' id='retail_price' placeholder='Retail Price' class='form-control mb-2'>
+        <input type='number' step='0.01' min='0.00' id='retail_price' placeholder='Retail Price'
+            class='form-control mb-2'>
         <input type='number' min='0' id='quantity' placeholder='Quantity' class='form-control mb-2'>
         <button id='addItem' class='btn btn-primary'>Add</button>
     </div>
@@ -436,7 +455,7 @@
                       <td>${item.item.description}</td>
                       <td>${parseFloat(item.item.retail_price).toFixed(2)}</td>
                       <td><input type='number' min='0' value='${item.quantity}' class='form-control' id='quantity2-${item.item.sku}' disabled></td>
-                      <td class="actions"><button onclick='updateShopItem("${item.item.sku}")' class='btn btn-warning disable'>Update</button></td>
+                      <td class="actions"><button onclick='updateShopItem("${item.item.sku}")' class='btn btn-warning disabled'>Update</button></td>
                     </tr>`;
                         } else if (tableNum === 3) {
                             row = `
@@ -677,7 +696,7 @@
                     xhrFields: { withCredentials: true },
                     success: data => {
                         if (data.username) {
-                            $("#userStatus").text(`Logged in as: ${data.username}`);
+                            $("#userStatus").html(`Hello ${data.username}<br/><a id="change_pw_link" href="{% url 'password_change' %}">Change my password</a>`);
                             tailor_dashboard(data.groups, data.username);
                             $("#authLink").text("Logout")
                                 .off("click")

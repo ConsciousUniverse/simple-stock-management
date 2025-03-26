@@ -4,14 +4,20 @@ import os
 
 load_dotenv()
 
+
+def get_bool_env(var_name):
+    return var_name.lower() in ("true", "1", "yes", "on")
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DJANGO_DEBUG")
+DEBUG = get_bool_env(os.getenv("DJANGO_DEBUG"))
 ALLOWED_HOSTS = [
     host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
 ]
+ALLOW_PW_CHANGE = get_bool_env(os.getenv("ALLOW_PW_CHANGE"))
 
 INSTALLED_APPS = [
     "django.contrib.admin",
