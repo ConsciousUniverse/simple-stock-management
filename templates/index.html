@@ -472,10 +472,9 @@
                         }
                         $tableBody.append(row);
 
-                        // For managers in update mode: attach update and delete buttons in table 1
+                        // For managers in update mode: attach delete button in table 1
                         if (tableNum === 1 && window.userGroups && window.userGroups.includes("managers")) {
                             $tableBody.find('tr:last .actions').append(`
-                    <button onclick='updateItem("${item.sku}", 1)' class='btn btn-warning' ${isUpdateModeOn ? '' : 'disabled'}>Update</button>
                     <button onclick='deleteItem("${item.sku}", 1)' class='btn btn-danger' ${isUpdateModeOn ? '' : 'disabled'}>Delete</button>
                   `);
                         }
