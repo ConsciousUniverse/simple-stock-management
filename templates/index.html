@@ -392,7 +392,7 @@
             };
 
             /** Sets the state of the update mode toggle button */
-            const setUpdateModeButtonText = isUpdateModeOn => {
+            const setUpdateModeButtonState = isUpdateModeOn => {
                 $('#updateModeToggle').prop('checked', isUpdateModeOn);
             };
 
@@ -641,7 +641,7 @@
                         }
                     });
                 }
-                setUpdateModeButtonText(isUpdateModeOn);
+                setUpdateModeButtonState(isUpdateModeOn);
                 $.ajax({
                     url: '/api/toggle_update_mode/',
                     type: 'POST',
@@ -656,6 +656,18 @@
                 });
             };
 
+            const get_edit_lock_status = () => {
+                $.ajax({
+                    url: '/api/get_edit_lock_status/',
+                    type: 'GET',
+                    success: response => {
+                        setUpdateModeButtonState(response.edit_lock);
+                        $('#updateModeToggle').data('updateMode', response.edit_lock);
+                    },
+                    error: xhr => console.error("Failed to fetch edit lock status:", xhr.responseText)
+                });
+            };
+
             /** Tailor the dashboard view based on user groups */
             const tailor_dashboard = (groups, username) => {
                 window.userGroups = groups;
@@ -664,15 +676,7 @@
                     $(".shop-stock").hide();
                     $(".warehouse-stock").addClass("col-md-12").removeClass("col-md-6");
                     $("#addItemSection, #updateModeSwitch").removeClass("d-none");
-                    $.ajax({
-                        url: '/api/get_edit_lock_status/',
-                        type: 'GET',
-                        success: response => {
-                            setUpdateModeButtonText(response.edit_lock);
-                            $('#updateModeToggle').data('updateMode', response.edit_lock);
-                        },
-                        error: xhr => console.error("Failed to fetch edit lock status:", xhr.responseText)
-                    });
+                    get_edit_lock_status();
                 } else {
                     $(".shop-stock").show();
                     if (groups.includes("shop_users")) {
