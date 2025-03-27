@@ -389,6 +389,13 @@
                     .find(row => row.startsWith('csrftoken='))?.split('=')[1];
             };
 
+            // Ensure CSRF token is included in all AJAX requests
+            $.ajaxSetup({
+                beforeSend: function (xhr, settings) {
+                    xhr.setRequestHeader("X-CSRFToken", getCSRFToken());
+                }
+            });
+
             /** Sorting functionality: toggles sort order and refetches items */
             const sortTable = (tableNum, column) => {
                 const $table = $(`#itemTable${tableNum}`);
@@ -471,8 +478,10 @@
                   <td>${item.item.description}</td>
                   <td><input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity3-${item.item.sku}"></td>
                   <td class="actions">
-                    ${window.userGroups && !window.userGroups.includes("managers") ? '' : `<button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.id}', document.getElementById('quantity3-${item.item.sku}').value, 'false')" class="btn btn-info">Dispatch</button>`}
-                    <button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.id}', $('#quantity3-${item.item.sku}').val(), 'true')" class="btn btn-danger">Cancel</button>
+                    ${window.userGroups && !window.userGroups.includes("managers") ? '' : `<button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.id}', document.getElementById('quantity3-${item.item.sku}').value, 'false', 'false')" class="btn btn-info" id="dispatchButton-${item.item.sku}">Dispatch</button>`}
+                    ${window.userGroups && !window.userGroups.includes("managers") ?
+                                    `<button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.id}', document.getElementById('quantity3-${item.item.sku}').value, 'false', 'true')" class="btn btn-primary" id="deleteButton-${item.item.sku}">Update</button>` : ''}
+                    <button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.id}', $('#quantity3-${item.item.sku}').val(), 'true', 'false')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
                   </td>
                 </tr>`;
                         }
@@ -612,13 +621,19 @@
             };
 
             /** Complete or cancel a transfer using AJAX POST */
-            const completeTransfer = (sku, shop_user_id, quantity, cancel) => {
+            const completeTransfer = (sku, shop_user_id, quantity, cancel, update) => {
+                let crudType = ''
+                if (update == 'true') {
+                    crudType = 'PATCH';
+                } else {
+                    crudType = 'POST';
+                }
                 $.ajax({
                     url: '/api/complete-transfer/',
-                    type: 'POST',
+                    type: crudType,
                     contentType: 'application/json',
                     headers: { 'X-CSRFToken': getCSRFToken() },
-                    data: JSON.stringify({ sku, shop_user_id, quantity, cancel }),
+                    data: JSON.stringify({ sku, shop_user_id, quantity, cancel, update }),
                     success: () => [1, 2, 3].forEach(num => fetchItems(num)),
                     error: xhr => alert(xhr.responseJSON.detail)
                 });

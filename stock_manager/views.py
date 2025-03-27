@@ -18,7 +18,7 @@ from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
 import logging
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.db.models import Q
 
 logger = logging.getLogger(__name__)
@@ -121,6 +121,7 @@ class TransferItemViewSet(viewsets.ModelViewSet):
 
 
 # Main Page View
+@ensure_csrf_cookie
 @login_required
 def index(request):
     return render(request, "index.html")
@@ -145,38 +146,54 @@ def get_user(request):
     )
 
 
-@api_view(["POST"])
+@api_view(["POST", "PATCH"])
 @permission_classes([IsAuthenticated])
 def complete_transfer(request):
-    if (
-        not request.user.groups.filter(name="managers").exists()
-        and request.data.get("cancel") != "true"
-    ):
-        return Response(
-            {"detail": "Permission denied. User is not in managers group."},
-            status=status.HTTP_403_FORBIDDEN,
-        )
     sku = request.data.get("sku")
     quantity = request.data.get("quantity")
     shop_user_id = request.data.get("shop_user_id")
-    try:
-        item = Item.objects.get(sku=sku)
-        cancel = True if request.data.get("cancel") == "true" else False
-        item.transfer_to_shop(
-            shop_user=shop_user_id,
-            transfer_quantity=quantity,
-            complete=True,
-            cancel=cancel,
+    cancel = True if request.data.get("cancel") == "true" else False
+    if request.method == "PATCH":
+        try:
+            transfer_item = TransferItem.objects.get(item__sku=sku)
+            transfer_item.quantity = quantity
+            transfer_item.save()
+        except Item.DoesNotExist:
+            logger.debug("Item not found: sku=%s", sku)
+            return Response(
+                {"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+        except ValueError as e:
+            logger.debug("ValueError during transfer: %s", str(e))
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"detail": "Transfer action successful."}, status=status.HTTP_200_OK
         )
-    except Item.DoesNotExist:
-        logger.debug("Item not found: sku=%s", sku)
-        return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
-    except ValueError as e:
-        logger.debug("ValueError during transfer: %s", str(e))
-        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    return Response(
-        {"detail": "Transfer action successful."}, status=status.HTTP_200_OK
-    )
+    else:
+        if not request.user.groups.filter(name="managers").exists() and not cancel:
+            return Response(
+                {"detail": "Permission denied. User is not in managers group."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        try:
+            item = Item.objects.get(sku=sku)
+            item.transfer_to_shop(
+                shop_user=shop_user_id,
+                transfer_quantity=quantity,
+                complete=True,
+                cancel=cancel,
+            )
+        except Item.DoesNotExist:
+            logger.debug("Item not found: sku=%s", sku)
+            return Response(
+                {"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+        except ValueError as e:
+            logger.debug("ValueError during transfer: %s", str(e))
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"detail": "Transfer action successful."}, status=status.HTTP_200_OK
+        )
 
 
 @api_view(["POST"])
