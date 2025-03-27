@@ -444,7 +444,7 @@
                                 ? window.editLock ? `<input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity1-${item.sku}">` : item.quantity
                                 : item.quantity;
                             const transferQuantityField = (window.userGroups && window.userGroups.includes("shop_users"))
-                                ? !window.editLock ? `<input type="number" min="0" placeholder="Enter transfer quantity" class="form-control" id="xfer_quantity1-${item.sku}">` : '<small>Warehouse under maintenance, please try again later.</small>' : '';
+                                ? !window.editLock ? `<input type="number" min="0" placeholder="Enter transfer quantity" class="form-control" value="0" id="xfer_quantity1-${item.sku}">` : '<small>Warehouse under maintenance, please try again later.</small>' : '';
                             row = `
                 <tr>
                   <td>${item.sku}</td>
@@ -487,7 +487,7 @@
                         // For shop_users: attach transfer button in table 1 (disabled when in edit mode).
                         if (tableNum === 1 && window.userGroups && window.userGroups.includes("shop_users")) {
                             $tableBody.find('tr:last .actions').append(`
-                <button onclick="transferItem('${item.sku}')" class="btn btn-info" ${window.editLock ? 'disabled' : ''}>Transfer</button>
+                <button onclick="transferItem('${item.sku}')" id="transferButton-${item.sku}" class="btn btn-info" ${window.editLock ? 'disabled' : ''}>Transfer</button>
               `);
                         }
                     });
@@ -602,7 +602,11 @@
                     contentType: 'application/json',
                     headers: { 'X-CSRFToken': getCSRFToken() },
                     data: JSON.stringify({ sku, transfer_quantity: transferQuantity }),
-                    success: () => [1, 2, 3].forEach(num => fetchItems(num)),
+                    success: () => {
+                        fetchItems(3);
+                        $(`#xfer_quantity1-${CSS.escape(sku)}`).prop('disabled', true);
+                        $(`#transferButton-${CSS.escape(sku)}`).prop('disabled', true);
+                    },
                     error: xhr => alert(xhr.responseJSON.detail)
                 });
             };
