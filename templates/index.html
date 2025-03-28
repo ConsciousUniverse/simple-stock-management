@@ -639,6 +639,16 @@
                 });
             };
 
+            /** Change the background and font color of quantity fields in table 3 when modified */
+            const attachTransferQntChangeListener = () => {
+                $('#itemTable3').on('input', 'input[type="number"]', function () {
+                    $(this).css({
+                        'background-color': getComputedStyle(document.documentElement).getPropertyValue('--secondary-color').trim(),
+                        'color': getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(),
+                    });
+                })
+            };
+
             /** Toggle update mode.
              *  This updates the global window.editLock variable and the toggle UI.
              *  It also updates all items and notifies the server.
@@ -771,6 +781,7 @@
                 [1, 2, 3].forEach(num => fetchItems(num));
                 $('#addItem').click(addItem);
                 $('#updateModeToggle').change(toggleUpdateMode); // Attach toggle handler
+                attachTransferQntChangeListener(); // Attach listener for table 3 quantity changes
             });
         })();
     </script>
