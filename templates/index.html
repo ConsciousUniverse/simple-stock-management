@@ -33,7 +33,7 @@
         h4,
         h5,
         h6 {
-            color: var(--secondary-color);
+            color: var(--text-color);
         }
 
         .footer {
@@ -246,6 +246,13 @@
             border-radius: 50%;
         }
 
+        div#addItemSectionInner {
+            background-color: var(--text-color) !important;
+            padding: 11px;
+            border: 3px var(--secondary-color) solid;
+            border-radius: var(--border-radius);
+        }
+
         input:checked+.slider {
             background-color: var(--secondary-color);
         }
@@ -295,8 +302,8 @@
             </ul>
         </div>
     </nav>
-    <h2 class="mb-4">Warehouse Stock</h2>
     <div class="row">
+        <h2 class="mb-4">Warehouse Stock</h2>
         <div class="col-12 warehouse-stock mb-4">
             <div class="d-flex justify-content-between mb-2">
                 <input type="text" id="searchBox1" class="form-control" placeholder="Search Warehouse Items..."
@@ -341,16 +348,20 @@
         </div>
     </div>
     <div id="addItemSection" class="d-none">
-        <h3>Add Item</h3>
-        <input type="text" id="sku" placeholder="SKU" class="form-control mb-2">
-        <input type="text" id="description" placeholder="Description" class="form-control mb-2">
-        <input type="number" step="0.01" min="0.00" id="retail_price" placeholder="Retail Price"
-            class="form-control mb-2">
-        <input type="number" min="0" id="quantity" placeholder="Quantity" class="form-control mb-2">
-        <button id="addItem" class="btn btn-primary">Add</button>
+        <h2>Add Item</h2>
+        <div id="addItemSectionInner">
+            <input type="text" id="sku" placeholder="SKU" class="form-control mb-2">
+            <input type="text" id="description" placeholder="Description" class="form-control mb-2">
+            <input type="number" step="0.01" min="0.00" id="retail_price" placeholder="Retail Price"
+                class="form-control mb-2">
+            <input type="number" min="0" id="quantity" placeholder="Quantity" class="form-control mb-2">
+            <button id="addItem" class="btn btn-primary">Add</button>
+        </div>
     </div>
     <div id="transfersPendingSection">
         <h3>Transfers Pending</h3>
+        <input type="text" id="searchBox3" class="form-control mb-2" placeholder="Search Transfers Pending..."
+            onkeyup="fetchItems(3, 1, this.value)">
         <table class="table table-bordered">
             <thead>
                 <tr>
