@@ -478,10 +478,10 @@
                   <td>${item.item.description}</td>
                   <td><input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity3-${item.item.sku}"></td>
                   <td class="actions">
-                    ${window.userGroups && !window.userGroups.includes("managers") ? '' : `<button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.id}', document.getElementById('quantity3-${item.item.sku}').value, 'false', 'false')" class="btn btn-info" id="dispatchButton-${item.item.sku}">Dispatch</button>`}
+                    ${window.userGroups && !window.userGroups.includes("managers") ? '' : `<button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.username}', document.getElementById('quantity3-${item.item.sku}').value, 'false', 'false')" class="btn btn-info" id="dispatchButton-${item.item.sku}">Dispatch</button>`}
                     ${window.userGroups && !window.userGroups.includes("managers") ?
-                                    `<button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.id}', document.getElementById('quantity3-${item.item.sku}').value, 'false', 'true')" class="btn btn-primary" id="deleteButton-${item.item.sku}">Update</button>` : ''}
-                    <button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.id}', $('#quantity3-${item.item.sku}').val(), 'true', 'false')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
+                                    `<button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.username}', document.getElementById('quantity3-${item.item.sku}').value, 'false', 'true')" class="btn btn-primary" id="deleteButton-${item.item.sku}">Update</button>` : ''}
+                    <button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.username}', $('#quantity3-${item.item.sku}').val(), 'true', 'false')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
                   </td>
                 </tr>`;
                         }
@@ -537,6 +537,66 @@
                 $paginationDiv.find('a.page-link').off('click').on('click', function (event) {
                     event.preventDefault();
                     const page = $(this).attr('onclick').match(/fetchItems\(\d+, (\d+),/)[1];
+                    // Save any changes prior to page change
+                    switch (tableNum) {
+                        case 1:
+                            if (window.userGroups && window.userGroups.includes("managers") && window.editLock) {
+                                $('#itemTable1 tr').each(function () {
+                                    const sku = $(this).find('td:first').text();
+                                    const desc = $(`#description1-${CSS.escape(sku)}`).val();
+                                    const price = $(`#retail_price1-${CSS.escape(sku)}`).val();
+                                    const qnt = $(`#quantity1-${CSS.escape(sku)}`).val();
+                                    if (desc !== undefined && price !== undefined && qnt !== undefined) {
+                                        updateItem(sku, 1, 'true');
+                                    }
+                                });
+                            } else if (window.userGroups && window.userGroups.includes("shop_users") && !window.editLock) {
+                                $('#itemTable1 tr').each(function () {
+                                    const sku = $(this).find('td:first').text();
+                                    const qnt = $(`#xfer_quantity1-${CSS.escape(sku)}`).val();
+                                    if (qnt !== undefined && qnt > 0) {
+                                        transferItem(sku, 'true');
+                                        fetchItems(3);
+                                    }
+                                });
+                            }
+                            break;
+                        case 2:
+                            if (window.userGroups && window.userGroups.includes("shop_users")) {
+                                $('#itemTable2 tr').each(function () {
+                                    const sku = $(this).find('td:first').text();
+                                    const qnt = $(`#quantity2-${CSS.escape(sku)}`).val();
+                                    if (qnt !== undefined) {
+                                        updateShopItem(sku, 'true');
+                                    }
+                                });
+                            }
+                            break;
+                        case 3:
+                            if (window.userGroups && window.userGroups.includes("shop_users")) {
+                                $('#itemTable3 tr').each(function () {
+                                    const sku = $(this).find('td:nth-child(1)').text();
+                                    const qnt = $(`#quantity3-${CSS.escape(sku)}`).val();
+                                    const shop_user = window.loggedInUsername;
+                                    if (qnt !== undefined) {
+                                        completeTransfer(sku, shop_user, qnt, 'false', 'true', 'true');
+                                    }
+                                });
+                            } else if (window.userGroups && window.userGroups.includes("managers")) {
+                                $('#itemTable3 tr').each(function () {
+                                    const shop_user = $(this).find('td:first').text();
+                                    const sku = $(this).find('td:nth-child(2)').text();
+                                    const qnt = $(`#quantity3-${CSS.escape(sku)}`).val();
+                                    if (qnt !== undefined) {
+                                        completeTransfer(sku, shop_user, qnt, 'false', 'true', 'true');
+                                    }
+                                });
+                            }
+                            break;
+                        default:
+                            console.error("Invalid table number");
+                    }
+                    // Fetch the new page of items
                     fetchItems(tableNum, page, $(`#searchBox${tableNum}`).val(), sortColumn, sortOrder);
                 });
             };
@@ -568,7 +628,7 @@
             };
 
             /** Update an item using AJAX PUT */
-            const updateItem = (sku, tableNum) => {
+            const updateItem = (sku, tableNum, pageChange = 'false') => {
                 const price = $(`#retail_price${tableNum}-${CSS.escape(sku)}`).val();
                 if (!/^\d+(\.\d{1,2})?$/.test(price)) {
                     alert('Retail price must be a valid number with up to 2 decimal places.');
@@ -587,7 +647,7 @@
                     contentType: 'application/json',
                     headers: { 'X-CSRFToken': getCSRFToken() },
                     data: JSON.stringify(data),
-                    success: () => fetchItems(tableNum)
+                    success: () => { if (pageChange !== 'true') { fetchItems(tableNum) } }
                 });
             };
 
@@ -603,7 +663,7 @@
             };
 
             /** Transfer an item using AJAX POST */
-            const transferItem = sku => {
+            const transferItem = (sku, pageChange = 'false') => {
                 const transferQuantity = $(`#xfer_quantity1-${CSS.escape(sku)}`).val();
                 $.ajax({
                     url: '/api/transfer/',
@@ -612,16 +672,19 @@
                     headers: { 'X-CSRFToken': getCSRFToken() },
                     data: JSON.stringify({ sku, transfer_quantity: transferQuantity }),
                     success: () => {
-                        fetchItems(3);
-                        $(`#xfer_quantity1-${CSS.escape(sku)}`).prop('disabled', true);
-                        $(`#transferButton-${CSS.escape(sku)}`).prop('disabled', true);
+                        if (pageChange !== 'true') {
+                            fetchItems(3);
+                            $(`#xfer_quantity1-${CSS.escape(sku)}`).prop('disabled', true);
+                            $(`#transferButton-${CSS.escape(sku)}`).prop('disabled', true);
+                            $(`#xfer_quantity1-${CSS.escape(sku)}`).val(0);
+                        }
                     },
                     error: xhr => alert(xhr.responseJSON.detail)
                 });
             };
 
             /** Complete or cancel a transfer using AJAX POST */
-            const completeTransfer = (sku, shop_user_id, quantity, cancel, update) => {
+            const completeTransfer = (sku, shop_user_id, quantity, cancel, update, pageChange = 'false') => {
                 let crudType = ''
                 if (update == 'true') {
                     crudType = 'PATCH';
@@ -634,19 +697,21 @@
                     contentType: 'application/json',
                     headers: { 'X-CSRFToken': getCSRFToken() },
                     data: JSON.stringify({ sku, shop_user_id, quantity, cancel, update }),
-                    success: () => [1, 2, 3].forEach(num => fetchItems(num)),
+                    success: () => { if (pageChange !== 'true') { [1, 2, 3].forEach(num => fetchItems(num)) } },
                     error: xhr => alert(xhr.responseJSON.detail)
                 });
             };
 
             /** Change the background and font color of quantity fields in table 3 when modified */
             const attachTransferQntChangeListener = () => {
-                $('#itemTable3').on('input', 'input[type="number"]', function () {
-                    $(this).css({
-                        'background-color': getComputedStyle(document.documentElement).getPropertyValue('--secondary-color').trim(),
-                        'color': getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(),
+                [1, 2, 3].forEach(tableNum => {
+                    $(`#itemTable${tableNum}`).on('input', 'input[type="number"]', function () {
+                        $(this).css({
+                            'background-color': getComputedStyle(document.documentElement).getPropertyValue('--secondary-color').trim(),
+                            'color': getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(),
+                        });
                     });
-                })
+                });
             };
 
             /** Toggle update mode.
@@ -748,7 +813,7 @@
             };
 
             /** Dummy function: Update shop item (to be implemented later) */
-            const updateShopItem = sku => {
+            const updateShopItem = (sku, pageChange = 'false') => {
                 const quantity = $(`#quantity2-${CSS.escape(sku)}`).val();
                 console.log(`SKU: ${sku}, Quantity: ${quantity}`);
                 // Update functionality to be implemented later.

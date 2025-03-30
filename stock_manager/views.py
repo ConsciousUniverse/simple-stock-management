@@ -153,9 +153,19 @@ def complete_transfer(request):
     quantity = request.data.get("quantity")
     shop_user_id = request.data.get("shop_user_id")
     cancel = True if request.data.get("cancel") == "true" else False
+    try:
+        shop_user = User.objects.get(username=shop_user_id)
+        shop_user_id = shop_user.id
+    except User.DoesNotExist:
+        logger.debug("User does not exist!")
+        return Response(
+            {"detail": "Shop user not found."}, status=status.HTTP_400_BAD_REQUEST
+        )
     if request.method == "PATCH":
         try:
-            transfer_item = TransferItem.objects.get(item__sku=sku)
+            transfer_item = TransferItem.objects.get(
+                item__sku=sku, shop_user=shop_user_id
+            )
             transfer_item.quantity = quantity
             transfer_item.save()
         except Item.DoesNotExist:
