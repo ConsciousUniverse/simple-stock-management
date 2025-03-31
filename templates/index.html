@@ -11,13 +11,10 @@
     <style>
         :root {
             --primary-color: #003200;
-            /* Darker Green */
             --secondary-color: #FFD700;
-            /* Gold */
+            --third-color: #a2a2a2;
             --background-color: #003200;
-            /* Darker Green */
             --text-color: #ffffff;
-            /* White */
             --border-radius: 5px;
             /* Slightly rounded corners */
         }
@@ -137,6 +134,12 @@
             color: var(--primary-color);
         }
 
+        .pagination .page-item.active .page-link {
+            background-color: var(--text-color);
+            color: var(--primary-color);
+            border-color: var(--text-color);
+        }
+
         .table {
             color: var(--primary-color);
             border-radius: var(--border-radius);
@@ -209,8 +212,9 @@
         }
 
         .btn-danger {
-            background-color: red;
-            border-color: red;
+            background-color: rgb(187, 0, 0);
+            border-color: rgb(135, 0, 0);
+            ;
             color: white;
         }
 
@@ -282,6 +286,11 @@
 
         #change_pw_link:hover {
             color: var(--secondary-color) !important;
+        }
+
+        .highlight-ordered td {
+            background-color: var(--third-color) !important;
+            color: var(--primary-color) !important;
         }
     </style>
 </head>
@@ -368,7 +377,7 @@
         <div class="d-flex justify-content-between mb-2">
             <input type="text" id="searchBox3" class="form-control mb-2" placeholder="Search Transfers Pending..."
                 onkeyup="fetchItems(3, 1, this.value)">
-            <button id="submitTransferRequest" class="btn btn-info d-none">Submit Transfer Request</button>
+            <button id="submitTransferRequest" class="btn btn-info d-none">Send Transfer Request</button>
         </div>
         <table class="table table-bordered">
             <thead>
@@ -448,7 +457,6 @@
                 if (sortColumn) {
                     apiUrl += `&ordering=${sortOrder === 'asc' ? '' : '-'}${sortColumn}`;
                 }
-
                 $.get(apiUrl, data => {
                     let $tableBody;
                     if (tableNum === 1) $tableBody = $('#itemTable1');
@@ -490,8 +498,9 @@
                   <td class="actions"><button onclick="updateShopItem('${item.item.sku}')" class="btn btn-warning disabled">Update</button></td>
                 </tr>`;
                         } else if (tableNum === 3) {
+                            const highlightClass = item.ordered && window.userGroups && window.userGroups.includes("shop_users") ? 'highlight-ordered' : '';
                             row = `
-                <tr>
+                <tr class="${highlightClass}" data-sku="${item.item.sku}" data-ordered="${item.ordered}" data-sku="${item.item.sku}" data-quantity="${item.quantity}">
                   ${window.userGroups && window.userGroups.includes("managers") ? `<td>${item.shop_user.username}</td>` : ''}
                   <td>${item.item.sku}</td>
                   <td>${item.item.description}</td>
@@ -505,7 +514,6 @@
                 </tr>`;
                         }
                         $tableBody.append(row);
-
                         // For managers: attach delete button in table 1, disabled if editLock is false.
                         if (tableNum === 1 && window.userGroups && window.userGroups.includes("managers")) {
                             $tableBody.find('tr:last .actions').append(`
@@ -557,7 +565,7 @@
                     event.preventDefault();
                     const page = $(this).attr('onclick').match(/fetchItems\(\d+, (\d+),/)[1];
                     // Save any changes prior to page change
-                    switch (tableNum) {
+                    /** switch (tableNum) {
                         case 1:
                             if (window.userGroups && window.userGroups.includes("managers") && window.editLock) {
                                 $('#itemTable1 tr').each(function () {
@@ -614,7 +622,7 @@
                             break;
                         default:
                             console.error("Invalid table number");
-                    }
+                    } */
                     // Fetch the new page of items
                     fetchItems(tableNum, page, $(`#searchBox${tableNum}`).val(), sortColumn, sortOrder);
                 });
@@ -704,11 +712,19 @@
 
             /** Submit order event handler */
             const submitTransferRequest = () => {
-                console.log('Submit order clicked')
+                $.ajax({
+                    url: '/api/submit-transfer-request/',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    headers: { 'X-CSRFToken': getCSRFToken() },
+                    data: JSON.stringify(),
+                    success: () => [3].forEach(num => fetchItems(num)),
+                    error: xhr => alert(xhr.responseJSON.detail)
+                });
             }
 
             /** Complete or cancel a transfer using AJAX POST */
-            const completeTransfer = (sku, shop_user_id, quantity, cancel, update, pageChange = 'false') => {
+            const completeTransfer = (sku, shop_user_id, quantity, cancel, update, pageChange = 'false', ordered = 'false') => {
                 let crudType = ''
                 if (update == 'true') {
                     crudType = 'PATCH';
@@ -810,8 +826,7 @@
                         if (data.username) {
                             $("#userStatus").html(`Hello ${data.username}<br/><a id="change_pw_link" href="{% url 'password_change' %}">Change my password</a>`);
                             tailor_dashboard(data.groups, data.username);
-                            // Ensure fetchItems is called only after tailor_dashboard completes
-                            [1, 2, 3].forEach(num => fetchItems(num));
+                            // [1, 2, 3].forEach(num => fetchItems(num));
                             $("#authLink").text("Logout")
                                 .off("click")
                                 .on("click", event => {

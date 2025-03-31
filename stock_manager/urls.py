@@ -10,6 +10,7 @@ from .views import (
     complete_transfer,
     set_edit_lock_status,
     get_edit_lock_status,
+    submit_transfer_request,
 )  # Add TransferItemViewSet import
 from rest_framework.authtoken.views import obtain_auth_token
 from django.conf.urls.static import static
@@ -28,6 +29,11 @@ urlpatterns = [
         "auth/token/", obtain_auth_token, name="api_token_auth"
     ),  # Optional token login
     path("api/transfer/", transfer_item, name="transfer_item"),
+    path(
+        "api/submit-transfer-request/",
+        submit_transfer_request,
+        name="submit-transfer-request",
+    ),
     path("api/complete-transfer/", complete_transfer, name="complete_transfer"),
     path(
         "api/set_edit_lock_status/", set_edit_lock_status, name="set_edit_lock_status"

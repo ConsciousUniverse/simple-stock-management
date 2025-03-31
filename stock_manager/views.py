@@ -116,8 +116,35 @@ class TransferItemViewSet(viewsets.ModelViewSet):
             else:
                 queryset = queryset.order_by(Lower(ordering))
         else:
-            queryset = queryset.order_by(Lower("item__sku"))
+            print('ordering by sku')
+            queryset = queryset.order_by(Lower('last_updated')).reverse()
         return queryset
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def set_edit_lock_status(request):
+    if not request.user.groups.filter(name="managers").exists():
+        return Response(
+            {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
+        )
+
+    edit_lock_status = request.data.get("edit_lock_status", False)
+    admin, created = Admin.objects.get_or_create(id=1)
+    admin.edit_lock = edit_lock_status
+    admin.save()
+    return Response(
+        {"edit_lock": admin.edit_lock},
+        status=status.HTTP_200_OK,
+    )
+
+
+@csrf_exempt
+def get_edit_lock_status(request):
+    if request.method == "GET":
+        edit_lock = Admin.is_edit_locked()
+        return JsonResponse({"edit_lock": edit_lock})
+    return JsonResponse({"error": "Invalid request method"}, status=400)
 
 
 # Main Page View
@@ -146,11 +173,68 @@ def get_user(request):
     )
 
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def transfer_item(request):
+    if Admin.objects.first().edit_lock:
+        logger.debug("Transfer attempt while update mode is enabled.")
+        return Response(
+            {
+                "detail": "Transfers are disabled as the warehouse is being maintained. Please try again later."
+            },
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    if not request.user.groups.filter(name="shop_users").exists():
+        logger.debug("Permission denied: user is not in shop_users group.")
+        return Response(
+            {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
+        )
+    sku = request.data.get("sku")
+    transfer_quantity = request.data.get("transfer_quantity")
+    if not transfer_quantity.isdigit():
+        logger.debug("Invalid transfer quantity: not an integer.")
+        return Response(
+            {"detail": "Transfer quantity must be an integer."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    transfer_quantity = int(transfer_quantity)
+    if transfer_quantity <= 0:
+        logger.debug("Invalid transfer quantity: less than or equal to zero.")
+        return Response(
+            {"detail": "Transfer quantity must be greater than zero."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    try:
+        item = Item.objects.get(sku=sku)
+        item.transfer_to_shop(request.user, transfer_quantity)
+    except Item.DoesNotExist:
+        logger.debug("Item not found: sku=%s", sku)
+        return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
+    except ValueError as e:
+        logger.debug("ValueError during transfer: %s", str(e))
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({"detail": "Transfer successful."}, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def submit_transfer_request(request):
+    try:
+        queryset = TransferItem.objects.update(ordered=True)
+    except Exception as e:
+        logger.debug("Error while submitting transfer: %s", str(e))
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(
+        {"detail": "Transfer successfully submitted."}, status=status.HTTP_200_OK
+    )
+
+
 @api_view(["POST", "PATCH"])
 @permission_classes([IsAuthenticated])
 def complete_transfer(request):
     sku = request.data.get("sku")
     quantity = request.data.get("quantity")
+    ordered = request.data.get("ordered", False)
     shop_user_id = request.data.get("shop_user_id")
     cancel = True if request.data.get("cancel") == "true" else False
     try:
@@ -204,72 +288,3 @@ def complete_transfer(request):
         return Response(
             {"detail": "Transfer action successful."}, status=status.HTTP_200_OK
         )
-
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def transfer_item(request):
-    if Admin.objects.first().edit_lock:
-        logger.debug("Transfer attempt while update mode is enabled.")
-        return Response(
-            {
-                "detail": "Transfers are disabled as the warehouse is being maintained. Please try again later."
-            },
-            status=status.HTTP_403_FORBIDDEN,
-        )
-    if not request.user.groups.filter(name="shop_users").exists():
-        logger.debug("Permission denied: user is not in shop_users group.")
-        return Response(
-            {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
-        )
-    sku = request.data.get("sku")
-    transfer_quantity = request.data.get("transfer_quantity")
-    if not transfer_quantity.isdigit():
-        logger.debug("Invalid transfer quantity: not an integer.")
-        return Response(
-            {"detail": "Transfer quantity must be an integer."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-    transfer_quantity = int(transfer_quantity)
-    if transfer_quantity <= 0:
-        logger.debug("Invalid transfer quantity: less than or equal to zero.")
-        return Response(
-            {"detail": "Transfer quantity must be greater than zero."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-    try:
-        item = Item.objects.get(sku=sku)
-        item.transfer_to_shop(request.user, transfer_quantity)
-    except Item.DoesNotExist:
-        logger.debug("Item not found: sku=%s", sku)
-        return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
-    except ValueError as e:
-        logger.debug("ValueError during transfer: %s", str(e))
-        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    return Response({"detail": "Transfer successful."}, status=status.HTTP_200_OK)
-
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def set_edit_lock_status(request):
-    if not request.user.groups.filter(name="managers").exists():
-        return Response(
-            {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
-        )
-
-    edit_lock_status = request.data.get("edit_lock_status", False)
-    admin, created = Admin.objects.get_or_create(id=1)
-    admin.edit_lock = edit_lock_status
-    admin.save()
-    return Response(
-        {"edit_lock": admin.edit_lock},
-        status=status.HTTP_200_OK,
-    )
-
-
-@csrf_exempt
-def get_edit_lock_status(request):
-    if request.method == "GET":
-        edit_lock = Admin.is_edit_locked()
-        return JsonResponse({"edit_lock": edit_lock})
-    return JsonResponse({"error": "Invalid request method"}, status=400)
