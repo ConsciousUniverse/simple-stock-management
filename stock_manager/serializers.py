@@ -32,4 +32,4 @@ class TransferItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TransferItem
-        fields = ["shop_user", "item", "quantity", "last_updated"]
+        fields = ["shop_user", "item", "quantity", "ordered", "last_updated"]

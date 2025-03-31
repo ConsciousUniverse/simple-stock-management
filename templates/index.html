@@ -120,6 +120,11 @@
             color: var(--primary-color);
         }
 
+        button#submitTransferRequest {
+            margin: 0 0 0 50%;
+            width: 50%;
+        }
+
         .pagination .page-link {
             background-color: var(--secondary-color);
             color: var(--primary-color);
@@ -360,8 +365,11 @@
     </div>
     <div id="transfersPendingSection">
         <h3>Transfers Pending</h3>
-        <input type="text" id="searchBox3" class="form-control mb-2" placeholder="Search Transfers Pending..."
-            onkeyup="fetchItems(3, 1, this.value)">
+        <div class="d-flex justify-content-between mb-2">
+            <input type="text" id="searchBox3" class="form-control mb-2" placeholder="Search Transfers Pending..."
+                onkeyup="fetchItems(3, 1, this.value)">
+            <button id="submitTransferRequest" class="btn btn-info d-none">Submit Transfer Request</button>
+        </div>
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -484,13 +492,13 @@
                         } else if (tableNum === 3) {
                             row = `
                 <tr>
-                  ${window.userGroups && !window.userGroups.includes("managers") ? '' : `<td>${item.shop_user.username}</td>`}
+                  ${window.userGroups && window.userGroups.includes("managers") ? `<td>${item.shop_user.username}</td>` : ''}
                   <td>${item.item.sku}</td>
                   <td>${item.item.description}</td>
                   <td><input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity3-${item.item.sku}"></td>
                   <td class="actions">
-                    ${window.userGroups && !window.userGroups.includes("managers") ? '' : `<button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.username}', document.getElementById('quantity3-${item.item.sku}').value, 'false', 'false')" class="btn btn-info" id="dispatchButton-${item.item.sku}">Dispatch</button>`}
-                    ${window.userGroups && !window.userGroups.includes("managers") ?
+                    ${window.userGroups && window.userGroups.includes("managers") ? `<button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.username}', document.getElementById('quantity3-${item.item.sku}').value, 'false', 'false')" class="btn btn-info" id="dispatchButton-${item.item.sku}">Dispatch</button>` : ''} 
+                    ${window.userGroups && window.userGroups.includes("shop_users") ?
                                     `<button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.username}', document.getElementById('quantity3-${item.item.sku}').value, 'false', 'true')" class="btn btn-primary" id="deleteButton-${item.item.sku}">Update</button>` : ''}
                     <button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.username}', $('#quantity3-${item.item.sku}').val(), 'true', 'false')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
                   </td>
@@ -694,6 +702,11 @@
                 });
             };
 
+            /** Submit order event handler */
+            const submitTransferRequest = () => {
+                console.log('Submit order clicked')
+            }
+
             /** Complete or cancel a transfer using AJAX POST */
             const completeTransfer = (sku, shop_user_id, quantity, cancel, update, pageChange = 'false') => {
                 let crudType = ''
@@ -779,6 +792,7 @@
                         $("#itemTable3 tr").each(function () {
                             $(this).find("td:first").hide();
                         });
+                        $("#submitTransferRequest").removeClass("d-none")
                     }
                 }
                 if (!groups.includes("shop_users")) {
@@ -856,6 +870,7 @@
                 get_edit_lock_status();
                 [1, 2, 3].forEach(num => fetchItems(num));
                 $('#addItem').click(addItem);
+                $('#submitTransferRequest').click(submitTransferRequest);
                 $('#updateModeToggle').change(toggleUpdateMode); // Attach toggle handler
                 attachTransferQntChangeListener(); // Attach listener for table 3 quantity changes
             });

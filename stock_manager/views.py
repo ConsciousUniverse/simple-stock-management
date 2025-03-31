@@ -100,7 +100,7 @@ class TransferItemViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.groups.filter(name="managers").exists():
-            queryset = TransferItem.objects.all()
+            queryset = TransferItem.objects.filter(ordered=True)
         else:
             queryset = TransferItem.objects.filter(shop_user=user)
         search_query = self.request.query_params.get("search", None)

@@ -97,6 +97,7 @@ class TransferItem(models.Model):
         Item, on_delete=models.CASCADE
     )  # Relates TransferItem to Item without a default value
     quantity = models.IntegerField(default=0)
+    ordered = models.BooleanField(default=False)
     last_updated = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
