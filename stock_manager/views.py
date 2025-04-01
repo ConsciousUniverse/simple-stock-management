@@ -218,8 +218,8 @@ def transfer_item(request):
     except Item.DoesNotExist:
         logger.debug("Item not found: sku=%s", sku)
         return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
-    except ValueError as e:
-        logger.debug("ValueError during transfer: %s", str(e))
+    except Exception as e:
+        logger.debug("Error during transfer: %s", str(e))
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"detail": "Transfer successful."}, status=status.HTTP_200_OK)
 
@@ -229,25 +229,34 @@ def transfer_to_shop(item, shop_user, transfer_quantity, complete=False, cancel=
         raise ValueError(
             "Transfers are disabled as the warehouse is being maintained. Please try again later."
         )
+    transfer_quantity = int(transfer_quantity)
     if cancel:
         transfer_item = TransferItem.objects.get(
             item=item, shop_user=shop_user
         ).delete()
     else:
-        transfer_quantity = int(transfer_quantity)
-        if item.quantity < transfer_quantity:
-            raise ValueError("Not enough stock to transfer")
-        try:
-            transfer_item, created = TransferItem.objects.get_or_create(
-                item=item,
-                shop_user=shop_user,
-            )
-        except Exception as e:
-            raise LookupError(str(e))
         if not complete:
-            transfer_item.quantity += transfer_quantity
-            transfer_item.save()
+            if item.quantity < transfer_quantity:
+                raise ValueError("Not enough stock to transfer")
+            try:
+                if not TransferItem.objects.filter(
+                    shop_user=shop_user, item=item
+                ).exists():
+                    TransferItem.objects.create(
+                        item=item, shop_user=shop_user, quantity=transfer_quantity
+                    )
+                else:
+                    raise LookupError("This item is already in Transfers Pending.")
+            except Exception as e:
+                raise LookupError(str(e))
         else:
+            try:
+                transfer_item = TransferItem.objects.get(
+                    item=item,
+                    shop_user=shop_user,
+                )
+            except Exception as e:
+                raise LookupError(str(e))
             # transfer to ShopItem database
             shop_user = User.objects.get(id=shop_user)
             try:
@@ -280,12 +289,11 @@ def submit_transfer_request(request):
     )
 
 
-@api_view(["POST", "PATCH"])
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def complete_transfer(request):
     sku = request.data.get("sku")
     quantity = request.data.get("quantity")
-    ordered = request.data.get("ordered", False)
     shop_user_id = request.data.get("shop_user_id")
     cancel = True if request.data.get("cancel") == "true" else False
     try:
@@ -296,47 +304,26 @@ def complete_transfer(request):
         return Response(
             {"detail": "Shop user not found."}, status=status.HTTP_400_BAD_REQUEST
         )
-    if request.method == "PATCH":
-        try:
-            transfer_item = TransferItem.objects.get(
-                item__sku=sku, shop_user=shop_user_id
-            )
-            transfer_item.quantity = quantity
-            transfer_item.save()
-        except Item.DoesNotExist:
-            logger.debug("Item not found: sku=%s", sku)
-            return Response(
-                {"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND
-            )
-        except ValueError as e:
-            logger.debug("ValueError during transfer: %s", str(e))
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    if not request.user.groups.filter(name="managers").exists() and not cancel:
         return Response(
-            {"detail": "Transfer action successful."}, status=status.HTTP_200_OK
+            {"detail": "Permission denied. User is not in managers group."},
+            status=status.HTTP_403_FORBIDDEN,
         )
-    else:
-        if not request.user.groups.filter(name="managers").exists() and not cancel:
-            return Response(
-                {"detail": "Permission denied. User is not in managers group."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-        try:
-            item = Item.objects.get(sku=sku)
-            transfer_to_shop(
-                item=item,
-                shop_user=shop_user_id,
-                transfer_quantity=quantity,
-                complete=True,
-                cancel=cancel,
-            )
-        except Item.DoesNotExist:
-            logger.debug("Item not found: sku=%s", sku)
-            return Response(
-                {"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND
-            )
-        except ValueError as e:
-            logger.debug("ValueError during transfer: %s", str(e))
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(
-            {"detail": "Transfer action successful."}, status=status.HTTP_200_OK
+    try:
+        item = Item.objects.get(sku=sku)
+        transfer_to_shop(
+            item=item,
+            shop_user=shop_user_id,
+            transfer_quantity=quantity,
+            complete=True,
+            cancel=cancel,
         )
+    except Item.DoesNotExist:
+        logger.debug("Item not found: sku=%s", sku)
+        return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
+    except ValueError as e:
+        logger.debug("ValueError during transfer: %s", str(e))
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(
+        {"detail": "Transfer action successful."}, status=status.HTTP_200_OK
+    )
