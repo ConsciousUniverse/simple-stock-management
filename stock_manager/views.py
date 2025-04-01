@@ -116,8 +116,8 @@ class TransferItemViewSet(viewsets.ModelViewSet):
             else:
                 queryset = queryset.order_by(Lower(ordering))
         else:
-            print('ordering by sku')
-            queryset = queryset.order_by(Lower('last_updated')).reverse()
+            print("ordering by sku")
+            queryset = queryset.order_by(Lower("last_updated")).reverse()
         return queryset
 
 
@@ -220,7 +220,9 @@ def transfer_item(request):
 @permission_classes([IsAuthenticated])
 def submit_transfer_request(request):
     try:
-        queryset = TransferItem.objects.update(ordered=True)
+        queryset = TransferItem.objects.filter(shop_user=request.user.id).update(
+            ordered=True
+        )
     except Exception as e:
         logger.debug("Error while submitting transfer: %s", str(e))
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
