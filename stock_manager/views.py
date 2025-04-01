@@ -229,12 +229,12 @@ def transfer_to_shop(item, shop_user, transfer_quantity, complete=False, cancel=
         raise ValueError(
             "Transfers are disabled as the warehouse is being maintained. Please try again later."
         )
-    transfer_quantity = int(transfer_quantity)
     if cancel:
         transfer_item = TransferItem.objects.get(
             item=item, shop_user=shop_user
         ).delete()
     else:
+        transfer_quantity = int(transfer_quantity)
         if not complete:
             if item.quantity < transfer_quantity:
                 raise ValueError("Not enough stock to transfer")
