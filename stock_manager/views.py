@@ -46,7 +46,7 @@ class ItemViewSet(viewsets.ModelViewSet):
             else:
                 queryset = queryset.order_by(Lower(ordering))
         else:
-            queryset = queryset.order_by(Lower("sku"))
+            queryset = queryset.order_by("last_updated").reverse()
         return queryset
 
     def update(self, request, *args, **kwargs):
@@ -54,6 +54,14 @@ class ItemViewSet(viewsets.ModelViewSet):
             return Response(
                 {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
             )
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        new_quantity = serializer.validated_data.get("quantity", None)
+        if new_quantity is None or instance.quantity == new_quantity:
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
         return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
@@ -116,8 +124,8 @@ class TransferItemViewSet(viewsets.ModelViewSet):
             else:
                 queryset = queryset.order_by(Lower(ordering))
         else:
-            print("ordering by sku")
-            queryset = queryset.order_by(Lower("last_updated")).reverse()
+            print("ordering by last_updated")
+            queryset = queryset.order_by("last_updated").reverse()
         return queryset
 
 
@@ -206,7 +214,7 @@ def transfer_item(request):
         )
     try:
         item = Item.objects.get(sku=sku)
-        item.transfer_to_shop(request.user, transfer_quantity)
+        transfer_to_shop(item, request.user, transfer_quantity)
     except Item.DoesNotExist:
         logger.debug("Item not found: sku=%s", sku)
         return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -214,6 +222,47 @@ def transfer_item(request):
         logger.debug("ValueError during transfer: %s", str(e))
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response({"detail": "Transfer successful."}, status=status.HTTP_200_OK)
+
+
+def transfer_to_shop(item, shop_user, transfer_quantity, complete=False, cancel=False):
+    if Admin.is_edit_locked():
+        raise ValueError(
+            "Transfers are disabled as the warehouse is being maintained. Please try again later."
+        )
+    if cancel:
+        transfer_item = TransferItem.objects.get(
+            item=item, shop_user=shop_user
+        ).delete()
+    else:
+        transfer_quantity = int(transfer_quantity)
+        if item.quantity < transfer_quantity:
+            raise ValueError("Not enough stock to transfer")
+        try:
+            transfer_item, created = TransferItem.objects.get_or_create(
+                item=item,
+                shop_user=shop_user,
+            )
+        except Exception as e:
+            raise LookupError(str(e))
+        if not complete:
+            transfer_item.quantity += transfer_quantity
+            transfer_item.save()
+        else:
+            # transfer to ShopItem database
+            shop_user = User.objects.get(id=shop_user)
+            try:
+                shop_item = ShopItem.objects.get(item=item, shop_user=shop_user)
+                shop_item.quantity += transfer_quantity
+            except ShopItem.DoesNotExist:
+                shop_item = ShopItem(
+                    item=item, shop_user=shop_user, quantity=transfer_quantity
+                )
+            shop_item.save()
+            # change quantity recorded for stock Item in warehouse
+            item.quantity -= transfer_quantity
+            item.save()
+            # delete item from pending transfer
+            TransferItem.objects.get(item=item, shop_user=shop_user).delete()
 
 
 @api_view(["POST"])
@@ -273,7 +322,8 @@ def complete_transfer(request):
             )
         try:
             item = Item.objects.get(sku=sku)
-            item.transfer_to_shop(
+            transfer_to_shop(
+                item=item,
                 shop_user=shop_user_id,
                 transfer_quantity=quantity,
                 complete=True,
