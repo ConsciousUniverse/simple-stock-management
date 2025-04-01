@@ -54,15 +54,18 @@ class ItemViewSet(viewsets.ModelViewSet):
             return Response(
                 {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
             )
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
-        if not serializer.is_valid():
+        try:
+            item = Item.objects.get(sku=request.data.get("sku"))
+        except Item.DoesNotExist:
+            return Response(
+                {"error": "Item not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+        serializer = ItemSerializer(item, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()  # Save the changes to the database
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        new_quantity = serializer.validated_data.get("quantity", None)
-        if new_quantity is None or instance.quantity == new_quantity:
-            serializer = self.get_serializer(instance)
-            return Response(serializer.data)
-        return super().update(request, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
         if not request.user.groups.filter(name="managers").exists():

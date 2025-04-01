@@ -466,19 +466,23 @@
                     data.results.forEach(item => {
                         let row = '';
                         if (tableNum === 1) {
-                            // For managers, allow editing only if editLock is true.
-                            const descriptionField = (window.userGroups && window.userGroups.includes("managers") && window.editLock)
-                                ? `<input type="text" value="${item.description}" class="form-control" id="description1-${item.sku}">`
-                                : item.description;
-                            const retailPriceField = (window.userGroups && window.userGroups.includes("managers") && window.editLock)
-                                ? `<input type="text" value="${parseFloat(item.retail_price).toFixed(2)}" class="form-control" id="retail_price1-${item.sku}">`
-                                : parseFloat(item.retail_price).toFixed(2);
-                            // Warehouse quantity field is disabled if editLock is false.
                             const quantityField = (window.userGroups && window.userGroups.includes("managers"))
-                                ? window.editLock ? `<input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity1-${item.sku}">` : item.quantity
+                                ? window.editLock
+                                    ? `<input type="number" min="0" value="${item.quantity}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="quantity">`
+                                    : item.quantity
                                 : item.quantity;
+                            const retailPriceField = (window.userGroups && window.userGroups.includes("managers"))
+                                ? window.editLock
+                                    ? `<input type="number" min="0" step="0.01" value="${item.retail_price}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="retail_price">`
+                                    : item.retail_price
+                                : item.retail_price;
+                            const descriptionField = (window.userGroups && window.userGroups.includes("managers"))
+                                ? window.editLock
+                                    ? `<input type="text" value="${item.description}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="description">`
+                                    : item.description
+                                : item.description;
                             const transferQuantityField = (window.userGroups && window.userGroups.includes("shop_users"))
-                                ? !window.editLock ? `<input type="number" min="0" placeholder="Enter transfer quantity" class="form-control" value="0" id="xfer_quantity1-${item.sku}">` : '<small>Warehouse under maintenance, please try again later.</small>' : '';
+                                ? !window.editLock ? `<input type="number" min="0" placeholder="Enter transfer quantity" class="form-control wh_editable_field" value="0" data-sku="${item.sku}" data-field="xfer_qnt">` : '<small>Warehouse under maintenance, please try again later.</small>' : '';
                             row = `
                 <tr>
                   <td>${item.sku}</td>
@@ -521,7 +525,7 @@
                         // For shop_users: attach transfer button in table 1 (disabled when in edit mode).
                         if (tableNum === 1 && window.userGroups && window.userGroups.includes("shop_users")) {
                             $tableBody.find('tr:last .actions').append(`
-                <button onclick="transferItem('${item.sku}')" id="transferButton-${item.sku}" class="btn btn-info" ${window.editLock ? 'disabled' : ''}>Transfer</button>
+                <button onclick="transferItem()" class="btn btn-info" ${window.editLock ? 'disabled' : ''}>Transfer</button>
               `);
                         }
                     });
@@ -594,27 +598,25 @@
             };
 
             /** Update an item using AJAX PUT */
-            const updateItem = (sku, tableNum, pageChange = 'false') => {
-                const price = $(`#retail_price${tableNum}-${CSS.escape(sku)}`).val();
-                if (!/^\d+(\.\d{1,2})?$/.test(price)) {
-                    alert('Retail price must be a valid number with up to 2 decimal places.');
-                    return;
+            const updateItem = (tableNum, sku, fieldName, value) => {
+                if (tableNum == 1) {
+                    if (fieldName == 'retail_price' && !/^\d+(\.\d{1,2})?$/.test(value)) {
+                        alert('Retail price must be a valid number with up to 2 decimal places.');
+                        return;
+                    }
+                    const data = {
+                        sku: sku,
+                        [fieldName]: value
+                    };
+                    $.ajax({
+                        url: `/api/items/${encodeURIComponent(sku)}/`,
+                        type: 'PUT',
+                        contentType: 'application/json',
+                        headers: { 'X-CSRFToken': getCSRFToken() },
+                        data: JSON.stringify(data),
+                        success: () => fetchItems(1)
+                    });
                 }
-                const data = {
-                    sku: sku,
-                    description: $(`#description${tableNum}-${CSS.escape(sku)}`).val(),
-                    retail_price: price,
-                    quantity: $(`#quantity${tableNum}-${CSS.escape(sku)}`).val()
-                };
-                const apiUrl = tableNum === 1 ? `/api/items/${sku}/` : `/api/shop_items/${sku}/`;
-                $.ajax({
-                    url: apiUrl,
-                    type: 'PUT',
-                    contentType: 'application/json',
-                    headers: { 'X-CSRFToken': getCSRFToken() },
-                    data: JSON.stringify(data),
-                    success: () => { if (pageChange !== 'true') { fetchItems(tableNum) } }
-                });
             };
 
             /** Delete an item using AJAX DELETE */
@@ -629,21 +631,18 @@
             };
 
             /** Transfer an item using AJAX POST */
-            const transferItem = (sku, pageChange = 'false') => {
-                const transferQuantity = $(`#xfer_quantity1-${CSS.escape(sku)}`).val();
+            const transferItem = () => {
+                var row = $(event.target).closest("tr");
+                var sku = row.find(".wh_editable_field").data("sku");
+                var xfer_qnt = row.find(".wh_editable_field[data-field='xfer_qnt']").val();
                 $.ajax({
                     url: '/api/transfer/',
                     type: 'POST',
                     contentType: 'application/json',
                     headers: { 'X-CSRFToken': getCSRFToken() },
-                    data: JSON.stringify({ sku, transfer_quantity: transferQuantity }),
+                    data: JSON.stringify({ sku, transfer_quantity: xfer_qnt }),
                     success: () => {
-                        if (pageChange !== 'true') {
-                            fetchItems(3);
-                            $(`#xfer_quantity1-${CSS.escape(sku)}`).prop('disabled', true);
-                            $(`#transferButton-${CSS.escape(sku)}`).prop('disabled', true);
-                            $(`#xfer_quantity1-${CSS.escape(sku)}`).val(0);
-                        }
+                        fetchItems(3);
                     },
                     error: xhr => alert(xhr.responseJSON.detail)
                 });
@@ -694,20 +693,6 @@
             const toggleUpdateMode = () => {
                 // Update the global edit lock status based on the checkbox.
                 let current_lock_status = $('#updateModeToggle').prop('checked');
-
-                // Loop through table 1 rows and update any editable fields if they exist.
-                if (current_lock_status == false) {
-                    $('#itemTable1 tr').each(function () {
-                        const sku = $(this).find('td:first').text();
-                        const desc = $(`#description1-${CSS.escape(sku)}`).val();
-                        const price = $(`#retail_price1-${CSS.escape(sku)}`).val();
-                        const qnt = $(`#quantity1-${CSS.escape(sku)}`).val();
-                        if (desc !== undefined && price !== undefined && qnt !== undefined) {
-                            updateItem(sku, 1);
-                        }
-                    });
-                }
-
                 // Notify the server of the update mode change.
                 $.ajax({
                     url: '/api/set_edit_lock_status/',
@@ -811,6 +796,16 @@
             window.updateShopItem = updateShopItem;
             window.tailor_dashboard = tailor_dashboard;
             window.checkAuthStatus = checkAuthStatus;
+
+            /** listener to update warehouse qnt when field
+             * looses focus **/
+            $(document).on("blur", ".wh_editable-field", function () {
+                var sku = $(this).data("sku");  // Get SKU
+                var fieldName = $(this).data("field");  // Get field name (e.g., 'quantity', 'retail_price', 'description')
+                var newValue = $(this).val();  // Get the updated value
+                updateItem(1, sku, fieldName, newValue)
+            });
+
 
             // Document ready: initialize event handlers and fetch data.
             $(document).ready(() => {
