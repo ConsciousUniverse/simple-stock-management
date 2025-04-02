@@ -738,6 +738,7 @@
                         if (data.username) {
                             $("#userStatus").html(`Hello ${data.username}<br/><a id="change_pw_link" href="{% url 'password_change' %}">Change my password</a>`);
                             tailor_dashboard(data.groups, data.username);
+                            fetchItems([1, 2, 3]);
                             $("#authLink").text("Logout")
                                 .off("click")
                                 .on("click", event => {
@@ -802,7 +803,6 @@
             $(document).ready(() => {
                 checkAuthStatus();
                 get_edit_lock_status();
-                fetchItems([1, 2, 3]);
                 $('#addItem').click(addItem);
                 $('#submitTransferRequest').click(submitTransferRequest);
                 $('#updateModeToggle').change(toggleUpdateMode); // Attach toggle handler
