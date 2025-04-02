@@ -1,5 +1,5 @@
 asgiref==3.8.1
-django==5.1.7
+django==5.1.8
 django-axes==7.0.2
 django-ipware==7.0.1
 djangorestframework==3.15.2
