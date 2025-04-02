@@ -321,21 +321,21 @@
         <div class="col-12 warehouse-stock mb-4">
             <div class="d-flex justify-content-between mb-2">
                 <input type="text" id="searchBox1" class="form-control" placeholder="Search Warehouse Items..."
-                    onkeyup="fetchItems(1, 1, this.value)">
+                    onkeyup="fetchItems([1], 1, this.value)">
                 <label id="updateModeSwitch" class="toggle-switch ms-2 d-none">
                     <input type="checkbox" id="updateModeToggle" onclick="toggleUpdateMode()">
                     <span class="slider"></span>
                 </label>
             </div>
-            <table class="table table-bordered">
+            <table class="table table-bordered whTable">
                 <thead>
                     <tr>
                         <th onclick="sortTable(1, 'sku')">SKU</th>
                         <th onclick="sortTable(1, 'description')">Description</th>
                         <th onclick="sortTable(1, 'retail_price')">Retail Price</th>
                         <th onclick="sortTable(1, 'quantity')">Warehouse Qnt</th>
-                        <th>Transfer Qnt</th>
-                        <th>Actions</th>
+                        <th id="whXferQnt">Transfer Qnt</th>
+                        <th id="whActions">Actions</th>
                     </tr>
                 </thead>
                 <tbody id="itemTable1"></tbody>
@@ -345,15 +345,14 @@
         <div class="col-12 shop-stock">
             <h2>Shop Stock</h2>
             <input type="text" id="searchBox2" class="form-control mb-2" placeholder="Search Shop Items..."
-                onkeyup="fetchItems(2, 1, this.value)">
-            <table class="table table-bordered">
+                onkeyup="fetchItems([2], 1, this.value)">
+            <table class="table table-bordered shopStockTable">
                 <thead>
                     <tr>
-                        <th onclick="sortTable(2, 'sku')">SKU</th>
-                        <th onclick="sortTable(2, 'description')">Description</th>
-                        <th onclick="sortTable(2, 'retail_price')">Retail Price</th>
+                        <th onclick="sortTable(2, 'item__sku')">SKU</th>
+                        <th onclick="sortTable(2, 'item__description')">Description</th>
+                        <th onclick="sortTable(2, 'item__retail_price')">Retail Price</th>
                         <th onclick="sortTable(2, 'quantity')">Item Qnt</th>
-                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody id="itemTable2"></tbody>
@@ -376,10 +375,10 @@
         <h3>Transfers Pending</h3>
         <div class="d-flex justify-content-between mb-2">
             <input type="text" id="searchBox3" class="form-control mb-2" placeholder="Search Transfers Pending..."
-                onkeyup="fetchItems(3, 1, this.value)">
+                onkeyup="fetchItems([3], 1, this.value)">
             <button id="submitTransferRequest" class="btn btn-info d-none">Send Transfer Request</button>
         </div>
-        <table class="table table-bordered">
+        <table class="table table-bordered xfersPendingTable">
             <thead>
                 <tr>
                     <th onclick="sortTable(3, 'shop_user__username')">Shop User</th>
@@ -431,7 +430,7 @@
                 const newOrder = currentOrder === 'asc' ? 'desc' : 'asc';
                 $table.data('sortOrder', newOrder).data('sortColumn', column);
                 const searchVal = $(`#searchBox${tableNum}`).val();
-                fetchItems(tableNum, 1, searchVal, column, newOrder);
+                fetchItems([tableNum], 1, searchVal, column, newOrder);
             };
 
             /** Update the update mode toggle button state based on window.editLock */
@@ -441,69 +440,69 @@
 
             /** Fetch items via AJAX and populate the corresponding table */
             const fetchItems = (tableNum, page = 1, searchQuery = '', sortColumn = '', sortOrder = '') => {
-                let apiUrl = '';
-                if (tableNum === 1) {
-                    apiUrl = '/api/items/';
-                } else if (tableNum === 2) {
-                    apiUrl = '/api/shop_items/';
-                } else if (tableNum === 3) {
-                    apiUrl = '/api/transfer_items/';
-                    if (window.userGroups && window.userGroups.includes("shop_users")) {
-                        apiUrl += `?shop_user_username=${window.loggedInUsername}`;
+                tableNum.forEach((tn) => {
+                    let apiUrl = '';
+                    if (tn === 1) {
+                        apiUrl = '/api/items/';
+                    } else if (tn === 2) {
+                        apiUrl = '/api/shop_items/';
+                    } else if (tn === 3) {
+                        apiUrl = '/api/transfer_items/';
+                        if (window.userGroups && window.userGroups.includes("shop_users")) {
+                            apiUrl += `?shop_user_username=${window.loggedInUsername}`;
+                        }
                     }
-                }
-                const separator = apiUrl.includes('?') ? '&' : '?';
-                apiUrl += `${separator}page=${page}&search=${encodeURIComponent(searchQuery)}`;
-                if (sortColumn) {
-                    apiUrl += `&ordering=${sortOrder === 'asc' ? '' : '-'}${sortColumn}`;
-                }
-                $.get(apiUrl, data => {
-                    let $tableBody;
-                    if (tableNum === 1) $tableBody = $('#itemTable1');
-                    else if (tableNum === 2) $tableBody = $('#itemTable2');
-                    else if (tableNum === 3) $tableBody = $('#itemTable3');
-                    $tableBody.empty();
-                    data.results.forEach(item => {
-                        let row = '';
-                        if (tableNum === 1) {
-                            const quantityField = (window.userGroups && window.userGroups.includes("managers"))
-                                ? window.editLock
-                                    ? `<input type="number" min="0" value="${item.quantity}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="quantity">`
-                                    : item.quantity
-                                : item.quantity;
-                            const retailPriceField = (window.userGroups && window.userGroups.includes("managers"))
-                                ? window.editLock
-                                    ? `<input type="number" min="0" step="0.01" value="${item.retail_price}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="retail_price">`
-                                    : item.retail_price
-                                : item.retail_price;
-                            const descriptionField = (window.userGroups && window.userGroups.includes("managers"))
-                                ? window.editLock
-                                    ? `<input type="text" value="${item.description}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="description">`
-                                    : item.description
-                                : item.description;
-                            const transferQuantityField = (window.userGroups && window.userGroups.includes("shop_users"))
-                                ? !window.editLock ? `<input type="number" min="0" placeholder="Enter transfer quantity" class="form-control wh_editable_field" value="0" data-sku="${item.sku}" data-field="xfer_qnt">` : '<small>Warehouse under maintenance, please try again later.</small>' : '';
-                            row = `
+                    const separator = apiUrl.includes('?') ? '&' : '?';
+                    apiUrl += `${separator}page=${page}&search=${encodeURIComponent(searchQuery)}`;
+                    if (sortColumn) {
+                        apiUrl += `&ordering=${sortOrder === 'asc' ? '' : '-'}${sortColumn}`;
+                    }
+                    $.get(apiUrl, data => {
+                        let $tableBody;
+                        if (tn === 1) $tableBody = $('#itemTable1');
+                        else if (tn === 2) $tableBody = $('#itemTable2');
+                        else if (tn === 3) $tableBody = $('#itemTable3');
+                        $tableBody.empty();
+                        data.results.forEach(item => {
+                            let row = '';
+                            if (tn === 1) {
+                                const quantityField = (window.userGroups && window.userGroups.includes("managers"))
+                                    ? window.editLock
+                                        ? `<input type="number" min="0" value="${item.quantity}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="quantity">`
+                                        : item.quantity
+                                    : item.quantity;
+                                const retailPriceField = (window.userGroups && window.userGroups.includes("managers"))
+                                    ? window.editLock
+                                        ? `<input type="number" min="0" step="0.01" value="${item.retail_price}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="retail_price">`
+                                        : item.retail_price
+                                    : item.retail_price;
+                                const descriptionField = (window.userGroups && window.userGroups.includes("managers"))
+                                    ? window.editLock
+                                        ? `<input type="text" value="${item.description}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="description">`
+                                        : item.description
+                                    : item.description;
+                                const transferQuantityField = (window.userGroups && window.userGroups.includes("shop_users"))
+                                    ? !window.editLock ? `<input type="number" min="0" class="form-control wh_editable-field" value="" placeholder="How many units?" data-sku="${item.sku}" data-field="xfer_qnt">` : '<small>Warehouse under maintenance, please try again later.</small>' : '';
+                                row = `
                 <tr>
                   <td>${item.sku}</td>
                   <td>${descriptionField}</td>
                   <td>${retailPriceField}</td>
                   <td>${quantityField}</td>
                   ${window.userGroups && window.userGroups.includes("shop_users") ? `<td>${transferQuantityField}</td>` : ''}
-                  <td class="actions"></td>
+                  ${window.userGroups && window.userGroups.includes("managers") ? `<td class="actions"></td>` : ''}
                 </tr>`;
-                        } else if (tableNum === 2) {
-                            row = `
+                            } else if (tn === 2) {
+                                row = `
                 <tr>
                   <td>${item.item.sku}</td>
                   <td>${item.item.description}</td>
                   <td>${parseFloat(item.item.retail_price).toFixed(2)}</td>
                   <td><input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity2-${item.item.sku}" disabled></td>
-                  <td class="actions"><button onclick="updateShopItem('${item.item.sku}')" class="btn btn-warning disabled">Update</button></td>
                 </tr>`;
-                        } else if (tableNum === 3) {
-                            const highlightClass = item.ordered && window.userGroups && window.userGroups.includes("shop_users") ? 'highlight-ordered' : '';
-                            row = `
+                            } else if (tn === 3) {
+                                const highlightClass = item.ordered && window.userGroups && window.userGroups.includes("shop_users") ? 'highlight-ordered' : '';
+                                row = `
                 <tr class="${highlightClass}" data-sku="${item.item.sku}" data-ordered="${item.ordered}" data-sku="${item.item.sku}" data-quantity="${item.quantity}">
                   ${window.userGroups && window.userGroups.includes("managers") ? `<td>${item.shop_user.username}</td>` : ''}
                   <td>${item.item.sku}</td>
@@ -514,31 +513,28 @@
                     <button ${window.userGroups && !window.userGroups.includes("shop_superusers") && !window.userGroups.includes("managers") && item.ordered ? 'disabled' : ''} onclick="completeTransfer('${item.item.sku}', '${item.shop_user.username}', $('#quantity3-${item.item.sku}').val(), 'true')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
                   </td>
                 </tr>`;
-                        }
-                        $tableBody.append(row);
-                        // For managers: attach delete button in table 1, disabled if editLock is false.
-                        if (tableNum === 1 && window.userGroups && window.userGroups.includes("managers")) {
-                            $tableBody.find('tr:last .actions').append(`
+                            }
+                            $tableBody.append(row);
+                            // For managers: attach delete button in table 1, disabled if editLock is false.
+                            if (tn === 1 && window.userGroups && window.userGroups.includes("managers")) {
+                                $tableBody.find('tr:last .actions').append(`
                 <button onclick="deleteItem('${item.sku}', 1)" class="btn btn-danger" ${window.editLock ? '' : 'disabled'}>Delete</button>
               `);
-                        }
-                        // For shop_users: attach transfer button in table 1 (disabled when in edit mode).
-                        if (tableNum === 1 && window.userGroups && window.userGroups.includes("shop_users")) {
-                            $tableBody.find('tr:last .actions').append(`
-                <button onclick="transferItem()" class="btn btn-info" ${window.editLock ? 'disabled' : ''}>Transfer</button>
-              `);
-                        }
+                            }
+                        });
+                        setupPagination(tn, data, sortColumn, sortOrder);
                     });
-                    setupPagination(tableNum, data, sortColumn, sortOrder);
-                });
+                })
             };
 
+
+
             /** Build and attach pagination controls */
-            const setupPagination = (tableNum, data, sortColumn = '', sortOrder = '') => {
+            const setupPagination = (tn, data, sortColumn = '', sortOrder = '') => {
                 let $paginationDiv;
-                if (tableNum === 1) $paginationDiv = $('#paginationControls1');
-                else if (tableNum === 2) $paginationDiv = $('#paginationControls2');
-                else if (tableNum === 3) $paginationDiv = $('#paginationControls3');
+                if (tn === 1) $paginationDiv = $('#paginationControls1');
+                else if (tn === 2) $paginationDiv = $('#paginationControls2');
+                else if (tn === 3) $paginationDiv = $('#paginationControls3');
 
                 $paginationDiv.empty();
                 let paginationHtml = '<nav aria-label="Page navigation"><ul class="pagination justify-content-center">';
@@ -549,26 +545,24 @@
                 const endPage = Math.min(startPage + 4, totalPages);
 
                 if (currentPage > 5) {
-                    paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="fetchItems(${tableNum}, ${startPage - 5}, $('#searchBox${tableNum}').val(), '${sortColumn}', '${sortOrder}')">Previous</a></li>`;
+                    paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="fetchItems([${tn}], ${startPage - 5}, $('#searchBox${tn}').val(), '${sortColumn}', '${sortOrder}')">Previous</a></li>`;
                 }
                 for (let i = startPage; i <= endPage; i++) {
                     paginationHtml += `<li class="page-item ${i === currentPage ? 'active' : ''}">
-                                  <a class="page-link" href="#" onclick="fetchItems(${tableNum}, ${i}, $('#searchBox${tableNum}').val(), '${sortColumn}', '${sortOrder}')">${i}</a>
+                                  <a class="page-link" href="#" onclick="fetchItems([${tn}], ${i}, $('#searchBox${tn}').val(), '${sortColumn}', '${sortOrder}')">${i}</a>
                                  </li>`;
                 }
                 if (endPage < totalPages) {
-                    paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="fetchItems(${tableNum}, ${startPage + 5}, $('#searchBox${tableNum}').val(), '${sortColumn}', '${sortOrder}')">Next</a></li>`;
+                    paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="fetchItems([${tn}], ${startPage + 5}, $('#searchBox${tn}').val(), '${sortColumn}', '${sortOrder}')">Next</a></li>`;
                 }
                 paginationHtml += '</ul></nav>';
                 $paginationDiv.append(paginationHtml);
-
-                // Reattach event listeners to pagination links
-                $paginationDiv.find('a.page-link').off('click').on('click', function (event) {
-                    event.preventDefault();
-                    const page = $(this).attr('onclick').match(/fetchItems\(\d+, (\d+),/)[1];
-                    // Fetch the new page of items
-                    fetchItems(tableNum, page, $(`#searchBox${tableNum}`).val(), sortColumn, sortOrder);
-                });
+                // // Reattach event listeners to pagination links
+                // $paginationDiv.find('a.page-link').off('click').on('click', function (event) {
+                //     event.preventDefault();
+                //     // Fetch the new page of items
+                //     fetchItems([tn], page, $(`#searchBox${tn}`).val(), sortColumn, sortOrder);
+                // });
             };
 
             /** Add a new item using AJAX POST */
@@ -591,7 +585,7 @@
                     headers: { 'X-CSRFToken': getCSRFToken() },
                     data: JSON.stringify(data),
                     success: () => {
-                        [1, 2, 3].forEach(num => fetchItems(num));
+                        fetchItems([1, 2, 3])
                         $('#sku, #description, #retail_price, #quantity').val('');
                     }
                 });
@@ -614,7 +608,7 @@
                         contentType: 'application/json',
                         headers: { 'X-CSRFToken': getCSRFToken() },
                         data: JSON.stringify(data),
-                        success: () => fetchItems(1)
+                        success: () => fetchItems([1])
                     });
                 }
             };
@@ -626,15 +620,12 @@
                     url: apiUrl,
                     type: 'DELETE',
                     headers: { 'X-CSRFToken': getCSRFToken() },
-                    success: () => fetchItems(tableNum)
+                    success: () => fetchItems([tableNum])
                 });
             };
 
             /** Transfer an item using AJAX POST */
-            const transferItem = () => {
-                var row = $(event.target).closest("tr");
-                var sku = row.find(".wh_editable_field").data("sku");
-                var xfer_qnt = row.find(".wh_editable_field[data-field='xfer_qnt']").val();
+            const transferItem = (sku, xfer_qnt) => {
                 $.ajax({
                     url: '/api/transfer/',
                     type: 'POST',
@@ -642,7 +633,7 @@
                     headers: { 'X-CSRFToken': getCSRFToken() },
                     data: JSON.stringify({ sku, transfer_quantity: xfer_qnt }),
                     success: () => {
-                        fetchItems(3);
+                        fetchItems([3]);
                     },
                     error: xhr => alert(xhr.responseJSON.detail)
                 });
@@ -656,7 +647,7 @@
                     contentType: 'application/json',
                     headers: { 'X-CSRFToken': getCSRFToken() },
                     data: JSON.stringify(),
-                    success: () => [3].forEach(num => fetchItems(num)),
+                    success: () => fetchItems([3]),
                     error: xhr => alert(xhr.responseJSON.detail)
                 });
             }
@@ -669,7 +660,7 @@
                     contentType: 'application/json',
                     headers: { 'X-CSRFToken': getCSRFToken() },
                     data: JSON.stringify({ sku, shop_user_id, quantity, cancel }),
-                    success: () => [1, 2, 3].forEach(num => fetchItems(num)),
+                    success: () => fetchItems([1, 2, 3]),
                     error: xhr => alert(xhr.responseJSON.detail)
                 });
             };
@@ -705,7 +696,7 @@
                         window.editLock = response.edit_lock;
                         updateUIBasedOnEditLock();
                         const currentPage = $('#paginationControls1 .page-item.active .page-link').text();
-                        fetchItems(1, currentPage);
+                        fetchItems([1], currentPage);
                     }
                 });
                 get_edit_lock_status();  // set the global variable to new value
@@ -730,7 +721,10 @@
                     }
                 }
                 if (!groups.includes("shop_users")) {
-                    $("th:contains('Transfer Qnt')").hide();
+                    $("th#whXferQnt").hide();
+                }
+                if (groups.includes("shop_users")) {
+                    $("th#whActions").hide();
                 }
             };
 
@@ -744,7 +738,6 @@
                         if (data.username) {
                             $("#userStatus").html(`Hello ${data.username}<br/><a id="change_pw_link" href="{% url 'password_change' %}">Change my password</a>`);
                             tailor_dashboard(data.groups, data.username);
-                            // [1, 2, 3].forEach(num => fetchItems(num));
                             $("#authLink").text("Logout")
                                 .off("click")
                                 .on("click", event => {
@@ -770,13 +763,6 @@
                 });
             };
 
-            /** Dummy function: Update shop item (to be implemented later) */
-            const updateShopItem = (sku, pageChange = 'false') => {
-                const quantity = $(`#quantity2-${CSS.escape(sku)}`).val();
-                console.log(`SKU: ${sku}, Quantity: ${quantity}`);
-                // Update functionality to be implemented later.
-            };
-
             /** Update the UI based on the edit lock status */
             const updateUIBasedOnEditLock = () => {
                 const isLocked = window.editLock;
@@ -793,7 +779,6 @@
             window.transferItem = transferItem;
             window.completeTransfer = completeTransfer;
             window.toggleUpdateMode = toggleUpdateMode;
-            window.updateShopItem = updateShopItem;
             window.tailor_dashboard = tailor_dashboard;
             window.checkAuthStatus = checkAuthStatus;
 
@@ -803,19 +788,26 @@
                 var sku = $(this).data("sku");  // Get SKU
                 var fieldName = $(this).data("field");  // Get field name (e.g., 'quantity', 'retail_price', 'description')
                 var newValue = $(this).val();  // Get the updated value
-                updateItem(1, sku, fieldName, newValue)
+                if (fieldName == 'xfer_qnt') {
+                    if (Number.isInteger(parseInt(newValue), 10)) {
+                        newValue > 0 ? transferItem(sku, newValue) : console.log('Enter more than 0!');
+                    }
+                }
+                else {
+                    updateItem(1, sku, fieldName, newValue)
+                }
             });
-
 
             // Document ready: initialize event handlers and fetch data.
             $(document).ready(() => {
                 checkAuthStatus();
                 get_edit_lock_status();
-                [1, 2, 3].forEach(num => fetchItems(num));
+                fetchItems([1, 2, 3]);
                 $('#addItem').click(addItem);
                 $('#submitTransferRequest').click(submitTransferRequest);
                 $('#updateModeToggle').change(toggleUpdateMode); // Attach toggle handler
                 attachTransferQntChangeListener(); // Attach listener for table 3 quantity changes
+                setInterval(fetchItems, 3000, [2, 3]);
             });
         })();
     </script>

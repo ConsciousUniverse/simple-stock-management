@@ -10,7 +10,7 @@ from rest_framework.response import (
     Response,
 )  # For returning HTTP responses in REST framework
 from rest_framework.decorators import api_view
-from django.db.models.functions import Lower
+from django.db.models.functions import Lower, Cast
 from rest_framework.decorators import permission_classes
 from django.http import JsonResponse
 from rest_framework.permissions import IsAuthenticated
@@ -19,7 +19,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
 import logging
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
-from django.db.models import Q
+from django.db.models import IntegerField, Q
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +42,16 @@ class ItemViewSet(viewsets.ModelViewSet):
         ordering = self.request.query_params.get("ordering", None)
         if ordering:
             if ordering.startswith("-"):
-                queryset = queryset.order_by(Lower(ordering[1:])).reverse()
+                field = ordering[1:]
+                if field == "quantity":
+                    queryset = queryset.order_by(Cast(field, IntegerField()).desc())
+                else:
+                    queryset = queryset.order_by(Lower(field)).reverse()
             else:
-                queryset = queryset.order_by(Lower(ordering))
+                if ordering == "quantity":
+                    queryset = queryset.order_by(Cast(ordering, IntegerField()))
+                else:
+                    queryset = queryset.order_by(Lower(ordering))
         else:
             queryset = queryset.order_by("last_updated").reverse()
         return queryset
@@ -93,11 +100,16 @@ class ShopItemViewSet(viewsets.ModelViewSet):
         ordering = self.request.query_params.get("ordering", None)
         if ordering:
             if ordering.startswith("-"):
-                queryset = queryset.order_by(Lower(ordering[1:])).reverse()
+                field = ordering[1:]
+                if field == "quantity":
+                    queryset = queryset.order_by(Cast(field, IntegerField()).desc())
+                else:
+                    queryset = queryset.order_by(Lower(field)).reverse()
             else:
-                queryset = queryset.order_by(Lower(ordering))
-        else:
-            queryset = queryset.order_by(Lower("item__sku"))
+                if ordering == "quantity":
+                    queryset = queryset.order_by(Cast(ordering, IntegerField()))
+                else:
+                    queryset = queryset.order_by(Lower(ordering))
         return queryset
 
 
@@ -123,12 +135,16 @@ class TransferItemViewSet(viewsets.ModelViewSet):
         ordering = self.request.query_params.get("ordering", None)
         if ordering:
             if ordering.startswith("-"):
-                queryset = queryset.order_by(Lower(ordering[1:])).reverse()
+                field = ordering[1:]
+                if field == "quantity":
+                    queryset = queryset.order_by(Cast(field, IntegerField()).desc())
+                else:
+                    queryset = queryset.order_by(Lower(field)).reverse()
             else:
-                queryset = queryset.order_by(Lower(ordering))
-        else:
-            print("ordering by last_updated")
-            queryset = queryset.order_by("last_updated").reverse()
+                if ordering == "quantity":
+                    queryset = queryset.order_by(Cast(ordering, IntegerField()))
+                else:
+                    queryset = queryset.order_by(Lower(ordering))
         return queryset
 
 
