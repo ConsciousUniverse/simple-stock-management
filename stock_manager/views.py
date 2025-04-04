@@ -243,8 +243,10 @@ def transfer_item(request):
     return Response({"detail": "Transfer successful."}, status=status.HTTP_200_OK)
 
 
-def transfer_to_shop(item, shop_user, transfer_quantity, complete=False, cancel=False):
-    if Admin.is_edit_locked():
+def transfer_to_shop(
+    item, shop_user, transfer_quantity, complete=False, cancel=False, manager=False
+):
+    if Admin.is_edit_locked() and not manager:
         raise ValueError(
             "Transfers are disabled as the warehouse is being maintained. Please try again later."
         )
@@ -257,34 +259,26 @@ def transfer_to_shop(item, shop_user, transfer_quantity, complete=False, cancel=
         if not complete:
             if item.quantity < transfer_quantity:
                 raise ValueError("Not enough stock to transfer")
-            try:
-                if not TransferItem.objects.filter(
-                    shop_user=shop_user, item=item
-                ).exists():
-                    TransferItem.objects.create(
-                        item=item, shop_user=shop_user, quantity=transfer_quantity
-                    )
-                else:
-                    raise LookupError("This item is already in Transfers Pending.")
-            except Exception as e:
-                raise LookupError(str(e))
-        else:
-            try:
-                transfer_item = TransferItem.objects.get(
-                    item=item,
-                    shop_user=shop_user,
-                )
-            except Exception as e:
-                raise LookupError(str(e))
-            # transfer to ShopItem database
-            shop_user = User.objects.get(id=shop_user)
-            try:
-                shop_item = ShopItem.objects.get(item=item, shop_user=shop_user)
-                shop_item.quantity += transfer_quantity
-            except ShopItem.DoesNotExist:
-                shop_item = ShopItem(
+            if not TransferItem.objects.filter(shop_user=shop_user, item=item).exists():
+                TransferItem.objects.create(
                     item=item, shop_user=shop_user, quantity=transfer_quantity
                 )
+            else:
+                raise LookupError("This item is already in Transfers Pending.")
+        else:
+            if item.quantity < int(transfer_quantity):
+                raise ValueError("Not enough stock to transfer")
+            transfer_item = TransferItem.objects.get(
+                item=item,
+                shop_user=shop_user,
+            )
+            # transfer to ShopItem database
+            shop_user = User.objects.get(id=shop_user)
+            shop_item = ShopItem.objects.get(item=item, shop_user=shop_user)
+            shop_item.quantity += transfer_quantity
+            shop_item = ShopItem(
+                item=item, shop_user=shop_user, quantity=transfer_quantity
+            )
             shop_item.save()
             # change quantity recorded for stock Item in warehouse
             item.quantity -= transfer_quantity
@@ -331,6 +325,7 @@ def complete_transfer(request):
     try:
         item = Item.objects.get(sku=sku)
         transfer_to_shop(
+            manager=request.user.groups.filter(name="managers").exists(),
             item=item,
             shop_user=shop_user_id,
             transfer_quantity=quantity,

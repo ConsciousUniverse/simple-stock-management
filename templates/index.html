@@ -323,7 +323,7 @@
                 <input type="text" id="searchBox1" class="form-control" placeholder="Search Warehouse Items..."
                     onkeyup="search(1, this.value)">
                 <label id="updateModeSwitch" class="toggle-switch ms-2 d-none">
-                    <input type="checkbox" id="updateModeToggle" onclick="toggleUpdateMode">
+                    <input type="checkbox" id="updateModeToggle">
                     <span class="slider"></span>
                 </label>
             </div>
@@ -395,8 +395,10 @@
     <script>
         (() => {
             'use strict';
+
             // Global variable to hold the edit lock status.
             window.editLock = false;
+
             // Globals to hold page, sort column & sort order
             window.currentPageGlobals = [{
                 page: 1,
@@ -414,16 +416,37 @@
                 order: '',
                 search: ''
             }];
+
             // Globals for other cache requirements
             window.cache = {
                 'xfer_qnt': {}
             };
+
             // Global for interval IDs
             window.intervalIDs = {};
-            /** Get the edit lock status from the server on load */
-            const get_edit_lock_status = () => {
+
+            // set edit lock status
+            const setEditLockStatus = (status) => {
+                // set on server
                 $.ajax({
-                    url: '/api/get_edit_lock_status/',
+                    url: '/api/set_edit_lock_status/',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    headers: { 'X-CSRFToken': getCSRFToken() },
+                    data: JSON.stringify({ edit_lock_status: status }),
+                    success: response => {
+                        // Update the global variable
+                        window.editLock = response.edit_lock;
+                        updateUIBasedOnEditLock();
+                        fetchItems(1);
+                    }
+                });
+            }
+
+            /** Get the edit lock status from the server */
+            const getEditLockStatus = () => {
+                $.ajax({
+                    url: '/api/getEditLockStatus/',
                     type: 'GET',
                     success: response => {
                         window.editLock = response.edit_lock;
@@ -558,7 +581,7 @@
                 ${window.userGroups && window.userGroups.includes("managers") ? `<td>${item.shop_user.username}</td>` : ''}
                 <td>${item.item.sku}</td>
                 <td>${item.item.description}</td>
-                <td>${window.userGroups && window.userGroups.includes("managers") ? `<input class="form-control" type="number" min="0" value="${window.cache.xfer_qnt[item.item.sku]}" id="quantity3-${item.item.sku}">` : item.quantity}</td>
+                <td>${window.userGroups && window.userGroups.includes("managers") && window.editLock ? `<input class="form-control" type="number" min="0" value="${window.cache.xfer_qnt[item.item.sku]}" id="quantity3-${item.item.sku}">` : window.cache.xfer_qnt[item.item.sku]}</td>
                 <td class="actions">
                 ${window.userGroups && window.userGroups.includes("managers") ? `<button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.username}', '${window.cache.xfer_qnt[item.item.sku]}', 'false')" class="btn btn-info" id="dispatchButton-${item.item.sku}">Dispatch</button>` : ''} 
                 <button ${window.userGroups && !window.userGroups.includes("shop_superusers") && !window.userGroups.includes("managers") && item.ordered ? 'disabled' : ''} onclick="completeTransfer('${item.item.sku}', '${item.shop_user.username}', $('#quantity3-${item.item.sku}').val(), 'true')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
@@ -694,20 +717,20 @@
 
             /** Complete or cancel a transfer using AJAX POST */
             const completeTransfer = (sku, shop_user_id, quantity, cancel) => {
-                console.log(quantity)
-                // $.ajax({
-                //     url: '/api/complete-transfer/',
-                //     type: "POST",
-                //     contentType: 'application/json',
-                //     headers: { 'X-CSRFToken': getCSRFToken() },
-                //     data: JSON.stringify({ sku, shop_user_id, quantity, cancel }),
-                //     success: () => fetchItems(1),
-                //     error: xhr => alert(xhr.responseJSON.detail)
-                // });
+                $.ajax({
+                    url: '/api/complete-transfer/',
+                    type: "POST",
+                    contentType: 'application/json',
+                    headers: { 'X-CSRFToken': getCSRFToken() },
+                    data: JSON.stringify({ sku, shop_user_id, quantity, cancel }),
+                    success: () => { fetchItems(1); },
+                    error: xhr => alert(xhr.responseJSON.detail)
+                });
+                window.cache.xfer_qnt.delete(sku);
             };
 
             /** Change the background and font color of quantity fields in table 3 when modified */
-            const attachTransferQntChangeListener = () => {
+            const attachQntChangeColorUpdateListener = () => {
                 [1, 2, 3].forEach(tableNum => {
                     $(`#itemTable${tableNum}`).on('input', 'input[type="number"]', function () {
                         $(this).css({
@@ -722,35 +745,17 @@
          *  This updates the global window.editLock variable and the toggle UI.
          *  It also updates all items and notifies the server.
          */
-            const toggleUpdateMode = () => {
+            const updateModeChangeHandler = () => {
                 // Update the global edit lock status based on the checkbox.
                 let current_lock_status = $('#updateModeToggle').prop('checked');
+                setEditLockStatus(current_lock_status);
                 if (current_lock_status) {
-                    // stop polling on xfer pending table
-                    [3].forEach((tn) => {
-                        clearInterval(window.intervalIDs[tn])
-                    });
+                    [2, 3].forEach((tn) => stopPolling(tn));
                 }
-                else {  // restart polling
-                    [3].forEach((tn) => {
-                        window.intervalIDs[tn] = setInterval(fetchItems, 3000, tn);
-                    })
+                else {
+                    [2, 3].forEach((tn) => startPolling(tn));
                 }
-                // Notify the server of the update mode change.
-                $.ajax({
-                    url: '/api/set_edit_lock_status/',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    headers: { 'X-CSRFToken': getCSRFToken() },
-                    data: JSON.stringify({ edit_lock_status: current_lock_status }),
-                    success: response => {
-                        // Update the global variable in case the server modifies the status.
-                        window.editLock = response.edit_lock;
-                        updateUIBasedOnEditLock();
-                        fetchItems(1);
-                    }
-                });
-                get_edit_lock_status();  // set the global variable to new value
+                [1, 2, 3].forEach(tn => fetchItems(tn));
             };
 
             /** Tailor the dashboard view based on user groups */
@@ -776,6 +781,9 @@
                 }
                 if (groups.includes("shop_users")) {
                     $("th#whActions").hide();
+                }
+                if (!window.editLock) {
+                    [2, 3].forEach(tn => startPolling(tn));
                 }
             };
 
@@ -823,6 +831,17 @@
                 $('#updateModeToggle').prop('checked', isLocked);
             };
 
+            // Start polling
+            const startPolling = (tableNum) => {
+                fetchItems(tableNum);
+                window.intervalIDs[tableNum] = setInterval(fetchItems, 3000, tableNum);
+            }
+            // Stop polling
+            const stopPolling = (tableNum) => {
+                clearInterval(window.intervalIDs[tableNum])
+                fetchItems(tableNum);
+            }
+
             // Expose functions needed by inline handlers to global scope.
             window.sortTable = sortTable;
             window.fetchItems = fetchItems;
@@ -830,7 +849,7 @@
             window.deleteItem = deleteItem;
             window.transferItem = transferItem;
             window.completeTransfer = completeTransfer;
-            window.toggleUpdateMode = toggleUpdateMode;
+            window.updateModeChangeHandler = updateModeChangeHandler;
             window.tailor_dashboard = tailor_dashboard;
             window.checkAuthStatus = checkAuthStatus;
             window.updatePageGlobals = updatePageGlobals;
@@ -863,11 +882,11 @@
             // Document ready: initialize event handlers and fetch data.
             $(document).ready(() => {
                 checkAuthStatus();
-                get_edit_lock_status();
+                setEditLockStatus(false);
                 $('#addItem').click(addItem);
                 $('#submitTransferRequest').click(submitTransferRequest);
-                $('#updateModeToggle').change(toggleUpdateMode); // Attach toggle handler
-                attachTransferQntChangeListener(); // Attach listener for table 3 quantity changes
+                $('#updateModeToggle').change(updateModeChangeHandler); // Attach toggle handler
+                attachQntChangeColorUpdateListener(); // Attach listener for table 3 quantity changes
             });
         })();
     </script>
