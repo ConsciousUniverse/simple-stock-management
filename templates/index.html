@@ -133,6 +133,12 @@
         .d-flex.justify-content-between.mb-2 {
             display: flex;
             justify-content: space-between;
+            align-items: center; /* Ensure vertical alignment */
+            gap: 10px; /* Add spacing between elements */
+        }
+
+        input#searchBox1 {
+            flex-grow: 1; /* Allow the search bar to take up available space */
         }
 
         .pagination .page-link {
@@ -231,6 +237,18 @@
             color: white;
         }
 
+        button#refreshInventory {
+            margin-left: 5px;
+        }
+
+        button#refreshWarehouse {
+            height: 38px; /* Match the height of other elements */
+            width: fit-content; /* Dynamically adjust width based on content */
+            padding: 0 15px; /* Add padding for better appearance */
+            text-align: center; /* Center the text */
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+
         .toggle-switch {
             position: relative;
             display: inline-block;
@@ -283,6 +301,14 @@
             transform: translateX(26px);
         }
 
+        input#searchBox2 {
+            min-width: 0;
+        }
+
+        div.shopStockSearchDiv {
+            width: 100%
+        }
+
         #userStatus {
             display: block;
             padding: 10px;
@@ -304,6 +330,10 @@
         .highlight-ordered td {
             background-color: var(--third-color) !important;
             color: var(--primary-color) !important;
+        }
+
+        #searchBox1, #refreshWarehouse {
+            height: 38px; /* Match the height of other elements */
         }
     </style>
 </head>
@@ -333,12 +363,14 @@
         <h2 class="mb-4">Warehouse Stock</h2>
         <div class="col-12 warehouse-stock mb-4">
             <div class="d-flex justify-content-between mb-2">
-                <input type="text" id="searchBox1" class="form-control" placeholder="Search Warehouse Items..."
+                <input type="text" id="searchBox1" class="form-control flex-fill" placeholder="Search Warehouse Items..."
                     onkeyup="search(1, this.value)">
                 <label id="updateModeSwitch" class="toggle-switch ms-2 d-none">
                     <input type="checkbox" id="updateModeToggle">
                     <span class="slider"></span>
                 </label>
+                <!-- Add Refresh Warehouse button -->
+                <button id="refreshWarehouse" class="btn btn-info d-none">Refresh Warehouse</button>
             </div>
             <div class="alert alert-danger text-center w-100 maintenanceMode" role="alert">
                 Warehouse maintenance is in progress.
@@ -360,10 +392,12 @@
         </div>
         <div class="col-12 shop-stock">
             <h2>Shop Stock</h2>
-            <div class="d-flex justify-content-between mb-2">
-                <input type="text" id="searchBox2" class="form-control mb-2" placeholder="Search Shop Items..."
+            <div class="d-flex align-items-center mb-2 shopStockSearchDiv">
+                <input type="text" id="searchBox2" class="form-control flex-fill" placeholder="Search Shop Items..."
                     onkeyup="search(2, this.value)">
-                <button id="refreshInventory" class="btn btn-info">Refresh Inventory</button>
+                <button id="refreshInventory" class="btn btn-info">
+                    Refresh Inventory
+                </button>
             </div>
             <table class="table table-bordered shopStockTable">
                 <thead>
@@ -393,7 +427,7 @@
     <div id="transfersPendingSection">
         <h3>Transfers Pending</h3>
         <div class="d-flex justify-content-between mb-2">
-            <input type="text" id="searchBox3" class="form-control mb-2" placeholder="Search Transfers Pending..."
+            <input type="text" id="searchBox3" class="form-control" placeholder="Search Transfers Pending..."
                 onkeyup="search(3, this.value)">
             <button id="refreshTransfersPending" class="btn btn-info">Refresh Transfers Status</button>
             <button id="submitTransferRequest" class="btn btn-info d-none">Send Transfer Request</button>
@@ -804,7 +838,8 @@
                         $("#itemTable3 tr").each(function () {
                             $(this).find("td:first").hide();
                         });
-                        $("#submitTransferRequest").removeClass("d-none")
+                        $("#submitTransferRequest").removeClass("d-none");
+                        $("#refreshWarehouse").removeClass("d-none"); // Show Refresh Warehouse button
                     }
                 }
                 if (!groups.includes("shop_users")) {
@@ -813,6 +848,11 @@
                 if (groups.includes("shop_users")) {
                     $("th#whActions").hide();
                 }
+            };
+
+            /** Dummy callback for Refresh Warehouse button */
+            const refreshWarehouse = () => {
+                console.log('Refresh clicked');
             };
 
             /** Check authentication status and update the UI accordingly */
@@ -909,6 +949,7 @@
                 attachQntChangeColorUpdateListener(); // Attach listener for table 3 quantity changes
                 $('#refreshInventory').click(() => [1, 2, 3].forEach(tn => fetchItems(tn)));
                 $('#refreshTransfersPending').click(() => [1, 2, 3].forEach(tn => fetchItems(tn)));
+                $('#refreshWarehouse').click(refreshWarehouse); // Attach dummy callback
             });
         })();
     </script>
