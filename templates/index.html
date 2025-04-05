@@ -583,8 +583,8 @@
                 <td>${item.item.description}</td>
                 <td>${window.userGroups && window.userGroups.includes("managers") && window.editLock ? `<input class="form-control" type="number" min="0" value="${window.cache.xfer_qnt[item.item.sku]}" id="quantity3-${item.item.sku}">` : window.cache.xfer_qnt[item.item.sku]}</td>
                 <td class="actions">
-                ${window.userGroups && window.userGroups.includes("managers") ? `<button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.username}', '${window.cache.xfer_qnt[item.item.sku]}', 'false')" class="btn btn-info" id="dispatchButton-${item.item.sku}">Dispatch</button>` : ''} 
-                <button ${window.userGroups && !window.userGroups.includes("shop_superusers") && !window.userGroups.includes("managers") && item.ordered ? 'disabled' : ''} onclick="completeTransfer('${item.item.sku}', '${item.shop_user.username}', $('#quantity3-${item.item.sku}').val(), 'true')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
+                ${window.userGroups && window.userGroups.includes("managers") ? `<button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.username}', 'false')" class="btn btn-info" id="dispatchButton-${item.item.sku}">Dispatch</button>` : ''} 
+                <button ${window.userGroups && !window.userGroups.includes("shop_superusers") && !window.userGroups.includes("managers") && item.ordered ? 'disabled' : ''} onclick="completeTransfer('${item.item.sku}', '${item.shop_user.username}', 'true')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
                 </td>
             </tr>`;
                         }
@@ -710,23 +710,24 @@
                     contentType: 'application/json',
                     headers: { 'X-CSRFToken': getCSRFToken() },
                     data: JSON.stringify(),
-                    success: () => {fetchItems(3); },
+                    success: () => { fetchItems(3); },
                     error: xhr => alert(xhr.responseJSON.detail)
                 });
             }
 
             /** Complete or cancel a transfer using AJAX POST */
-            const completeTransfer = (sku, shop_user_id, quantity, cancel) => {
+            const completeTransfer = (sku, shop_user_id, cancel) => {
+                const quantity = window.cache.xfer_qnt[sku];
                 $.ajax({
                     url: '/api/complete-transfer/',
                     type: "POST",
                     contentType: 'application/json',
                     headers: { 'X-CSRFToken': getCSRFToken() },
                     data: JSON.stringify({ sku, shop_user_id, quantity, cancel }),
-                    success: () => { [1,3].forEach(tn => fetchItems(tn)); },
+                    success: () => { [1, 3].forEach(tn => fetchItems(tn)); },
                     error: xhr => alert(xhr.responseJSON.detail)
                 });
-                window.cache.xfer_qnt.delete(sku);
+                delete window.cache.xfer_qnt[sku]; // Use the delete operator for plain objects
             };
 
             /** Change the background and font color of quantity fields in table 3 when modified */
@@ -743,12 +744,15 @@
 
             /** Toggle update mode.
          *  This updates the global window.editLock variable and the toggle UI.
-         *  It also updates all items and notifies the server.
+         *  It also updates all items tables.
          */
             const updateModeChangeHandler = () => {
                 // Update the global edit lock status based on the checkbox.
                 let current_lock_status = $('#updateModeToggle').prop('checked');
                 setEditLockStatus(current_lock_status);
+                [1, 2, 3].forEach((tn) => {
+                    fetchItems(tn);
+                });
             };
 
             /** Tailor the dashboard view based on user groups */

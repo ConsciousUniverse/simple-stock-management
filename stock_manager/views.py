@@ -256,9 +256,9 @@ def transfer_to_shop(
         ).delete()
     else:
         transfer_quantity = int(transfer_quantity)
+        if item.quantity < transfer_quantity:
+            raise ValueError("Not enough stock to transfer")
         if not complete:
-            if item.quantity < transfer_quantity:
-                raise ValueError("Not enough stock to transfer")
             if not TransferItem.objects.filter(shop_user=shop_user, item=item).exists():
                 TransferItem.objects.create(
                     item=item, shop_user=shop_user, quantity=transfer_quantity
@@ -270,7 +270,9 @@ def transfer_to_shop(
                 raise ValueError("Not enough stock to transfer")
             # transfer to ShopItem database
             shop_user = User.objects.get(id=shop_user)
-            shop_item, created = ShopItem.objects.get_or_create(item=item, shop_user=shop_user)
+            shop_item, created = ShopItem.objects.get_or_create(
+                item=item, shop_user=shop_user
+            )
             shop_item.quantity += transfer_quantity
             shop_item.save()
             # change quantity recorded for stock Item in warehouse
@@ -331,6 +333,8 @@ def complete_transfer(request):
     except ValueError as e:
         logger.debug("ValueError during transfer: %s", str(e))
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response(
         {"detail": "Transfer action successful."}, status=status.HTTP_200_OK
     )
