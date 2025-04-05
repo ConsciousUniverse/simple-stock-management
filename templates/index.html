@@ -122,6 +122,11 @@
             width: 50%;
         }
 
+        button#refreshInventory {
+            margin: 0 0 0 50%;
+            width: 50%;
+        }
+
         .pagination .page-link {
             background-color: var(--secondary-color);
             color: var(--primary-color);
@@ -344,8 +349,11 @@
         </div>
         <div class="col-12 shop-stock">
             <h2>Shop Stock</h2>
-            <input type="text" id="searchBox2" class="form-control mb-2" placeholder="Search Shop Items..."
-                onkeyup="search(2, this.value)">
+            <div class="d-flex justify-content-between mb-2">
+                <input type="text" id="searchBox2" class="form-control mb-2" placeholder="Search Shop Items..."
+                    onkeyup="search(2, this.value)">
+                <button id="refreshInventory" class="btn btn-info">Refresh Inventory</button>
+            </div>
             <table class="table table-bordered shopStockTable">
                 <thead>
                     <tr>
@@ -428,19 +436,21 @@
             // set edit lock status
             const setEditLockStatus = (status) => {
                 // set on server
-                $.ajax({
-                    url: '/api/set_edit_lock_status/',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    headers: { 'X-CSRFToken': getCSRFToken() },
-                    data: JSON.stringify({ edit_lock_status: status }),
-                    success: response => {
-                        // Update the global variable
-                        window.editLock = response.edit_lock;
-                        updateUIBasedOnEditLock();
-                        fetchItems(1);
-                    }
-                });
+                if (window.groups && window.groups.includes("managers")) {
+                    $.ajax({
+                        url: '/api/set_edit_lock_status/',
+                        type: 'POST',
+                        contentType: 'application/json',
+                        headers: { 'X-CSRFToken': getCSRFToken() },
+                        data: JSON.stringify({ edit_lock_status: status }),
+                        success: response => {
+                            // Update the global variable
+                            window.editLock = response.edit_lock;
+                            updateUIBasedOnEditLock();
+                            fetchItems(1);
+                        }
+                    });
+                }
             }
 
             /** Get the edit lock status from the server */
@@ -871,6 +881,7 @@
                 $('#submitTransferRequest').click(submitTransferRequest);
                 $('#updateModeToggle').change(updateModeChangeHandler); // Attach toggle handler
                 attachQntChangeColorUpdateListener(); // Attach listener for table 3 quantity changes
+                $('#refreshInventory').click(() => console.log('Refresh clicked'));
             });
         })();
     </script>
