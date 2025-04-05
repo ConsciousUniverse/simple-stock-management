@@ -117,14 +117,22 @@
             color: var(--primary-color);
         }
 
-        button#submitTransferRequest {
-            margin: 0 0 0 50%;
-            width: 50%;
-        }
 
         button#refreshInventory {
             margin: 0 0 0 50%;
             width: 50%;
+        }
+
+        button#refreshTransfersPending,
+        button#submitTransferRequest {
+            width: 25%;
+            margin: 0 5px;
+            /* Add small margin between buttons */
+        }
+
+        .d-flex.justify-content-between.mb-2 {
+            display: flex;
+            justify-content: space-between;
         }
 
         .pagination .page-link {
@@ -384,6 +392,7 @@
         <div class="d-flex justify-content-between mb-2">
             <input type="text" id="searchBox3" class="form-control mb-2" placeholder="Search Transfers Pending..."
                 onkeyup="search(3, this.value)">
+            <button id="refreshTransfersPending" class="btn btn-info">Refresh Transfers Status</button>
             <button id="submitTransferRequest" class="btn btn-info d-none">Send Transfer Request</button>
         </div>
         <table class="table table-bordered xfersPendingTable">
@@ -436,7 +445,7 @@
             // set edit lock status
             const setEditLockStatus = (status) => {
                 // set on server
-                if (window.groups && window.groups.includes("managers")) {
+                if (window.userGroups && window.userGroups.includes("managers")) {
                     $.ajax({
                         url: '/api/set_edit_lock_status/',
                         type: 'POST',
@@ -766,9 +775,9 @@
             };
 
             /** Tailor the dashboard view based on user groups */
-            const tailor_dashboard = (groups, username) => {
-                window.userGroups = groups;
-                window.loggedInUsername = username;
+            const tailor_dashboard = () => {
+                const groups = window.userGroups;
+                setEditLockStatus(false);
                 if (groups && groups.includes("managers")) {
                     $(".shop-stock").hide();
                     $(".warehouse-stock").addClass("col-md-12").removeClass("col-md-6");
@@ -800,7 +809,9 @@
                     success: data => {
                         if (data.username) {
                             $("#userStatus").html(`Hello ${data.username}<br/><a id="change_pw_link" href="{% url 'password_change' %}">Change my password</a>`);
-                            tailor_dashboard(data.groups, data.username);
+                            window.loggedInUsername = data.username;
+                            window.userGroups = data.groups;
+                            tailor_dashboard();
                             [1, 2, 3].forEach((tn) => fetchItems(tn));
                             $("#authLink").text("Logout")
                                 .off("click")
@@ -876,12 +887,12 @@
             // Document ready: initialize event handlers and fetch data.
             $(document).ready(() => {
                 checkAuthStatus();
-                setEditLockStatus(false);
                 $('#addItem').click(addItem);
                 $('#submitTransferRequest').click(submitTransferRequest);
                 $('#updateModeToggle').change(updateModeChangeHandler); // Attach toggle handler
                 attachQntChangeColorUpdateListener(); // Attach listener for table 3 quantity changes
-                $('#refreshInventory').click(() => console.log('Refresh clicked'));
+                $('#refreshInventory').click(() => [1, 2, 3].forEach(tn => fetchItems(tn)));
+                $('#refreshTransfersPending').click(() => [1, 2, 3].forEach(tn => fetchItems(tn)));
             });
         })();
     </script>

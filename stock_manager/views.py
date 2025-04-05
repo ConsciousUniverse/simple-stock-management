@@ -110,6 +110,8 @@ class ShopItemViewSet(viewsets.ModelViewSet):
                     queryset = queryset.order_by(Cast(ordering, IntegerField()))
                 else:
                     queryset = queryset.order_by(Lower(ordering))
+        else:
+            queryset = queryset.order_by("last_updated").reverse()
         return queryset
 
 
@@ -334,7 +336,7 @@ def complete_transfer(request):
         logger.debug("ValueError during transfer: %s", str(e))
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
-         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response(
         {"detail": "Transfer action successful."}, status=status.HTTP_200_OK
     )
