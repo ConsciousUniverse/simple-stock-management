@@ -456,7 +456,9 @@
                             // Update the global variable
                             window.editLock = response.edit_lock;
                             updateUIBasedOnEditLock();
-                            fetchItems(1);
+                            [1, 2, 3].forEach((tn) => {
+                                fetchItems(tn);
+                            });
                         }
                     });
                 }
@@ -464,14 +466,20 @@
 
             /** Get the edit lock status from the server */
             const getEditLockStatus = () => {
-                $.ajax({
-                    url: '/api/get_edit_lock_status/',
-                    type: 'GET',
-                    success: response => {
-                        window.editLock = response.edit_lock;
-                        updateUIBasedOnEditLock();
-                    },
-                    error: xhr => console.error("Failed to fetch edit lock status:", xhr.responseText)
+                return new Promise((resolve, reject) => {
+                    $.ajax({
+                        url: '/api/get_edit_lock_status/',
+                        type: 'GET',
+                        success: response => {
+                            window.editLock = response.edit_lock;
+                            updateUIBasedOnEditLock();
+                            resolve(); // Resolve the promise after success
+                        },
+                        error: xhr => {
+                            console.error("Failed to fetch edit lock status:", xhr.responseText);
+                            reject(xhr); // Reject the promise on error
+                        }
+                    });
                 });
             };
 
@@ -526,55 +534,55 @@
             };
 
             /** Fetch items via AJAX and populate the corresponding table */
-            const fetchItems = (tableNum) => {
-                getEditLockStatus();  // ensure edit lock status is up to date
-                let apiUrl = '';
-                let page = window.currentPageGlobals[tableNum - 1]['page']
-                let searchQuery = window.currentPageGlobals[tableNum - 1]['search']
-                let sortColumn = window.currentPageGlobals[tableNum - 1]['sort']
-                let sortOrder = window.currentPageGlobals[tableNum - 1]['order']
-                if (tableNum === 1) {
-                    apiUrl = '/api/items/';
-                } else if (tableNum === 2) {
-                    apiUrl = '/api/shop_items/';
-                } else if (tableNum === 3) {
-                    apiUrl = '/api/transfer_items/';
-                    if (window.userGroups && window.userGroups.includes("shop_users")) {
-                        apiUrl += `?shop_user_username=${window.loggedInUsername}`;
+            const fetchItems = async (tableNum) => {
+                try {
+                    await getEditLockStatus(); // Wait for getEditLockStatus to complete
+                    let apiUrl = '';
+                    let page = window.currentPageGlobals[tableNum - 1]['page'];
+                    let searchQuery = window.currentPageGlobals[tableNum - 1]['search'];
+                    let sortColumn = window.currentPageGlobals[tableNum - 1]['sort'];
+                    let sortOrder = window.currentPageGlobals[tableNum - 1]['order'];
+                    if (tableNum === 1) {
+                        apiUrl = '/api/items/';
+                    } else if (tableNum === 2) {
+                        apiUrl = '/api/shop_items/';
+                    } else if (tableNum === 3) {
+                        apiUrl = '/api/transfer_items/';
+                        if (window.userGroups && window.userGroups.includes("shop_users")) {
+                            apiUrl += `?shop_user_username=${window.loggedInUsername}`;
+                        }
                     }
-                }
-                const separator = apiUrl.includes('?') ? '&' : '?';
-                apiUrl += `${separator}page=${page}&search=${encodeURIComponent(searchQuery)}`;
-                if (sortColumn) {
-                    apiUrl += `&ordering=${sortOrder === 'asc' ? '' : '-'}${sortColumn}`;
-                }
-                $.get(apiUrl, data => {
-                    let $tableBody;
-                    if (tableNum === 1) $tableBody = $('#itemTable1');
-                    else if (tableNum === 2) $tableBody = $('#itemTable2');
-                    else if (tableNum === 3) $tableBody = $('#itemTable3');
-                    $tableBody.empty();
-                    data.results.forEach(item => {
-                        let row = '';
-                        if (tableNum === 1) {
-                            const quantityField = (window.userGroups && window.userGroups.includes("managers"))
-                                ? window.editLock
-                                    ? `<input type="number" min="0" value="${item.quantity}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="quantity">`
-                                    : item.quantity
-                                : item.quantity;
-                            const retailPriceField = (window.userGroups && window.userGroups.includes("managers"))
-                                ? window.editLock
-                                    ? `<input type="number" min="0" step="0.01" value="${item.retail_price}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="retail_price">`
-                                    : item.retail_price
-                                : item.retail_price;
-                            const descriptionField = (window.userGroups && window.userGroups.includes("managers"))
-                                ? window.editLock
-                                    ? `<input type="text" value="${item.description}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="description">`
-                                    : item.description
-                                : item.description;
-                            const transferQuantityField = (window.userGroups && window.userGroups.includes("shop_users"))
-                                ? !window.editLock ? `<input type="number" min="0" class="form-control wh_editable-field" value="" placeholder="How many units?" data-sku="${item.sku}" data-field="xfer_qnt">` : '<small>Warehouse under maintenance, please try again later.</small>' : '';
-                            row = `
+                    const separator = apiUrl.includes('?') ? '&' : '?';
+                    apiUrl += `${separator}page=${page}&search=${encodeURIComponent(searchQuery)}`;
+                    if (sortColumn) {
+                        apiUrl += `&ordering=${sortOrder === 'asc' ? '' : '-'}${sortColumn}`;
+                    }
+                    $.get(apiUrl, data => {
+                        let $tableBody;
+                        if (tableNum === 1) $tableBody = $('#itemTable1');
+                        else if (tableNum === 2) $tableBody = $('#itemTable2');
+                        else if (tableNum === 3) $tableBody = $('#itemTable3');
+                        $tableBody.empty();
+                        data.results.forEach(item => {
+                            let row = '';
+                            if (tableNum === 1) {
+                                const quantityField = (window.userGroups && window.userGroups.includes("managers"))
+                                    ? window.editLock
+                                        ? `<input type="number" min="0" value="${item.quantity}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="quantity">`
+                                        : item.quantity
+                                    : item.quantity;
+                                const retailPriceField = (window.userGroups && window.userGroups.includes("managers"))
+                                    ? window.editLock
+                                        ? `<input type="number" min="0" step="0.01" value="${item.retail_price}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="retail_price">`
+                                        : item.retail_price
+                                    : item.retail_price;
+                                const descriptionField = (window.userGroups && window.userGroups.includes("managers"))
+                                    ? window.editLock
+                                        ? `<input type="text" value="${item.description}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="description">`
+                                        : item.description
+                                    : item.description;
+                                const transferQuantityField = `<input type="number" min="0" class="form-control xferQntField wh_editable-field" ${window.editLock ? 'disabled' : ''} value="" placeholder="How many units?" data-sku="${item.sku}" data-field="xfer_qnt">`;
+                                row = `
             <tr>
                 <td>${item.sku}</td>
                 <td>${descriptionField}</td>
@@ -583,20 +591,20 @@
                 ${window.userGroups && window.userGroups.includes("shop_users") ? `<td>${transferQuantityField}</td>` : ''}
                 ${window.userGroups && window.userGroups.includes("managers") ? `<td class="actions"></td>` : ''}
             </tr>`;
-                        } else if (tableNum === 2) {
-                            row = `
+                            } else if (tableNum === 2) {
+                                row = `
             <tr>
                 <td>${item.item.sku}</td>
                 <td>${item.item.description}</td>
                 <td>${parseFloat(item.item.retail_price).toFixed(2)}</td>
                 <td><input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity2-${item.item.sku}" disabled></td>
             </tr>`;
-                        } else if (tableNum === 3) {
-                            if (window.cache.xfer_qnt[item.item.sku] === undefined) {
-                                window.cache.xfer_qnt[item.item.sku] = item.quantity;
-                            }
-                            const highlightClass = item.ordered && window.userGroups && window.userGroups.includes("shop_users") ? 'highlight-ordered' : '';
-                            row = `
+                            } else if (tableNum === 3) {
+                                if (window.cache.xfer_qnt[item.item.sku] === undefined) {
+                                    window.cache.xfer_qnt[item.item.sku] = item.quantity;
+                                }
+                                const highlightClass = item.ordered && window.userGroups && window.userGroups.includes("shop_users") ? 'highlight-ordered' : '';
+                                row = `
             <tr class="${highlightClass}" data-sku="${item.item.sku}" data-ordered="${item.ordered}" data-sku="${item.item.sku}" data-quantity="${item.quantity}">
                 ${window.userGroups && window.userGroups.includes("managers") ? `<td>${item.shop_user.username}</td>` : ''}
                 <td>${item.item.sku}</td>
@@ -607,17 +615,20 @@
                 <button ${window.userGroups && !window.userGroups.includes("shop_superusers") && !window.userGroups.includes("managers") && item.ordered ? 'disabled' : ''} onclick="completeTransfer('${item.item.sku}', '${item.shop_user.username}', 'true')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
                 </td>
             </tr>`;
-                        }
-                        $tableBody.append(row);
-                        // For managers: attach delete button in table 1, disabled if editLock is false.
-                        if (tableNum === 1 && window.userGroups && window.userGroups.includes("managers")) {
-                            $tableBody.find('tr:last .actions').append(`
+                            }
+                            $tableBody.append(row);
+                            // For managers: attach delete button in table 1, disabled if editLock is false.
+                            if (tableNum === 1 && window.userGroups && window.userGroups.includes("managers")) {
+                                $tableBody.find('tr:last .actions').append(`
             <button onclick="deleteItem('${item.sku}', 1)" class="btn btn-danger" ${window.editLock ? '' : 'disabled'}>Delete</button>
             `);
-                        }
+                            }
+                        });
+                        setupPagination(tableNum, data);
                     });
-                    setupPagination(tableNum, data);
-                });
+                } catch (error) {
+                    console.error("Error in fetchItems:", error);
+                }
             };
 
             /** Build and attach pagination controls */
@@ -770,16 +781,13 @@
                 // Update the global edit lock status based on the checkbox.
                 let current_lock_status = $('#updateModeToggle').prop('checked');
                 setEditLockStatus(current_lock_status);
-                [1, 2, 3].forEach((tn) => {
-                    fetchItems(tn);
-                });
             };
 
             /** Tailor the dashboard view based on user groups */
             const tailor_dashboard = () => {
                 const groups = window.userGroups;
-                setEditLockStatus(false);
                 if (groups && groups.includes("managers")) {
+                    setEditLockStatus(false);
                     $(".shop-stock").hide();
                     $(".warehouse-stock").addClass("col-md-12").removeClass("col-md-6");
                     $("#addItemSection, #updateModeSwitch").removeClass("d-none");
@@ -845,6 +853,7 @@
                 // Disable/enable fields and buttons based on edit lock
                 $('#itemTable1 input, #itemTable1 button').prop('disabled', !isLocked);
                 $('#updateModeToggle').prop('checked', isLocked);
+                $('.maintenanceMode').toggleClass('d-none', !isLocked);
             };
 
 
