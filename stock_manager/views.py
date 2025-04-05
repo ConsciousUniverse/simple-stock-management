@@ -268,17 +268,10 @@ def transfer_to_shop(
         else:
             if item.quantity < int(transfer_quantity):
                 raise ValueError("Not enough stock to transfer")
-            transfer_item = TransferItem.objects.get(
-                item=item,
-                shop_user=shop_user,
-            )
             # transfer to ShopItem database
             shop_user = User.objects.get(id=shop_user)
-            shop_item = ShopItem.objects.get(item=item, shop_user=shop_user)
+            shop_item, created = ShopItem.objects.get_or_create(item=item, shop_user=shop_user)
             shop_item.quantity += transfer_quantity
-            shop_item = ShopItem(
-                item=item, shop_user=shop_user, quantity=transfer_quantity
-            )
             shop_item.save()
             # change quantity recorded for stock Item in warehouse
             item.quantity -= transfer_quantity
