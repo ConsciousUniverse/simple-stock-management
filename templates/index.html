@@ -340,6 +340,9 @@
                     <span class="slider"></span>
                 </label>
             </div>
+            <div class="alert alert-danger text-center w-100 maintenanceMode" role="alert">
+                Warehouse maintenance is in progress.
+            </div>
             <table class="table table-bordered whTable">
                 <thead>
                     <tr>
@@ -729,7 +732,10 @@
                     headers: { 'X-CSRFToken': getCSRFToken() },
                     data: JSON.stringify({ sku, transfer_quantity: xfer_qnt }),
                     success: () => { fetchItems(3); },
-                    error: xhr => alert(xhr.responseJSON.detail)
+                    error: xhr => {
+                        alert(xhr.responseJSON.detail);
+                        fetchItems(1);
+                    }
                 });
             };
 
