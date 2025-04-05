@@ -126,7 +126,7 @@
         button#refreshTransfersPending,
         button#submitTransferRequest {
             width: 25%;
-            margin: 0 5px;
+            margin: 0 3px;
             /* Add small margin between buttons */
         }
 
@@ -465,7 +465,7 @@
             /** Get the edit lock status from the server */
             const getEditLockStatus = () => {
                 $.ajax({
-                    url: '/api/getEditLockStatus/',
+                    url: '/api/get_edit_lock_status/',
                     type: 'GET',
                     success: response => {
                         window.editLock = response.edit_lock;
@@ -527,6 +527,7 @@
 
             /** Fetch items via AJAX and populate the corresponding table */
             const fetchItems = (tableNum) => {
+                getEditLockStatus();  // ensure edit lock status is up to date
                 let apiUrl = '';
                 let page = window.currentPageGlobals[tableNum - 1]['page']
                 let searchQuery = window.currentPageGlobals[tableNum - 1]['search']
