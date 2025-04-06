@@ -489,6 +489,20 @@
             // Global for interval IDs
             window.intervalIDs = {};
 
+            // Add a debounce helper function
+            const debounce = (func, wait) => {
+                let timeout;
+                return function(...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), wait);
+                }
+            };
+
+            // Wrap fetchItems with debounce
+            const debouncedFetchItems = debounce((tableNum) => {
+                fetchItems(tableNum);
+            }, 150);
+
             // set edit lock status
             const setEditLockStatus = (status) => {
                 // set on server
@@ -557,7 +571,7 @@
                 if (search !== null) {
                     window.currentPageGlobals[tableNum - 1]['search'] = search;
                 }
-                fetchItems(tableNum);
+                debouncedFetchItems(tableNum);
             }
 
             /** Search */
@@ -675,14 +689,11 @@
                 <td><input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity2-${item.item.sku}" data-shop_user="${item.shop_user.username}" disabled></td>
             </tr>`;
                             } else if (tableNum === 3) {
-                                if (item.shop_user && item.shop_user.username) {
-                                    const shop_user = item.shop_user.username;
-                                    setXferVals(shop_user, item.item.sku, item.quantity);
-                                }
                                 const highlightClass = item.ordered && window.userGroups && window.userGroups.includes("shop_users") ? 'highlight-ordered' : '';
                                 const shop_user = item.shop_user && item.shop_user.username ? item.shop_user.username : window.loggedInUsername;
+                                setXferVals(shop_user, item.item.sku, item.quantity);
                                 row = `
-            <tr class="${highlightClass}" data-sku="${item.item.sku}" data-ordered="${item.ordered}" data-sku="${item.item.sku}" data-quantity="${item.quantity}">
+            <tr class="${highlightClass}" data-ordered="${item.ordered}" data-sku="${item.item.sku}" data-quantity="${item.quantity}">
                 ${window.userGroups && window.userGroups.includes("managers") ? `<td>${shop_user}</td>` : ''}
                 <td>${item.item.sku}</td>
                 <td>${item.item.description}</td>
