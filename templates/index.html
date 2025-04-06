@@ -661,7 +661,7 @@
     <td>${item.item.sku}</td>
     <td>${item.item.description}</td>
     <td>${parseFloat(item.item.retail_price).toFixed(2)}</td>
-    <td><input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity2-${item.item.sku}" data-shop_user="${item.shop_user.username}" disabled></td>
+    <td><input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity2-${item.item.sku}" data-shop_user_id="${item.shop_user.username}" disabled></td>
 </tr>`;
                             } else if (tableNum === 3) {
                                 const highlightClass = item.ordered && window.userGroups && window.userGroups.includes("shop_users") ? 'highlight-ordered' : '';
@@ -672,7 +672,7 @@
     ${window.userGroups && window.userGroups.includes("managers") ? `<td>${shop_user}</td>` : ''}
     <td>${item.item.sku}</td>
     <td>${item.item.description}</td>
-    <td>${window.userGroups && window.userGroups.includes("managers") && window.editLock ? `<input class="form-control" type="number" min="0" value="${getXferVals(shop_user, item.item.sku)}" id="quantity3-${item.item.sku}">` : getXferVals(shop_user, item.item.sku)}</td>
+    <td>${window.userGroups && window.userGroups.includes("managers") && window.editLock ? `<input class="form-control" type="number" min="0" value="${getXferVals(shop_user, item.item.sku)}" id="quantity3-${item.item.sku}" data-shop_user_id="${item.shop_user.username}">` : getXferVals(shop_user, item.item.sku)}</td>
     <td class="actions">
     ${window.userGroups && window.userGroups.includes("managers") ? `<button onclick="completeTransfer('${item.item.sku}', '${shop_user}', 'false')" class="btn btn-info" id="dispatchButton-${item.item.sku}">Dispatch</button>` : ''} 
     <button ${window.userGroups && !window.userGroups.includes("shop_superusers") && !window.userGroups.includes("managers") && item.ordered ? 'disabled' : ''} onclick="completeTransfer('${item.item.sku}', '${shop_user}', 'true')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
@@ -951,8 +951,8 @@
             $(document).on("blur", `input[id^="quantity3-"]`, function () {
                 const id = $(this).attr('id')
                 const sku = id.replace('quantity3-', '')
-                const shop_user_id = $(this).data('shop_user_id');
-                setXferVals(shop_user_id, sku, $(this).val());
+                const shopUserID = $(this).data('shop_user_id');
+                setXferVals(shopUserID, sku, $(this).val());
             });
 
             $(document).ready(() => {
