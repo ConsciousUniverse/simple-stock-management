@@ -644,22 +644,27 @@
                 <td>${item.item.sku}</td>
                 <td>${item.item.description}</td>
                 <td>${parseFloat(item.item.retail_price).toFixed(2)}</td>
-                <td><input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity2-${item.item.sku}" disabled></td>
+                <td><input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity2-${item.item.sku}" data-shop_user="${item.shop_user.username}" disabled></td>
             </tr>`;
                             } else if (tableNum === 3) {
-                                if (window.cache.xfer_qnt[item.item.sku] === undefined) {
-                                    window.cache.xfer_qnt[item.item.sku] = item.quantity;
+                                if (item.shop_user && item.shop_user.username) {
+                                    const shop_user = item.shop_user.username;
+                                    if (!window.cache.xfer_qnt[shop_user]) {
+                                        window.cache.xfer_qnt[shop_user] = {};
+                                    }
+                                    window.cache.xfer_qnt[shop_user][item.item.sku] = item.quantity;
                                 }
                                 const highlightClass = item.ordered && window.userGroups && window.userGroups.includes("shop_users") ? 'highlight-ordered' : '';
+                                const shop_user = item.shop_user && item.shop_user.username ? item.shop_user.username : window.loggedInUsername;
                                 row = `
             <tr class="${highlightClass}" data-sku="${item.item.sku}" data-ordered="${item.ordered}" data-sku="${item.item.sku}" data-quantity="${item.quantity}">
-                ${window.userGroups && window.userGroups.includes("managers") ? `<td>${item.shop_user.username}</td>` : ''}
+                ${window.userGroups && window.userGroups.includes("managers") ? `<td>${shop_user}</td>` : ''}
                 <td>${item.item.sku}</td>
                 <td>${item.item.description}</td>
-                <td>${window.userGroups && window.userGroups.includes("managers") && window.editLock ? `<input class="form-control" type="number" min="0" value="${window.cache.xfer_qnt[item.item.sku]}" id="quantity3-${item.item.sku}">` : window.cache.xfer_qnt[item.item.sku]}</td>
+                <td>${window.userGroups && window.userGroups.includes("managers") && window.editLock ? `<input class="form-control" type="number" min="0" value="${window.cache.xfer_qnt[shop_user]?.[item.item.sku] || ''}" id="quantity3-${item.item.sku}">` : window.cache.xfer_qnt[shop_user]?.[item.item.sku] || ''}</td>
                 <td class="actions">
-                ${window.userGroups && window.userGroups.includes("managers") ? `<button onclick="completeTransfer('${item.item.sku}', '${item.shop_user.username}', 'false')" class="btn btn-info" id="dispatchButton-${item.item.sku}">Dispatch</button>` : ''} 
-                <button ${window.userGroups && !window.userGroups.includes("shop_superusers") && !window.userGroups.includes("managers") && item.ordered ? 'disabled' : ''} onclick="completeTransfer('${item.item.sku}', '${item.shop_user.username}', 'true')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
+                ${window.userGroups && window.userGroups.includes("managers") ? `<button onclick="completeTransfer('${item.item.sku}', '${shop_user}', 'false')" class="btn btn-info" id="dispatchButton-${item.item.sku}">Dispatch</button>` : ''} 
+                <button ${window.userGroups && !window.userGroups.includes("shop_superusers") && !window.userGroups.includes("managers") && item.ordered ? 'disabled' : ''} onclick="completeTransfer('${item.item.sku}', '${shop_user}', 'true')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
                 </td>
             </tr>`;
                             }
@@ -798,7 +803,7 @@
 
             /** Complete or cancel a transfer using AJAX POST */
             const completeTransfer = (sku, shop_user_id, cancel) => {
-                const quantity = window.cache.xfer_qnt[sku];
+                const quantity = window.cache.xfer_qnt[shop_user_id][sku];
                 $.ajax({
                     url: '/api/complete-transfer/',
                     type: "POST",
@@ -808,7 +813,7 @@
                     success: () => { [1, 3].forEach(tn => fetchItems(tn)); },
                     error: xhr => alert(xhr.responseJSON.detail)
                 });
-                delete window.cache.xfer_qnt[sku]; // Use the delete operator for plain objects
+                delete window.cache.xfer_qnt[shop_user_id][sku]; // Use the delete operator for plain objects
             };
 
             /** Change the background and font color of quantity fields in table 3 when modified */
@@ -941,8 +946,9 @@
             $(document).on("blur", `input[id^="quantity3-"]`, function () {
                 const id = $(this).attr('id')
                 const sku = id.replace('quantity3-', '')
+                const shop_user_id = $(this).data('shop_user_id');
                 // Update cache for this specific SKU.
-                window.cache.xfer_qnt[sku] = $(this).val();
+                window.cache.xfer_qnt[shop_user_id][sku] = $(this).val();
             });
 
             // Document ready: initialize event handlers and fetch data.
