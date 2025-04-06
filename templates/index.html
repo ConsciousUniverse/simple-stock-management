@@ -483,7 +483,7 @@
 
             // Globals for other cache requirements
             window.cache = {
-                'xfer_qnt': {}
+                'xfer_qnt': new Map()
             };
 
             // Global for interval IDs
@@ -580,6 +580,34 @@
                 $('#updateModeToggle').prop('checked', window.editLock);
             };
 
+            /** Set nested cache map values for xfer_qty */
+            const setXferVals = (shop_user, sku, qty) => {
+                const map = window.cache.xfer_qnt;
+                if (!map.has(shop_user)) {
+                    map.set(shop_user, new Map());
+                }
+                map.get(shop_user).set(sku, qty);
+            }
+
+            /** Get nested chage map values for xfer_qty */
+            const getXferVals = (shop_user, sku) => {
+                const map = window.cache.xfer_qnt
+                return map.get(shop_user)?.get(sku);
+            }
+
+            /** Delete xfer_qnt values from cache */
+            const deleteXferVals = (shop_user, sku) => {
+                const map = window.cache.xfer_qnt
+                if (!map.has(shop_user)) return;
+
+                const userMap = map.get(shop_user);
+                userMap.delete(sku);
+
+                if (userMap.size === 0) {
+                    map.delete(shop_user);
+                }
+            }
+
             /** Fetch items via AJAX and populate the corresponding table */
             const fetchItems = async (tableNum) => {
                 try {
@@ -649,10 +677,7 @@
                             } else if (tableNum === 3) {
                                 if (item.shop_user && item.shop_user.username) {
                                     const shop_user = item.shop_user.username;
-                                    if (!window.cache.xfer_qnt[shop_user]) {
-                                        window.cache.xfer_qnt[shop_user] = {};
-                                    }
-                                    window.cache.xfer_qnt[shop_user][item.item.sku] = item.quantity;
+                                    setXferVals(shop_user, item.item.sku, item.quantity);
                                 }
                                 const highlightClass = item.ordered && window.userGroups && window.userGroups.includes("shop_users") ? 'highlight-ordered' : '';
                                 const shop_user = item.shop_user && item.shop_user.username ? item.shop_user.username : window.loggedInUsername;
@@ -661,7 +686,7 @@
                 ${window.userGroups && window.userGroups.includes("managers") ? `<td>${shop_user}</td>` : ''}
                 <td>${item.item.sku}</td>
                 <td>${item.item.description}</td>
-                <td>${window.userGroups && window.userGroups.includes("managers") && window.editLock ? `<input class="form-control" type="number" min="0" value="${window.cache.xfer_qnt[shop_user]?.[item.item.sku] || ''}" id="quantity3-${item.item.sku}">` : window.cache.xfer_qnt[shop_user]?.[item.item.sku] || ''}</td>
+                <td>${window.userGroups && window.userGroups.includes("managers") && window.editLock ? `<input class="form-control" type="number" min="0" value="${getXferVals(shop_user, item.item.sku)}" id="quantity3-${item.item.sku}">` : getXferVals(shop_user, item.item.sku)}</td>
                 <td class="actions">
                 ${window.userGroups && window.userGroups.includes("managers") ? `<button onclick="completeTransfer('${item.item.sku}', '${shop_user}', 'false')" class="btn btn-info" id="dispatchButton-${item.item.sku}">Dispatch</button>` : ''} 
                 <button ${window.userGroups && !window.userGroups.includes("shop_superusers") && !window.userGroups.includes("managers") && item.ordered ? 'disabled' : ''} onclick="completeTransfer('${item.item.sku}', '${shop_user}', 'true')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
@@ -803,7 +828,7 @@
 
             /** Complete or cancel a transfer using AJAX POST */
             const completeTransfer = (sku, shop_user_id, cancel) => {
-                const quantity = window.cache.xfer_qnt[shop_user_id][sku];
+                const quantity = getXferVals(shop_user_id, sku);
                 $.ajax({
                     url: '/api/complete-transfer/',
                     type: "POST",
@@ -813,7 +838,7 @@
                     success: () => { [1, 3].forEach(tn => fetchItems(tn)); },
                     error: xhr => alert(xhr.responseJSON.detail)
                 });
-                delete window.cache.xfer_qnt[shop_user_id][sku]; // Use the delete operator for plain objects
+                deleteXferVals(shop_user_id, sku);
             };
 
             /** Change the background and font color of quantity fields in table 3 when modified */
@@ -948,7 +973,7 @@
                 const sku = id.replace('quantity3-', '')
                 const shop_user_id = $(this).data('shop_user_id');
                 // Update cache for this specific SKU.
-                window.cache.xfer_qnt[shop_user_id][sku] = $(this).val();
+                setXferVals(shop_user_id, sku, $(this).val());
             });
 
             // Document ready: initialize event handlers and fetch data.
