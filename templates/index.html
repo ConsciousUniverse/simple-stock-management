@@ -16,7 +16,6 @@
             --background-color: #003200;
             --text-color: #ffffff;
             --border-radius: 5px;
-            /* Slightly rounded corners */
         }
 
         body {
@@ -57,7 +56,7 @@
         }
 
         .btn-outline-primary:hover {
-            background-color: var (--secondary-color);
+            background-color: var(--secondary-color);
             color: var(--primary-color);
         }
 
@@ -70,7 +69,7 @@
 
         .btn-warning:hover {
             background-color: var(--primary-color);
-            border-color: var (--primary-color);
+            border-color: var(--primary-color);
             color: var(--secondary-color);
         }
 
@@ -117,7 +116,6 @@
             color: var(--primary-color);
         }
 
-
         button#refreshInventory {
             margin: 0 0 0 50%;
             width: 50%;
@@ -127,21 +125,17 @@
         button#submitTransferRequest {
             width: 25%;
             margin: 0 3px;
-            /* Add small margin between buttons */
         }
 
         .d-flex.justify-content-between.mb-2 {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            /* Ensure vertical alignment */
             gap: 10px;
-            /* Add spacing between elements */
         }
 
         input#searchBox1 {
             flex-grow: 1;
-            /* Allow the search bar to take up available space */
         }
 
         .pagination .page-link {
@@ -236,7 +230,6 @@
         .btn-danger {
             background-color: rgb(187, 0, 0);
             border-color: rgb(135, 0, 0);
-            ;
             color: white;
         }
 
@@ -246,15 +239,10 @@
 
         button#refreshWarehouse {
             height: 38px;
-            /* Match the height of other elements */
             width: fit-content;
-            /* Dynamically adjust width based on content */
             padding: 0 15px;
-            /* Add padding for better appearance */
             text-align: center;
-            /* Center the text */
             white-space: nowrap;
-            /* Prevent text wrapping */
         }
 
         .toggle-switch {
@@ -314,7 +302,7 @@
         }
 
         div.shopStockSearchDiv {
-            width: 100%
+            width: 100%;
         }
 
         #userStatus {
@@ -343,7 +331,6 @@
         #searchBox1,
         #refreshWarehouse {
             height: 38px;
-            /* Match the height of other elements */
         }
     </style>
 </head>
@@ -352,8 +339,7 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
         <a class="navbar-brand" href="#">
-            <img src="{% static 'img/logo.webp' %}" alt="Logo" class="spin-logo"
-                style="max-width: 95px; max-height: 95px;">
+            <img src="{% static 'img/logo.webp' %}" alt="Logo" class="spin-logo" style="max-width: 95px; max-height: 95px;">
         </a>
         <div class="navbar-collapse collapse justify-content-center">
             <span class="navbar-text h1">Simpler Stock Management</span>
@@ -373,13 +359,12 @@
         <h2 class="mb-4">Warehouse Stock</h2>
         <div class="col-12 warehouse-stock mb-4">
             <div class="d-flex justify-content-between mb-2">
-                <input type="text" id="searchBox1" class="form-control flex-fill"
-                    placeholder="Search Warehouse Items..." onkeyup="search(1, this.value)">
+                <input type="text" id="searchBox1" class="form-control flex-fill" placeholder="Search Warehouse Items..."
+                    onkeyup="search(1, this.value)">
                 <label id="updateModeSwitch" class="toggle-switch ms-2 d-none">
                     <input type="checkbox" id="updateModeToggle">
                     <span class="slider"></span>
                 </label>
-                <!-- Add Refresh Warehouse button -->
                 <button id="refreshWarehouse" class="btn btn-info d-none">Refresh Warehouse</button>
             </div>
             <div class="alert alert-danger text-center w-100 maintenanceMode" role="alert">
@@ -405,9 +390,7 @@
             <div class="d-flex align-items-center mb-2 shopStockSearchDiv">
                 <input type="text" id="searchBox2" class="form-control flex-fill" placeholder="Search Shop Items..."
                     onkeyup="search(2, this.value)">
-                <button id="refreshInventory" class="btn btn-info">
-                    Refresh Inventory
-                </button>
+                <button id="refreshInventory" class="btn btn-info">Refresh Inventory</button>
             </div>
             <table class="table table-bordered shopStockTable">
                 <thead>
@@ -481,31 +464,20 @@
                 search: ''
             }];
 
-            // Globals for other cache requirements
+            // Global cache for transfer quantities.
             window.cache = {
                 'xfer_qnt': new Map()
             };
 
-            // Global for interval IDs
-            window.intervalIDs = {};
-
-            // Add a debounce helper function
-            const debounce = (func, wait) => {
-                let timeout;
-                return function(...args) {
-                    clearTimeout(timeout);
-                    timeout = setTimeout(() => func.apply(this, args), wait);
-                }
+            // Global object to hold active AJAX requests for each table.
+            window.currentFetchRequests = {
+                1: null,
+                2: null,
+                3: null
             };
 
-            // Wrap fetchItems with debounce
-            const debouncedFetchItems = debounce((tableNum) => {
-                fetchItems(tableNum);
-            }, 150);
-
-            // set edit lock status
+            // Set edit lock status on the server.
             const setEditLockStatus = (status) => {
-                // set on server
                 if (window.userGroups && window.userGroups.includes("managers")) {
                     $.ajax({
                         url: '/api/set_edit_lock_status/',
@@ -514,7 +486,6 @@
                         headers: { 'X-CSRFToken': getCSRFToken() },
                         data: JSON.stringify({ edit_lock_status: status }),
                         success: response => {
-                            // Update the global variable
                             window.editLock = response.edit_lock;
                             updateUIBasedOnEditLock();
                             [1, 2, 3].forEach((tn) => {
@@ -523,9 +494,9 @@
                         }
                     });
                 }
-            }
+            };
 
-            /** Get the edit lock status from the server */
+            // Get the edit lock status from the server.
             const getEditLockStatus = () => {
                 return new Promise((resolve, reject) => {
                     $.ajax({
@@ -534,30 +505,30 @@
                         success: response => {
                             window.editLock = response.edit_lock;
                             updateUIBasedOnEditLock();
-                            resolve(); // Resolve the promise after success
+                            resolve();
                         },
                         error: xhr => {
                             console.error("Failed to fetch edit lock status:", xhr.responseText);
-                            reject(xhr); // Reject the promise on error
+                            reject(xhr);
                         }
                     });
                 });
             };
 
-            /** Helper: Get CSRF token from cookies */
+            // Get CSRF token from cookies.
             const getCSRFToken = () => {
                 return document.cookie.split('; ')
                     .find(row => row.startsWith('csrftoken='))?.split('=')[1];
             };
 
-            // Ensure CSRF token is included in all AJAX requests
+            // Ensure CSRF token is included in all AJAX requests.
             $.ajaxSetup({
                 beforeSend: function (xhr, settings) {
                     xhr.setRequestHeader("X-CSRFToken", getCSRFToken());
                 }
             });
 
-            /** Update global page variables */
+            // Update global page variables and trigger a new fetch.
             const updatePageGlobals = (tableNum, page = null, sort = null, order = null, search = null) => {
                 if (page !== null) {
                     window.currentPageGlobals[tableNum - 1]['page'] = page;
@@ -571,15 +542,15 @@
                 if (search !== null) {
                     window.currentPageGlobals[tableNum - 1]['search'] = search;
                 }
-                debouncedFetchItems(tableNum);
-            }
+                fetchItems(tableNum);
+            };
 
-            /** Search */
+            // Search function for tables.
             const search = (tableNum, query) => {
                 updatePageGlobals(tableNum, 1, null, null, query);
-            }
+            };
 
-            /** Sorting functionality: toggles sort order and refetches items */
+            // Sorting functionality.
             const sortTable = (tableNum, column) => {
                 const $table = $(`#itemTable${tableNum}`);
                 const currentOrder = $table.data('sortOrder') || 'asc';
@@ -589,43 +560,40 @@
                 updatePageGlobals(tableNum, 1, column, newOrder, searchVal);
             };
 
-            /** Update the update mode toggle button state based on window.editLock */
+            // Update the update mode toggle button state.
             const setUpdateModeButtonState = () => {
                 $('#updateModeToggle').prop('checked', window.editLock);
             };
 
-            /** Set nested cache map values for xfer_qty */
+            // Set nested cache map values for transfer quantities.
             const setXferVals = (shop_user, sku, qty) => {
                 const map = window.cache.xfer_qnt;
                 if (!map.has(shop_user)) {
                     map.set(shop_user, new Map());
                 }
                 map.get(shop_user).set(sku, qty);
-            }
+            };
 
-            /** Get nested chage map values for xfer_qty */
+            // Get nested cache map values for transfer quantities.
             const getXferVals = (shop_user, sku) => {
-                const map = window.cache.xfer_qnt
-                return map.get(shop_user)?.get(sku);
-            }
+                return window.cache.xfer_qnt.get(shop_user)?.get(sku);
+            };
 
-            /** Delete xfer_qnt values from cache */
+            // Delete transfer quantity values from cache.
             const deleteXferVals = (shop_user, sku) => {
-                const map = window.cache.xfer_qnt
+                const map = window.cache.xfer_qnt;
                 if (!map.has(shop_user)) return;
-
                 const userMap = map.get(shop_user);
                 userMap.delete(sku);
-
                 if (userMap.size === 0) {
                     map.delete(shop_user);
                 }
-            }
+            };
 
-            /** Fetch items via AJAX and populate the corresponding table */
+            // Fetch items via AJAX and populate the corresponding table.
             const fetchItems = async (tableNum) => {
                 try {
-                    await getEditLockStatus(); // Wait for getEditLockStatus to complete
+                    await getEditLockStatus();
                     let apiUrl = '';
                     let page = window.currentPageGlobals[tableNum - 1]['page'];
                     let searchQuery = window.currentPageGlobals[tableNum - 1]['search'];
@@ -646,7 +614,14 @@
                     if (sortColumn) {
                         apiUrl += `&ordering=${sortOrder === 'asc' ? '' : '-'}${sortColumn}`;
                     }
-                    $.get(apiUrl, data => {
+
+                    // Cancel any existing request for this table.
+                    if (window.currentFetchRequests[tableNum]) {
+                        window.currentFetchRequests[tableNum].abort();
+                    }
+
+                    // Make the AJAX call and store its jqXHR.
+                    const xhr = $.get(apiUrl, data => {
                         let $tableBody;
                         if (tableNum === 1) $tableBody = $('#itemTable1');
                         else if (tableNum === 2) $tableBody = $('#itemTable2');
@@ -672,54 +647,57 @@
                                     : item.description;
                                 const transferQuantityField = `<input type="number" min="0" class="form-control xferQntField wh_editable-field" ${window.editLock ? 'disabled' : ''} value="" placeholder="How many units?" data-sku="${item.sku}" data-field="xfer_qnt">`;
                                 row = `
-            <tr>
-                <td>${item.sku}</td>
-                <td>${descriptionField}</td>
-                <td>${retailPriceField}</td>
-                <td>${quantityField}</td>
-                ${window.userGroups && window.userGroups.includes("shop_users") ? `<td>${transferQuantityField}</td>` : ''}
-                ${window.userGroups && window.userGroups.includes("managers") ? `<td class="actions"></td>` : ''}
-            </tr>`;
+<tr>
+    <td>${item.sku}</td>
+    <td>${descriptionField}</td>
+    <td>${retailPriceField}</td>
+    <td>${quantityField}</td>
+    ${window.userGroups && window.userGroups.includes("shop_users") ? `<td>${transferQuantityField}</td>` : ''}
+    ${window.userGroups && window.userGroups.includes("managers") ? `<td class="actions"></td>` : ''}
+</tr>`;
                             } else if (tableNum === 2) {
                                 row = `
-            <tr>
-                <td>${item.item.sku}</td>
-                <td>${item.item.description}</td>
-                <td>${parseFloat(item.item.retail_price).toFixed(2)}</td>
-                <td><input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity2-${item.item.sku}" data-shop_user="${item.shop_user.username}" disabled></td>
-            </tr>`;
+<tr>
+    <td>${item.item.sku}</td>
+    <td>${item.item.description}</td>
+    <td>${parseFloat(item.item.retail_price).toFixed(2)}</td>
+    <td><input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity2-${item.item.sku}" data-shop_user="${item.shop_user.username}" disabled></td>
+</tr>`;
                             } else if (tableNum === 3) {
                                 const highlightClass = item.ordered && window.userGroups && window.userGroups.includes("shop_users") ? 'highlight-ordered' : '';
                                 const shop_user = item.shop_user && item.shop_user.username ? item.shop_user.username : window.loggedInUsername;
                                 setXferVals(shop_user, item.item.sku, item.quantity);
                                 row = `
-            <tr class="${highlightClass}" data-ordered="${item.ordered}" data-sku="${item.item.sku}" data-quantity="${item.quantity}">
-                ${window.userGroups && window.userGroups.includes("managers") ? `<td>${shop_user}</td>` : ''}
-                <td>${item.item.sku}</td>
-                <td>${item.item.description}</td>
-                <td>${window.userGroups && window.userGroups.includes("managers") && window.editLock ? `<input class="form-control" type="number" min="0" value="${getXferVals(shop_user, item.item.sku)}" id="quantity3-${item.item.sku}">` : getXferVals(shop_user, item.item.sku)}</td>
-                <td class="actions">
-                ${window.userGroups && window.userGroups.includes("managers") ? `<button onclick="completeTransfer('${item.item.sku}', '${shop_user}', 'false')" class="btn btn-info" id="dispatchButton-${item.item.sku}">Dispatch</button>` : ''} 
-                <button ${window.userGroups && !window.userGroups.includes("shop_superusers") && !window.userGroups.includes("managers") && item.ordered ? 'disabled' : ''} onclick="completeTransfer('${item.item.sku}', '${shop_user}', 'true')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
-                </td>
-            </tr>`;
+<tr class="${highlightClass}" data-ordered="${item.ordered}" data-sku="${item.item.sku}" data-quantity="${item.quantity}">
+    ${window.userGroups && window.userGroups.includes("managers") ? `<td>${shop_user}</td>` : ''}
+    <td>${item.item.sku}</td>
+    <td>${item.item.description}</td>
+    <td>${window.userGroups && window.userGroups.includes("managers") && window.editLock ? `<input class="form-control" type="number" min="0" value="${getXferVals(shop_user, item.item.sku)}" id="quantity3-${item.item.sku}">` : getXferVals(shop_user, item.item.sku)}</td>
+    <td class="actions">
+    ${window.userGroups && window.userGroups.includes("managers") ? `<button onclick="completeTransfer('${item.item.sku}', '${shop_user}', 'false')" class="btn btn-info" id="dispatchButton-${item.item.sku}">Dispatch</button>` : ''} 
+    <button ${window.userGroups && !window.userGroups.includes("shop_superusers") && !window.userGroups.includes("managers") && item.ordered ? 'disabled' : ''} onclick="completeTransfer('${item.item.sku}', '${shop_user}', 'true')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
+    </td>
+</tr>`;
                             }
                             $tableBody.append(row);
-                            // For managers: attach delete button in table 1, disabled if editLock is false.
                             if (tableNum === 1 && window.userGroups && window.userGroups.includes("managers")) {
                                 $tableBody.find('tr:last .actions').append(`
-            <button onclick="deleteItem('${item.sku}', 1)" class="btn btn-danger" ${window.editLock ? '' : 'disabled'}>Delete</button>
-            `);
+<button onclick="deleteItem('${item.sku}', 1)" class="btn btn-danger" ${window.editLock ? '' : 'disabled'}>Delete</button>
+`);
                             }
                         });
                         setupPagination(tableNum, data);
                     });
+
+                    // Store the active request.
+                    window.currentFetchRequests[tableNum] = xhr;
+
                 } catch (error) {
                     console.error("Error in fetchItems:", error);
                 }
             };
 
-            /** Build and attach pagination controls */
+            // Build and attach pagination controls.
             const setupPagination = (tn, data) => {
                 let $paginationDiv;
                 if (tn === 1) $paginationDiv = $('#paginationControls1');
@@ -739,8 +717,8 @@
                 }
                 for (let i = startPage; i <= endPage; i++) {
                     paginationHtml += `<li class="page-item ${i === currentPage ? 'active' : ''}">
-                                  <a class="page-link" href="#" onclick="updatePageGlobals(${tn}, ${i}, null, null, null)">${i}</a>
-                                 </li>`;
+                      <a class="page-link" href="#" onclick="updatePageGlobals(${tn}, ${i}, null, null, null)">${i}</a>
+                     </li>`;
                 }
                 if (endPage < totalPages) {
                     paginationHtml += `<li class="page-item"><a class="page-link" href="#" onclick="updatePageGlobals(${tn}, ${startPage + 5}, null, null, null)">Next</a></li>`;
@@ -749,7 +727,7 @@
                 $paginationDiv.append(paginationHtml);
             };
 
-            /** Add a new item using AJAX POST */
+            // Add a new item using AJAX POST.
             const addItem = () => {
                 const retailPrice = $('#retail_price').val();
                 if (!/^\d+(\.\d{1,2})?$/.test(retailPrice)) {
@@ -775,7 +753,7 @@
                 });
             };
 
-            /** Update an item using AJAX PUT */
+            // Update an item using AJAX PUT.
             const updateItem = (tableNum, sku, fieldName, value) => {
                 if (tableNum == 1) {
                     if (fieldName == 'retail_price' && !/^\d+(\.\d{1,2})?$/.test(value)) {
@@ -797,7 +775,7 @@
                 }
             };
 
-            /** Delete an item using AJAX DELETE */
+            // Delete an item using AJAX DELETE.
             const deleteItem = (sku, tableNum) => {
                 const apiUrl = tableNum === 1 ? `/api/items/${sku}/` : `/api/shop_items/${sku}/`;
                 $.ajax({
@@ -808,7 +786,7 @@
                 });
             };
 
-            /** Transfer an item using AJAX POST */
+            // Transfer an item using AJAX POST.
             const transferItem = (sku, xfer_qnt) => {
                 $.ajax({
                     url: '/api/transfer/',
@@ -824,7 +802,7 @@
                 });
             };
 
-            /** Submit order event handler */
+            // Submit transfer request.
             const submitTransferRequest = () => {
                 $.ajax({
                     url: '/api/submit-transfer-request/',
@@ -835,9 +813,9 @@
                     success: () => { fetchItems(3); },
                     error: xhr => alert(xhr.responseJSON.detail)
                 });
-            }
+            };
 
-            /** Complete or cancel a transfer using AJAX POST */
+            // Complete or cancel a transfer using AJAX POST.
             const completeTransfer = (sku, shop_user_id, cancel) => {
                 const quantity = getXferVals(shop_user_id, sku);
                 $.ajax({
@@ -852,7 +830,7 @@
                 deleteXferVals(shop_user_id, sku);
             };
 
-            /** Change the background and font color of quantity fields in table 3 when modified */
+            // Change color of quantity fields when modified.
             const attachQntChangeColorUpdateListener = () => {
                 [1, 2, 3].forEach(tableNum => {
                     $(`#itemTable${tableNum}`).on('input', 'input[type="number"]', function () {
@@ -864,17 +842,13 @@
                 });
             };
 
-            /** Toggle update mode.
-         *  This updates the global window.editLock variable and the toggle UI.
-         *  It also updates all items tables.
-         */
+            // Toggle update mode.
             const updateModeChangeHandler = () => {
-                // Update the global edit lock status based on the checkbox.
                 let current_lock_status = $('#updateModeToggle').prop('checked');
                 setEditLockStatus(current_lock_status);
             };
 
-            /** Tailor the dashboard view based on user groups */
+            // Tailor the dashboard view based on user groups.
             const tailor_dashboard = () => {
                 const groups = window.userGroups;
                 if (groups && groups.includes("managers")) {
@@ -890,7 +864,7 @@
                             $(this).find("td:first").hide();
                         });
                         $("#submitTransferRequest").removeClass("d-none");
-                        $("#refreshWarehouse").removeClass("d-none"); // Show Refresh Warehouse button
+                        $("#refreshWarehouse").removeClass("d-none");
                     }
                 }
                 if (!groups.includes("shop_users")) {
@@ -901,7 +875,7 @@
                 }
             };
 
-            /** Check authentication status and update the UI accordingly */
+            // Check authentication status and update the UI accordingly.
             const checkAuthStatus = () => {
                 $.ajax({
                     url: '/api/auth/user/',
@@ -939,17 +913,15 @@
                 });
             };
 
-            /** Update the UI based on the edit lock status */
+            // Update the UI based on the edit lock status.
             const updateUIBasedOnEditLock = () => {
                 const isLocked = window.editLock;
-                // Disable/enable fields and buttons based on edit lock
                 $('#itemTable1 input, #itemTable1 button').prop('disabled', !isLocked);
                 $('#updateModeToggle').prop('checked', isLocked);
                 $('.maintenanceMode').toggleClass('d-none', !isLocked);
             };
 
-
-            // Expose functions needed by inline handlers to global scope.
+            // Expose functions to global scope.
             window.sortTable = sortTable;
             window.fetchItems = fetchItems;
             window.updateItem = updateItem;
@@ -962,45 +934,39 @@
             window.updatePageGlobals = updatePageGlobals;
             window.search = search;
 
-            /** listener to update warehouse qnt when field
-             * looses focus **/
             $(document).on("blur", ".wh_editable-field", function () {
-                var sku = $(this).data("sku");  // Get SKU
-                var fieldName = $(this).data("field");  // Get field name (e.g., 'quantity', 'retail_price', 'description')
-                var newValue = $(this).val();  // Get the updated value
+                var sku = $(this).data("sku");
+                var fieldName = $(this).data("field");
+                var newValue = $(this).val();
                 if (fieldName == 'xfer_qnt') {
                     if (Number.isInteger(parseInt(newValue), 10)) {
                         newValue > 0 ? transferItem(sku, newValue) : console.log('Enter more than 0!');
                     }
                 }
                 else {
-                    updateItem(1, sku, fieldName, newValue)
+                    updateItem(1, sku, fieldName, newValue);
                 }
             });
 
-            /** Update cache to hold edited xfer quantities between table3 reloads */
             $(document).on("blur", `input[id^="quantity3-"]`, function () {
                 const id = $(this).attr('id')
                 const sku = id.replace('quantity3-', '')
                 const shop_user_id = $(this).data('shop_user_id');
-                // Update cache for this specific SKU.
                 setXferVals(shop_user_id, sku, $(this).val());
             });
 
-            // Document ready: initialize event handlers and fetch data.
             $(document).ready(() => {
                 checkAuthStatus();
                 $('#addItem').click(addItem);
                 $('#submitTransferRequest').click(submitTransferRequest);
-                $('#updateModeToggle').change(updateModeChangeHandler); // Attach toggle handler
-                attachQntChangeColorUpdateListener(); // Attach listener for table 3 quantity changes
+                $('#updateModeToggle').change(updateModeChangeHandler);
+                attachQntChangeColorUpdateListener();
                 $('#refreshInventory').click(() => [1, 2, 3].forEach(tn => fetchItems(tn)));
                 $('#refreshTransfersPending').click(() => [1, 2, 3].forEach(tn => fetchItems(tn)));
-                $('#refreshWarehouse').click(() => fetchItems(1)); // Attach dummy callback
+                $('#refreshWarehouse').click(() => fetchItems(1));
             });
         })();
     </script>
-
     <footer class="text-center mt-5 footer">
         <small>Simpler Stock Manager v5.0-beta. (c)2025 <a href="https://github.com/consciousuniverse"
                 target="_blank">Dan Bright</a>. License GPLv3.</small>
