@@ -261,12 +261,15 @@ def transfer_to_shop(
         if item.quantity < transfer_quantity:
             raise ValueError("Not enough stock to transfer")
         if not complete:
-            if not TransferItem.objects.filter(shop_user=shop_user, item=item).exists():
-                TransferItem.objects.create(
-                    item=item, shop_user=shop_user, quantity=transfer_quantity
+            xfer_item, created = TransferItem.objects.get_or_create(
+                shop_user=shop_user, item=item
+            )
+            if xfer_item.ordered:
+                raise LookupError(
+                    "This item has already been ordered and is awaiting dispatch. Please contact the warehouse manager if you wish to amend your order."
                 )
-            else:
-                raise LookupError("This item is already in Transfers Pending.")
+            xfer_item.quantity = transfer_quantity
+            xfer_item.save()
         else:
             if item.quantity < int(transfer_quantity):
                 raise ValueError("Not enough stock to transfer")

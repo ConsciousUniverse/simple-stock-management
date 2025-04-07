@@ -916,7 +916,7 @@
             // Update the UI based on the edit lock status.
             const updateUIBasedOnEditLock = () => {
                 const isLocked = window.editLock;
-                $('#itemTable1 input, #itemTable1 button').prop('disabled', !isLocked);
+                $('#itemTable1 input, #itemTable1 button').prop('disabled', isLocked);
                 $('#updateModeToggle').prop('checked', isLocked);
                 $('.maintenanceMode').toggleClass('d-none', !isLocked);
             };
