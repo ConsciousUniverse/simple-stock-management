@@ -339,7 +339,8 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
         <a class="navbar-brand" href="#">
-            <img src="{% static 'img/logo.webp' %}" alt="Logo" class="spin-logo" style="max-width: 95px; max-height: 95px;">
+            <img src="{% static 'img/logo.webp' %}" alt="Logo" class="spin-logo"
+                style="max-width: 95px; max-height: 95px;">
         </a>
         <div class="navbar-collapse collapse justify-content-center">
             <span class="navbar-text h1">Simpler Stock Management</span>
@@ -359,8 +360,8 @@
         <h2 class="mb-4">Warehouse Stock</h2>
         <div class="col-12 warehouse-stock mb-4">
             <div class="d-flex justify-content-between mb-2">
-                <input type="text" id="searchBox1" class="form-control flex-fill" placeholder="Search Warehouse Items..."
-                    onkeyup="search(1, this.value)">
+                <input type="text" id="searchBox1" class="form-control flex-fill"
+                    placeholder="Search Warehouse Items..." onkeyup="search(1, this.value)">
                 <label id="updateModeSwitch" class="toggle-switch ms-2 d-none">
                     <input type="checkbox" id="updateModeToggle">
                     <span class="slider"></span>
@@ -422,7 +423,7 @@
         <div class="d-flex justify-content-between mb-2">
             <input type="text" id="searchBox3" class="form-control" placeholder="Search Transfers Pending..."
                 onkeyup="search(3, this.value)">
-            <button id="refreshTransfersPending" class="btn btn-info">Refresh Transfers Status</button>
+            <button id="refreshTransfersPending" class="btn btn-info">Refreseh Transfers Status</button>
             <button id="submitTransferRequest" class="btn btn-info d-none">Send Transfer Request</button>
         </div>
         <table class="table table-bordered xfersPendingTable">
@@ -631,19 +632,13 @@
                             let row = '';
                             if (tableNum === 1) {
                                 const quantityField = (window.userGroups && window.userGroups.includes("managers"))
-                                    ? window.editLock
-                                        ? `<input type="number" min="0" value="${item.quantity}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="quantity">`
-                                        : item.quantity
+                                    ? `<input type="number" min="0" value="${item.quantity}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="quantity">`
                                     : item.quantity;
                                 const retailPriceField = (window.userGroups && window.userGroups.includes("managers"))
-                                    ? window.editLock
-                                        ? `<input type="number" min="0" step="0.01" value="${item.retail_price}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="retail_price">`
-                                        : item.retail_price
+                                    ? `<input type="number" min="0" step="0.01" value="${item.retail_price}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="retail_price">`
                                     : item.retail_price;
                                 const descriptionField = (window.userGroups && window.userGroups.includes("managers"))
-                                    ? window.editLock
-                                        ? `<input type="text" value="${item.description}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="description">`
-                                        : item.description
+                                    ? `<input type="text" value="${item.description}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="description">`
                                     : item.description;
                                 const transferQuantityField = `<input type="number" min="0" class="form-control xferQntField wh_editable-field" ${window.editLock ? 'disabled' : ''} value="" placeholder="How many units?" data-sku="${item.sku}" data-field="xfer_qnt">`;
                                 row = `
@@ -672,7 +667,7 @@
     ${window.userGroups && window.userGroups.includes("managers") ? `<td>${shop_user}</td>` : ''}
     <td>${item.item.sku}</td>
     <td>${item.item.description}</td>
-    <td>${window.userGroups && window.userGroups.includes("managers") && window.editLock ? `<input class="form-control" type="number" min="0" value="${getXferVals(shop_user, item.item.sku)}" id="quantity3-${item.item.sku}" data-shop_user_id="${item.shop_user.username}">` : getXferVals(shop_user, item.item.sku)}</td>
+    <td>${window.userGroups && window.userGroups.includes("managers") ? `<input class="form-control" type="number" min="0" value="${getXferVals(shop_user, item.item.sku)}" id="quantity3-${item.item.sku}" data-shop_user_id="${item.shop_user.username}">` : getXferVals(shop_user, item.item.sku)}</td>
     <td class="actions">
     ${window.userGroups && window.userGroups.includes("managers") ? `<button onclick="completeTransfer('${item.item.sku}', '${shop_user}', 'false')" class="btn btn-info" id="dispatchButton-${item.item.sku}">Dispatch</button>` : ''} 
     <button ${window.userGroups && !window.userGroups.includes("shop_superusers") && !window.userGroups.includes("managers") && item.ordered ? 'disabled' : ''} onclick="completeTransfer('${item.item.sku}', '${shop_user}', 'true')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
@@ -682,7 +677,7 @@
                             $tableBody.append(row);
                             if (tableNum === 1 && window.userGroups && window.userGroups.includes("managers")) {
                                 $tableBody.find('tr:last .actions').append(`
-<button onclick="deleteItem('${item.sku}', 1)" class="btn btn-danger" ${window.editLock ? '' : 'disabled'}>Delete</button>
+<button onclick="deleteItem('${item.sku}', 1)" class="btn btn-danger"}>Delete</button>
 `);
                             }
                         });
@@ -749,6 +744,9 @@
                     success: () => {
                         fetchItems(1);
                         $('#sku, #description, #retail_price, #quantity').val('');
+                    },
+                    error: xhr => {
+                        alert(xhr.responseJSON.detail);
                     }
                 });
             };
@@ -770,7 +768,10 @@
                         contentType: 'application/json',
                         headers: { 'X-CSRFToken': getCSRFToken() },
                         data: JSON.stringify(data),
-                        success: () => fetchItems(1)
+                        success: () => fetchItems(1),
+                        error: xhr => {
+                            alert(xhr.responseJSON.detail);
+                        }
                     });
                 }
             };
@@ -782,7 +783,10 @@
                     url: apiUrl,
                     type: 'DELETE',
                     headers: { 'X-CSRFToken': getCSRFToken() },
-                    success: () => fetchItems(tableNum)
+                    success: () => fetchItems(tableNum),
+                    error: xhr => {
+                        alert(xhr.responseJSON.detail);
+                    }
                 });
             };
 

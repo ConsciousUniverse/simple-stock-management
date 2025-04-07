@@ -13,8 +13,7 @@ class Admin(models.Model):
 
     @staticmethod
     def is_edit_locked():
-        admin = Admin.objects.first()
-        return admin.edit_lock if admin else False
+        return Admin.objects.values_list("edit_lock", flat=True)[0]
 
 
 class Item(models.Model):
@@ -40,14 +39,15 @@ class ShopItem(models.Model):
     shop_user = models.ForeignKey(
         User, on_delete=models.CASCADE
     )  # Relates item to a User
-    item = models.ForeignKey(
-        Item, on_delete=models.CASCADE
-    )  # Relates ShopItem to Item
+    item = models.ForeignKey(Item, on_delete=models.CASCADE)  # Relates ShopItem to Item
     quantity = models.IntegerField(default=0)
     last_updated = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('shop_user', 'item')  # Ensure unique combination of shop_user and item
+        unique_together = (
+            "shop_user",
+            "item",
+        )  # Ensure unique combination of shop_user and item
 
     def __str__(self):
         return f"{self.shop_user.username} - {self.item.sku}"

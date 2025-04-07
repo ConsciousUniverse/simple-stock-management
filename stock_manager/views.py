@@ -292,23 +292,39 @@ def transfer_to_shop(
 @permission_classes([IsAuthenticated])
 def submit_transfer_request(request):
     try:
-        queryset = TransferItem.objects.filter(shop_user=request.user.id, ordered=False)
-        # send notification email
-        SendEmail().compose(
-            records=list(
-                queryset.values(
-                    "id",
-                    "item__sku",
-                    "item__description",
-                    "item__retail_price",
-                    "quantity",
+        if not Admin.is_edit_locked():
+            queryset = TransferItem.objects.filter(
+                shop_user=request.user.id, ordered=False
+            )
+            if queryset.exists():
+                # send notification email
+                SendEmail().compose(
+                    records=list(
+                        queryset.values(
+                            "id",
+                            "item__sku",
+                            "item__description",
+                            "item__retail_price",
+                            "quantity",
+                        )
+                    ),
+                    user=request.user,
+                    notification_type=SendEmail.EmailType.STOCK_TRANSFER,
                 )
-            ),
-            user=request.user,
-            notification_type=SendEmail.EmailType.STOCK_TRANSFER,
-        )
-        # update records ordered status to True
-        queryset.update(ordered=True)
+                # update records ordered status to True
+                queryset.update(ordered=True)
+            else:
+                return Response(
+                    {"detail": "There were no outstanding items to request!"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        else:
+            return Response(
+                {
+                    "detail": "Transfers cannot proceed while the warehouse is under maintenance. Please try again later."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
     except Exception as e:
         logger.debug("Error while submitting transfer: %s", str(e))
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
