@@ -10,6 +10,7 @@ dotenv = "*"
 gunicorn = "*"
 gevent = "*"
 django-axes = {extras = ["ipware"], version = "*"}
+django-anymail = {extras = ["sparkpost"], version = "*"}
 
 [dev-packages]
 pandas = "*"

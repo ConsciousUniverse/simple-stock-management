@@ -1,3 +1,4 @@
+import logging
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from rest_framework import viewsets
@@ -17,9 +18,9 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
-import logging
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.db.models import IntegerField, Q
+from email_service.email import SendEmail
 
 logger = logging.getLogger(__name__)
 
@@ -291,9 +292,23 @@ def transfer_to_shop(
 @permission_classes([IsAuthenticated])
 def submit_transfer_request(request):
     try:
-        queryset = TransferItem.objects.filter(shop_user=request.user.id).update(
-            ordered=True
+        queryset = TransferItem.objects.filter(shop_user=request.user.id, ordered=False)
+        # send notification email
+        SendEmail().compose(
+            records=list(
+                queryset.values(
+                    "id",
+                    "item__sku",
+                    "item__description",
+                    "item__retail_price",
+                    "quantity",
+                )
+            ),
+            user=request.user,
+            notification_type=SendEmail.EmailType.STOCK_TRANSFER,
         )
+        # update records ordered status to True
+        queryset.update(ordered=True)
     except Exception as e:
         logger.debug("Error while submitting transfer: %s", str(e))
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)

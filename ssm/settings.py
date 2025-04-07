@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "stock_manager",
     "axes",
+    "email_service.apps.EmailServiceConfig",
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -50,14 +51,11 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle'
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
     ],
-    'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/day',
-        'user': '100/second'
-    },
+    "DEFAULT_THROTTLE_RATES": {"anon": "100/day", "user": "100/second"},
     "DEFAULT_PAGINATION_CLASS": "stock_manager.pagination.CustomPagination",
 }
 LOGIN_REDIRECT_URL = "/"
@@ -78,6 +76,15 @@ TEMPLATES = [
         },
     },
 ]
+SEND_NOTIFICATION_EMAIL = get_bool_env(os.getenv("MAIL_SEND_NOTIFICATIONS"))
+EMAIL_BACKEND = os.getenv("MAIL_SERVICE_BACKEND")
+DEFAULT_FROM_EMAIL = os.getenv("MAIL_DEFAULT_FROM")
+SERVER_EMAIL = os.getenv("MAIL_SERVER_EMAIL")
+ANYMAIL = {
+    "IGNORE_UNSUPPORTED_FEATURES": True,
+    "SPARKPOST_API_KEY": os.getenv("MAIL_SERVICE_API_KEY"),
+    "SPARKPOST_API_URL": os.getenv("MAIL_SERVICE_API_URL"),
+}
 WSGI_APPLICATION = "ssm.wsgi.application"
 DATABASES = {
     "default": {
@@ -112,3 +119,36 @@ STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+LOG_FILE = os.getenv("LOG_FILE")  # this directory & file needs to be created first!
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+        },
+        'simple': {
+            'format': '%(asctime)s %(levelname)s %(message)s'
+        }
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': LOG_FILE,
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
