@@ -29,14 +29,13 @@ In addition, regular updates of Python dependencies to the latest versions is ne
 - **Search**: Search for items in the warehouse and shop by SKU, description, or other attributes.
 - **Sort**: Sort items by SKU, description, retail price, or quantity.
 
-### Update Mode
-- **Toggle Update Mode**: Managers can enter and leave update mode to make changes to item details, by toggling the switch on the top right of the 'Warehouse Stock' table. When update mode is active (i.e., the warehouse stock data is being maintained), transfers by shop users are blocked, to preserve database integrity.
-- **Update Items**: Managers & shop users can update item descriptions, retail prices, and quantities.
-- **Delete Items**: Managers can delete items from the warehouse stock.
+### Warehouse Maintenance
+- **Toggle Warehouse Maintenance Mode**: Managers can toggle 'maintenance mode', during which transfers by shop users are paused.
+- **Add, Update & Delete Stock**: Managers can add new stock items, update stock item descriptions, retail prices, and quantities, and delete items. All updates occur immedately the field is edited - no need to click any additional buttons.
 
 ### Transfer Items
-- **Transfer Items**: Shop users can request to transfer items from the warehouse to the shop.
-- **Complete Transfers**: Managers can modify, dispatch, and cancel pending transfers from the warehouse to the shops. Warehouse inventory is only reduced - and shop inventory increased - after managers have actioned the dispatch on the system.
+- **Transfer Items**: Shop users can request to transfer items from the warehouse to the shop by simply entering how many units they require into the input field. The item is thereby instantly added to the 'Transfers Pending' panel. Quantities may be amended, or the transfer cancelled prior to sending the request. Clicking the 'Send Transfer Request' button submits the request, after which it can no longer be amended.
+- **Complete Transfers**: Managers can modify, dispatch, and cancel pending transfers from the warehouse to the shops. Warehouse inventory is only reduced - and shop inventory increased - after managers have actioned the dispatch on the system. Dispatched items are immediately removed from the shop user's 'Transfers Pending' panel.
 
 ## Live demo
 
@@ -45,31 +44,37 @@ Coming soon...
 ## Screenshots
 
 ### Warehouse manager's view
-![image](https://github.com/user-attachments/assets/d1dcfd28-91aa-453f-a612-c335b7c4c010)
+
+![alt text](<github_assets/Screenshot 2025-04-08 at 11.10.44 AM.png>)
 
 
 ### Shop view
-![image](https://github.com/user-attachments/assets/0b7b13c6-88a1-41b3-8603-acf695e0252a)
+
+![alt text](<github_assets/Screenshot 2025-04-08 at 11.11.22 AM.png>)
 
 
 ## What changed?
 
 The backend is still Django Rest Framework, while the frontend is now plain old jQuery, rather than relying on ReactJS with all its dependencies. The frontend is now integrated into the Django app, as opposed to the previous standalone frontend UI.
 
-## Installation
+## Suggested installation steps on a Linux system
 
+- Create a local user with minimal privileges to run the app (e.g., 'django'); make the app's root directory; and `cd` into that directory.
 - Clone the repo.
 - Install the python dependences. This project uses pipenv to install in a virtual environment, but a requirements.txt file has also been generated for pip install.
 - Copy .env_default to .env.
 - Configure the .env file you just copied. Be sure to set debug to False if publicly accessible, and configure your allowed hosts correctly.
+- Create the log file at the location you specificed in the .env file (ensure this is writeable by the 'django' user)
 - Generate a Django secret key with this one-liner: `python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'`.
-- Set up your web server and gunicorn.
+- Set up your forwarding (reverse proxy) web server, and configure 'systemd' to run gunicorn. As an example: by creating this file `/etc/systemd/ssm-gunicorn.service` with this content:
+
+    ![Example systemd file](github_assets/image.png)
 - Do the database migrations, i.e., from the project root run: `python manage.py makemigrations`, `python makemigrations stock_manager`,  then `python manage.py migrate`.
+- Start the 'systemd' service, and enable at boot: `systemctl start ssm-gunicorn` and `systemctl enable ssm-gunicorn`.
 - Create the superuser, i.e., from the project root run: `python manage.py createsuperuser`.
 - Login to the admin section with your superuser (e.g., https://your-site.domain/admin) and create your warehouse manager user and shop users.
-- Still in the admin section, create the 'managers' and 'shop_users' user groups.
-- Assign the warehouse manager user to the 'managers' group and the shop users to the 'shop_users' group.
-- Apply appropriate brute-force mitagions to your server, to protect the login (e.g., fail2ban).
+- Still in the admin section, create the 'managers', 'shop_users' and 'receive_mail' user groups.
+- Assign the warehouse manager user to the 'managers' group, the shop users to the 'shop_users' group, and those managers who you wish to receive notification emails to the 'receive_mail' group.
 
 Remeber not to host the app on a server containing any personal or other sensitive information, as it has not been vetted for security, and cannot be considered secure!
 
