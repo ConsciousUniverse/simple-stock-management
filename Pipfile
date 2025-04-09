@@ -11,6 +11,7 @@ gunicorn = "*"
 gevent = "*"
 django-axes = {extras = ["ipware"], version = "*"}
 django-anymail = {extras = ["sparkpost"], version = "*"}
+openpyxl = "*"
 
 [dev-packages]
 pandas = "*"

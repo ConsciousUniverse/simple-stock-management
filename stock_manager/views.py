@@ -13,14 +13,17 @@ from rest_framework.response import (
 from rest_framework.decorators import api_view
 from django.db.models.functions import Lower, Cast
 from rest_framework.decorators import permission_classes
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
-from django.db.models import IntegerField, Q
+from django.db.models import IntegerField, Q, ForeignKey, OneToOneField, ManyToManyField
 from email_service.email import SendEmail
+from io import BytesIO
+from openpyxl import Workbook
+from functools import reduce
 
 logger = logging.getLogger(__name__)
 
@@ -373,4 +376,64 @@ def complete_transfer(request):
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
     return Response(
         {"detail": "Transfer action successful."}, status=status.HTTP_200_OK
+    )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def export_models_excel(request):
+
+    @staticmethod
+    def get_related_field(obj, field_name):
+        try:
+            return reduce(
+                lambda o, attr: getattr(o, attr, None) if o else None,
+                field_name.split("__"),
+                obj,
+            )
+        except AttributeError:
+            return ""
+
+    if not request.user.groups.filter(name="managers").exists():
+        logger.debug("Permission denied: user is not in managers group.")
+        return Response(
+            {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
+        )
+
+    workbook = Workbook()
+    item_sheet = workbook.active
+    item_sheet.title = "Warehouse Stock"
+    item_fields = ["sku", "description", "retail_price", "quantity"]
+    item_header = ["SKU", "Description", "Retail Price", "Quantity"]
+    item_sheet.append(item_header)
+    for item in Item.objects.only(*item_fields):
+        row_data = [getattr(item, field, "") for field in item_fields]
+        item_sheet.append(row_data)
+    shop_item_sheet = workbook.create_sheet(title="Shop Stock")
+    shop_item_relation_fields = ["shop_user", "item"]
+    shop_item_retrieved_fields = [
+        "shop_user__username",
+        "item__sku",
+        "item__description",
+        "item__retail_price",
+        "quantity",
+    ]
+    shop_item_header = ["Shop User", "SKU", "Description", "Retail Price", "Quantity"]
+    shop_item_queryset = ShopItem.objects.select_related(
+        *shop_item_relation_fields
+    ).only(*shop_item_retrieved_fields)
+    shop_item_sheet.append(shop_item_header)
+    for shop_item in shop_item_queryset:
+        row_data = [
+            get_related_field(shop_item, field) for field in shop_item_retrieved_fields
+        ]
+        shop_item_sheet.append(row_data)
+    output = BytesIO()
+    workbook.save(output)
+    output.seek(0)
+    return FileResponse(
+        output,
+        as_attachment=True,
+        filename="ssm_data.xlsx",
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )

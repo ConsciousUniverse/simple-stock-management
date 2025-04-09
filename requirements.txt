@@ -7,10 +7,12 @@ django-axes==7.0.2
 django-ipware==7.0.1
 djangorestframework==3.16.0
 dotenv==0.9.9
+et-xmlfile==2.0.0
 gevent==24.11.1
 greenlet==3.1.1
 gunicorn==23.0.0
 idna==3.10
+openpyxl==3.1.5
 packaging==24.2
 python-dotenv==1.1.0
 python-ipware==3.0.0

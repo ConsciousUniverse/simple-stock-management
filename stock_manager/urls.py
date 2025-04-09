@@ -11,6 +11,7 @@ from .views import (
     set_edit_lock_status,
     get_edit_lock_status,
     submit_transfer_request,
+    export_models_excel,
 )  # Add TransferItemViewSet import
 from rest_framework.authtoken.views import obtain_auth_token
 from django.conf.urls.static import static
@@ -40,6 +41,9 @@ urlpatterns = [
     ),
     path(
         "api/get_edit_lock_status/", get_edit_lock_status, name="get_edit_lock_status"
+    ),
+     path(
+        "api/export_data/", export_models_excel, name="export_models_excel"
     ),
 ]
 
