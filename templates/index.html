@@ -348,6 +348,16 @@
             padding: 15px;
             border-radius: var(--border-radius);
         }
+
+        #uploadStockDataButton {
+            background-color: var(--primary-color);
+            color: var(--secondary-color);
+        }
+
+        #uploadStockDataButton:hover {
+            background-color: var(--text-color);
+            color: var(--primary-color);
+        }
     </style>
 </head>
 
@@ -457,7 +467,11 @@
         <div id="paginationControls3" class="pagination-controls"></div>
     </div>
     <div id="dlStockSection" class="text-center">
-        <button id="downloadStockData" class="btn btn-info d-none w-25">Download Stock Data</button>
+        <div class="d-flex justify-content-center align-items-center mt-3">
+            <input type="file" id="uploadStockData" class="form-control d-none w-25 me-2" accept=".xlsx">
+            <button id="uploadStockDataButton" class="btn btn-info d-none w-25">Upload Stock Data</button>
+            <button id="downloadStockData" class="btn btn-info d-none w-25">Download Stock Data</button>
+        </div>
     </div>
     <script>
         (() => {
@@ -859,6 +873,35 @@
                 window.location.href = url;
             };
 
+            // Handle stock data upload
+            const uploadStockData = () => {
+                const fileInput = document.getElementById('uploadStockData');
+                const file = fileInput.files[0];
+                if (!file) {
+                    alert('Please select a file to upload.');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                $.ajax({
+                    url: '/api/import_data/',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    headers: { 'X-CSRFToken': getCSRFToken() },
+                    success: () => {
+                        alert('Stock data uploaded successfully.');
+                        [1, 2].forEach(tn => fetchItems(tn));
+                    },
+                    error: xhr => {
+                        alert(xhr.responseJSON.detail || 'Failed to upload stock data.');
+                    }
+                });
+            };
+
             // Change color of quantity fields when modified.
             const attachQntChangeColorUpdateListener = () => {
                 [1, 2, 3].forEach(tableNum => {
@@ -885,7 +928,7 @@
                     $(".shop-stock").hide();
                     $(".warehouse-stock").addClass("col-md-12").removeClass("col-md-6");
                     $("#addItemSection, #updateModeSwitch").removeClass("d-none");
-                    $("#downloadStockData").removeClass("d-none");
+                    $("#downloadStockData, #uploadStockData, #uploadStockDataButton").removeClass("d-none");
                 } else {
                     $(".shop-stock").show();
                     if (groups.includes("shop_users")) {
@@ -996,6 +1039,7 @@
                 $('#refreshTransfersPending').click(() => [1, 2, 3].forEach(tn => fetchItems(tn)));
                 $('#refreshWarehouse').click(() => fetchItems(1));
                 $('#downloadStockData').click(() => downloadStockData());
+                $('#uploadStockDataButton').click(uploadStockData);
             });
         })();
     </script>

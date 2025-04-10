@@ -22,8 +22,9 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.db.models import IntegerField, Q, ForeignKey, OneToOneField, ManyToManyField
 from email_service.email import SendEmail
 from io import BytesIO
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 from functools import reduce
+from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -102,20 +103,17 @@ class ShopItemViewSet(viewsets.ModelViewSet):
                 | Q(item__sku__icontains=search_query)
             )  # 🔍 Search filter
         ordering = self.request.query_params.get("ordering", None)
-        if ordering:
-            if ordering.startswith("-"):
-                field = ordering[1:]
-                if field == "quantity":
-                    queryset = queryset.order_by(Cast(field, IntegerField()).desc())
-                else:
-                    queryset = queryset.order_by(Lower(field)).reverse()
+        if ordering.startswith("-"):
+            field = ordering[1:]
+            if field == "quantity":
+                queryset = queryset.order_by(Cast(field, IntegerField()).desc())
             else:
-                if ordering == "quantity":
-                    queryset = queryset.order_by(Cast(ordering, IntegerField()))
-                else:
-                    queryset = queryset.order_by(Lower(ordering))
+                queryset = queryset.order_by(Lower(field)).reverse()
         else:
-            queryset = queryset.order_by("last_updated").reverse()
+            if ordering == "quantity":
+                queryset = queryset.order_by(Cast(ordering, IntegerField()))
+            else:
+                queryset = queryset.order_by(Lower(ordering))
         return queryset
 
 
@@ -139,18 +137,17 @@ class TransferItemViewSet(viewsets.ModelViewSet):
                 | Q(item__sku__icontains=search_query)
             )  # 🔍 Search filter
         ordering = self.request.query_params.get("ordering", None)
-        if ordering:
-            if ordering.startswith("-"):
-                field = ordering[1:]
-                if field == "quantity":
-                    queryset = queryset.order_by(Cast(field, IntegerField()).desc())
-                else:
-                    queryset = queryset.order_by(Lower(field)).reverse()
+        if ordering.startswith("-"):
+            field = ordering[1:]
+            if field == "quantity":
+                queryset = queryset.order_by(Cast(field, IntegerField()).desc())
             else:
-                if ordering == "quantity":
-                    queryset = queryset.order_by(Cast(ordering, IntegerField()))
-                else:
-                    queryset = queryset.order_by(Lower(ordering))
+                queryset = queryset.order_by(Lower(field)).reverse()
+        else:
+            if ordering == "quantity":
+                queryset = queryset.order_by(Cast(ordering, IntegerField()))
+            else:
+                queryset = queryset.order_by(Lower(ordering))
         return queryset
 
 
@@ -381,7 +378,7 @@ def complete_transfer(request):
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
-def export_models_excel(request):
+def export_data_excel(request):
 
     @staticmethod
     def get_related_field(obj, field_name):
@@ -451,3 +448,153 @@ def export_models_excel(request):
         filename="ssm_data.xlsx",
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
+
+
+def field_changed(instance, field_name, new_value):
+    """
+    Check whether a field on an instance would change if updated with new_value.
+    Uses the model field's to_python() to convert the new value.
+    """
+    try:
+        field_obj = instance._meta.get_field(field_name)
+        norm_new_value = field_obj.to_python(new_value)
+    except Exception:
+        norm_new_value = new_value  # fallback if field not found or conversion fails
+
+    # Handle None vs. empty string: treat them as equal if that makes sense for your app.
+    old_value = getattr(instance, field_name)
+    if old_value is None and norm_new_value in [None, ""]:
+        return False
+    return old_value != norm_new_value
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def import_data_excel(request):
+    if not request.user.groups.filter(name="managers").exists():
+        logger.debug("Permission denied: user is not in managers group.")
+        return Response({"detail": "Permission denied."}, status=403)
+
+    file = request.FILES.get("file")
+    if not file or not file.name.endswith(".xlsx"):
+        return Response(
+            {"detail": "Invalid file format. Please upload an .xlsx file."},
+            status=400,
+        )
+
+    # Define field mappings for Item and ShopItem models.
+    item_field_mapping = {
+        "SKU": "sku",
+        "Description": "description",
+        "Retail Price": "retail_price",
+        "Quantity": "quantity",
+    }
+    shop_item_field_mapping = {
+        "Shop User": "shop_user__username",
+        "SKU": "item__sku",
+        "Description": "item__description",
+        "Retail Price": "item__retail_price",
+        "Quantity": "quantity",
+    }
+
+    # We'll track which records are present in the Excel data.
+    excel_item_skus = set()  # For Item (sku is the primary key)
+    excel_shopitem_keys = (
+        set()
+    )  # For ShopItem (tuple of (shop_user.username, item.sku))
+
+    try:
+        workbook = load_workbook(file)
+        with transaction.atomic():
+            # Process "Warehouse Stock" sheet for Item model
+            if "Warehouse Stock" in workbook.sheetnames:
+                item_sheet = workbook["Warehouse Stock"]
+                headers = [cell.value for cell in next(item_sheet.iter_rows(max_row=1))]
+                for row in item_sheet.iter_rows(min_row=2, values_only=True):
+                    # Build a data dictionary using the mapping
+                    data = {
+                        item_field_mapping[headers[i]]: value
+                        for i, value in enumerate(row)
+                        if headers[i] in item_field_mapping
+                    }
+                    sku = data.get("sku")
+                    if not sku:
+                        continue  # skip rows without an SKU
+                    excel_item_skus.add(sku)
+                    obj, created = Item.objects.get_or_create(sku=sku, defaults=data)
+                    if not created:
+                        updated = False
+                        for key, value in data.items():
+                            if field_changed(obj, key, value):
+                                setattr(obj, key, value)
+                                updated = True
+                        if updated:
+                            obj.save()
+
+            # Process "Shop Stock" sheet for ShopItem model
+            if "Shop Stock" in workbook.sheetnames:
+                shop_item_sheet = workbook["Shop Stock"]
+                headers = [
+                    cell.value for cell in next(shop_item_sheet.iter_rows(max_row=1))
+                ]
+                for row in shop_item_sheet.iter_rows(min_row=2, values_only=True):
+                    raw_data = {
+                        shop_item_field_mapping[headers[i]]: value
+                        for i, value in enumerate(row)
+                        if headers[i] in shop_item_field_mapping
+                    }
+                    # Resolve related fields: fetch shop_user and item.
+                    shop_username = raw_data.pop("shop_user__username", None)
+                    item_sku = raw_data.pop("item__sku", None)
+                    if not shop_username or not item_sku:
+                        continue  # skip row if key data is missing
+
+                    # Track the combination key
+                    excel_shopitem_keys.add((shop_username, item_sku))
+
+                    shop_user = User.objects.get(username=shop_username)
+                    item = Item.objects.get(sku=item_sku)
+                    obj, created = ShopItem.objects.get_or_create(
+                        shop_user=shop_user, item=item
+                    )
+
+                    item_updated = False
+                    shop_item_updated = False
+
+                    for key, value in raw_data.items():
+                        if key.startswith("item__"):
+                            field = key.split("__", 1)[1]
+                            if field_changed(item, field, value):
+                                setattr(item, field, value)
+                                item_updated = True
+                        else:
+                            if field_changed(obj, key, value):
+                                setattr(obj, key, value)
+                                shop_item_updated = True
+
+                    if item_updated:
+                        item.save()
+                    if shop_item_updated:
+                        obj.save()
+
+            # Delete Items that are in the DB but not in the Excel file.
+            # (Excel file is considered the source of truth.)
+            deleted_items_count, _ = Item.objects.exclude(
+                sku__in=excel_item_skus
+            ).delete()
+            logger.debug(
+                "Deleted %s Item records not present in Excel", deleted_items_count
+            )
+
+            # Delete ShopItem records that are in the DB but not in the Excel file.
+            # Iterate over all ShopItem records and delete those that do not match any Excel key.
+            for shop_item in ShopItem.objects.select_related("shop_user", "item"):
+                key = (shop_item.shop_user.username, shop_item.item.sku)
+                if key not in excel_shopitem_keys:
+                    shop_item.delete()
+
+    except Exception as e:
+        logger.debug("Error while importing Excel file: %s", str(e))
+        return Response({"detail": str(e)}, status=400)
+
+    return Response({"detail": "Data successfully imported."}, status=200)
