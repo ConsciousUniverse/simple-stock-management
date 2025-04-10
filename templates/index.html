@@ -34,7 +34,6 @@
 
         .footer {
             color: var(--text-color);
-            margin: 10px;
         }
 
         .navbar-light {
@@ -62,7 +61,7 @@
 
         .btn-warning {
             background-color: var(--secondary-color);
-            border-color: var(--secondary-color);
+            border-color: var (--secondary-color);
             color: var(--primary-color);
             border-radius: var(--border-radius);
         }
@@ -168,7 +167,7 @@
 
         .table thead th {
             background-color: var(--secondary-color);
-            color: var(--primary-color);
+            color: var (--primary-color);
         }
 
         .form-control {
@@ -332,6 +331,23 @@
         #refreshWarehouse {
             height: 38px;
         }
+
+        button#downloadStockData {
+            background-color: var(--primary-color);
+            color: var(--secondary-color);
+        }
+
+        button#downloadStockData:hover {
+            background-color: var(--text-color);
+            color: var(--primary-color);
+        }
+
+        div#dlStockSection {
+            margin-top: 50px;
+            background-color: var(--secondary-color);
+            padding: 15px;
+            border-radius: var(--border-radius);
+        }
     </style>
 </head>
 
@@ -419,7 +435,7 @@
         </div>
     </div>
     <div id="transfersPendingSection">
-        <h3>Transfers Pending</h3>
+        <h2>Transfers Pending</h2>
         <div class="d-flex justify-content-between mb-2">
             <input type="text" id="searchBox3" class="form-control" placeholder="Search Transfers Pending..."
                 onkeyup="search(3, this.value)">
@@ -439,6 +455,9 @@
             <tbody id="itemTable3"></tbody>
         </table>
         <div id="paginationControls3" class="pagination-controls"></div>
+    </div>
+    <div id="dlStockSection" class="text-center">
+        <button id="downloadStockData" class="btn btn-info d-none w-25">Download Stock Data</button>
     </div>
     <script>
         (() => {
@@ -834,6 +853,12 @@
                 deleteXferVals(shop_user_id, sku);
             };
 
+            // Download stock data using AJAX POST.
+            const downloadStockData = () => {
+                const url = '/api/export_data/';
+                window.location.href = url;
+            };
+
             // Change color of quantity fields when modified.
             const attachQntChangeColorUpdateListener = () => {
                 [1, 2, 3].forEach(tableNum => {
@@ -860,6 +885,7 @@
                     $(".shop-stock").hide();
                     $(".warehouse-stock").addClass("col-md-12").removeClass("col-md-6");
                     $("#addItemSection, #updateModeSwitch").removeClass("d-none");
+                    $("#downloadStockData").removeClass("d-none");
                 } else {
                     $(".shop-stock").show();
                     if (groups.includes("shop_users")) {
@@ -968,6 +994,7 @@
                 $('#refreshInventory').click(() => [1, 2, 3].forEach(tn => fetchItems(tn)));
                 $('#refreshTransfersPending').click(() => [1, 2, 3].forEach(tn => fetchItems(tn)));
                 $('#refreshWarehouse').click(() => fetchItems(1));
+                $('#downloadStockData').click(() => downloadStockData());
             });
         })();
     </script>
