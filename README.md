@@ -24,7 +24,11 @@ In addition, regular updates of Python dependencies to the latest versions is ne
 - **Warehouse Stock**: View and manage items in the warehouse.
 - **Shop Stock**: View items available in the shop.
 - **Transfers Pending**: View and manage pending stock transfers.
-- **Download Stock Data**: Both warehouse and shop stock data may be downloaded as a spreadsheet.
+- **Download Stock Data**: Both warehouse and shop stock data may be downloaded as an excel spreadsheet.
+- **Upload Stock Data**: Both warehouse and shop stock data may be uploaded as an excel spreadsheet and ingested into the database. The spreadsheet is considered the 'source of truth'! Important note: the unique identifer for each record is the SKU.
+    - If records exist in the spreadsheet but not in the database, they are added to the database.
+    - If records on the spreadsheet differ, the database is updated.
+    - If records already in the database are not present on the spreadsheet, they are deleted from the database (this is optional and may be configured in the .env file). 
 
 ### Search and Sort
 - **Search**: Search for items in the warehouse and shop by SKU, description, or other attributes.

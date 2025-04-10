@@ -1,4 +1,5 @@
 import logging
+from django.conf import settings
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from rest_framework import viewsets
@@ -450,30 +451,32 @@ def export_data_excel(request):
     )
 
 
-def field_changed(instance, field_name, new_value):
-    """
-    Check whether a field on an instance would change if updated with new_value.
-    Uses the model field's to_python() to convert the new value.
-    """
-    try:
-        field_obj = instance._meta.get_field(field_name)
-        norm_new_value = field_obj.to_python(new_value)
-    except Exception:
-        norm_new_value = new_value  # fallback if field not found or conversion fails
-
-    # Handle None vs. empty string: treat them as equal if that makes sense for your app.
-    old_value = getattr(instance, field_name)
-    if old_value is None and norm_new_value in [None, ""]:
-        return False
-    return old_value != norm_new_value
-
-
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def import_data_excel(request):
     if not request.user.groups.filter(name="managers").exists():
         logger.debug("Permission denied: user is not in managers group.")
         return Response({"detail": "Permission denied."}, status=403)
+
+    @staticmethod
+    def field_changed(instance, field_name, new_value):
+        """
+        Check whether a field on an instance would change if updated with new_value.
+        Uses the model field's to_python() to convert the new value.
+        """
+        try:
+            field_obj = instance._meta.get_field(field_name)
+            norm_new_value = field_obj.to_python(new_value)
+        except Exception:
+            norm_new_value = (
+                new_value  # fallback if field not found or conversion fails
+            )
+
+        # Handle None vs. empty string
+        old_value = getattr(instance, field_name)
+        if old_value is None and norm_new_value in [None, ""]:
+            return False
+        return old_value != norm_new_value
 
     file = request.FILES.get("file")
     if not file or not file.name.endswith(".xlsx"):
@@ -577,21 +580,23 @@ def import_data_excel(request):
                     if shop_item_updated:
                         obj.save()
 
-            # Delete Items that are in the DB but not in the Excel file.
-            # (Excel file is considered the source of truth.)
-            deleted_items_count, _ = Item.objects.exclude(
-                sku__in=excel_item_skus
-            ).delete()
-            logger.debug(
-                "Deleted %s Item records not present in Excel", deleted_items_count
-            )
+            allow_delete = getattr(settings, "ALLOW_RECORD_DELETE_FROM_XLSX", False)
+            if allow_delete:
+                # Delete Items that are in the DB but not in the Excel file.
+                # (Excel file is considered the source of truth.)
+                deleted_items_count, _ = Item.objects.exclude(
+                    sku__in=excel_item_skus
+                ).delete()
+                logger.debug(
+                    "Deleted %s Item records not present in Excel", deleted_items_count
+                )
 
-            # Delete ShopItem records that are in the DB but not in the Excel file.
-            # Iterate over all ShopItem records and delete those that do not match any Excel key.
-            for shop_item in ShopItem.objects.select_related("shop_user", "item"):
-                key = (shop_item.shop_user.username, shop_item.item.sku)
-                if key not in excel_shopitem_keys:
-                    shop_item.delete()
+                # Delete ShopItem records that are in the DB but not in the Excel file.
+                # Iterate over all ShopItem records and delete those that do not match any Excel key.
+                for shop_item in ShopItem.objects.select_related("shop_user", "item"):
+                    key = (shop_item.shop_user.username, shop_item.item.sku)
+                    if key not in excel_shopitem_keys:
+                        shop_item.delete()
 
     except Exception as e:
         logger.debug("Error while importing Excel file: %s", str(e))
