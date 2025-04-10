@@ -24,6 +24,7 @@ In addition, regular updates of Python dependencies to the latest versions is ne
 - **Warehouse Stock**: View and manage items in the warehouse.
 - **Shop Stock**: View items available in the shop.
 - **Transfers Pending**: View and manage pending stock transfers.
+- **Download Stock Data**: Both warehouse and shop stock data may be downloaded as a spreadsheet.
 
 ### Search and Sort
 - **Search**: Search for items in the warehouse and shop by SKU, description, or other attributes.
