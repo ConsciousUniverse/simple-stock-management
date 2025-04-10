@@ -405,51 +405,43 @@ def export_models_excel(request):
 
     workbook = Workbook()
     item_sheet = workbook.active
-    if manager:
-        item_sheet.title = "Warehouse Stock"
-        item_fields = ["sku", "description", "retail_price", "quantity"]
-        item_header = ["SKU", "Description", "Retail Price", "Quantity"]
-        item_sheet.append(item_header)
-        for item in Item.objects.only(*item_fields):
-            row_data = [getattr(item, field, "") for field in item_fields]
-            item_sheet.append(row_data)
-    if shop_user or manager:
-        if not manager:
-            shop_item_sheet = workbook.active
-            shop_item_sheet.title = "Shop Stock"
-        shop_item_sheet = (
-            workbook.create_sheet(title="Shop Stock") if manager else shop_item_sheet
-        )
-        shop_item_relation_fields = ["shop_user", "item"]
-        shop_item_retrieved_fields = [
-            "shop_user__username",
-            "item__sku",
-            "item__description",
-            "item__retail_price",
-            "quantity",
+    item_sheet.title = "Warehouse Stock"
+    item_fields = ["sku", "description", "retail_price", "quantity"]
+    item_header = ["SKU", "Description", "Retail Price", "Quantity"]
+    item_sheet.append(item_header)
+    for item in Item.objects.only(*item_fields):
+        row_data = [getattr(item, field, "") for field in item_fields]
+        item_sheet.append(row_data)
+    shop_item_sheet = workbook.create_sheet(title="Shop Stock")
+    shop_item_relation_fields = ["shop_user", "item"]
+    shop_item_retrieved_fields = [
+        "shop_user__username",
+        "item__sku",
+        "item__description",
+        "item__retail_price",
+        "quantity",
+    ]
+    shop_item_header = [
+        "Shop User",
+        "SKU",
+        "Description",
+        "Retail Price",
+        "Quantity",
+    ]
+    shop_item_queryset = ShopItem.objects.select_related(
+        *shop_item_relation_fields
+    ).only(*shop_item_retrieved_fields)
+    shop_item_queryset = (
+        shop_item_queryset.filter(**{"shop_user__username": request.user.username})
+        if not manager
+        else shop_item_queryset
+    )
+    shop_item_sheet.append(shop_item_header)
+    for shop_item in shop_item_queryset:
+        row_data = [
+            get_related_field(shop_item, field) for field in shop_item_retrieved_fields
         ]
-        shop_item_header = [
-            "Shop User",
-            "SKU",
-            "Description",
-            "Retail Price",
-            "Quantity",
-        ]
-        shop_item_queryset = ShopItem.objects.select_related(
-            *shop_item_relation_fields
-        ).only(*shop_item_retrieved_fields)
-        shop_item_queryset = (
-            shop_item_queryset.filter(**{"shop_user__username": request.user.username})
-            if not manager
-            else shop_item_queryset
-        )
-        shop_item_sheet.append(shop_item_header)
-        for shop_item in shop_item_queryset:
-            row_data = [
-                get_related_field(shop_item, field)
-                for field in shop_item_retrieved_fields
-            ]
-            shop_item_sheet.append(row_data)
+        shop_item_sheet.append(row_data)
     output = BytesIO()
     workbook.save(output)
     output.seek(0)
