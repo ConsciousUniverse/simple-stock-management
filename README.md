@@ -45,7 +45,18 @@ In addition, regular updates of Python dependencies to the latest versions is ne
 
 ## Live demo
 
-Coming soon...
+[Try the live demo at: https://ssm.zaziork.com](https://ssm.zaziork.com). 
+
+(Note that some functionality has been disabled in the demo, such as file uploads and password changes. Also, if two more people are signed onto the demo with the same username at the same time, you will observe unexpected changes to the data - YMMV!).
+
+Warehouse manager login:
+
+- Username: demo_manager
+- Password: Gui7u6QxWEdZwq
+
+Shop user login:
+- Username: demo_shop_user
+- Password: Gui7u6QxWEdZwq
 
 ## Screenshots
 

@@ -457,6 +457,10 @@ def import_data_excel(request):
     if not request.user.groups.filter(name="managers").exists():
         logger.debug("Permission denied: user is not in managers group.")
         return Response({"detail": "Permission denied."}, status=403)
+    
+    if not getattr(settings, "ALLOW_UPLOADS", False):
+        logger.debug("Attempted upload when disabled.")
+        return Response({"detail": "Uploads are disabled in the app configuration."}, status=400)
 
     @staticmethod
     def field_changed(instance, field_name, new_value):
