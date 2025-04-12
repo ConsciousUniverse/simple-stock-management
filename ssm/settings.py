@@ -80,8 +80,8 @@ SEND_NOTIFICATION_EMAIL = get_bool_env(os.getenv("MAIL_SEND_NOTIFICATIONS"))
 EMAIL_BACKEND = os.getenv("MAIL_SERVICE_BACKEND")
 DEFAULT_FROM_EMAIL = os.getenv("MAIL_DEFAULT_FROM")
 SERVER_EMAIL = os.getenv("MAIL_SERVER_EMAIL")
-ALLOW_UPLOADS=get_bool_env(os.getenv("ALLOW_UPLOADS"))
-ALLOW_RECORD_DELETE_FROM_XLSX=get_bool_env(os.getenv("ALLOW_RECORD_DELETE_FROM_XLSX"))
+ALLOW_UPLOADS = get_bool_env(os.getenv("ALLOW_UPLOADS"))
+ALLOW_RECORD_DELETE_FROM_XLSX = get_bool_env(os.getenv("ALLOW_RECORD_DELETE_FROM_XLSX"))
 ANYMAIL = {
     "IGNORE_UNSUPPORTED_FEATURES": True,
     "SPARKPOST_API_KEY": os.getenv("MAIL_SERVICE_API_KEY"),
@@ -123,34 +123,32 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 LOG_FILE = os.getenv("LOG_FILE")  # this directory & file needs to be created first!
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s"
         },
-        'simple': {
-            'format': '%(asctime)s %(levelname)s %(message)s'
-        }
+        "simple": {"format": "%(asctime)s %(levelname)s %(message)s"},
     },
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple'
+    "handlers": {
+        "console": {
+            "level": "DEBUG",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
         },
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': LOG_FILE,
-            'formatter': 'verbose'
+        "file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": LOG_FILE,
+            "formatter": "verbose",
         },
     },
-    'loggers': {
-        'django': {
-            'handlers': ['file'],
-            'level': 'INFO',
-            'propagate': False,
+    "loggers": {
+        "django": {
+            "handlers": ["file"],
+            "level": "INFO",
+            "propagate": False,
         },
     },
 }

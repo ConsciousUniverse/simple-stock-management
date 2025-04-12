@@ -14,18 +14,15 @@ from rest_framework.response import (
 from rest_framework.decorators import api_view
 from django.db.models.functions import Lower, Cast
 from rest_framework.decorators import permission_classes
-from django.http import JsonResponse, FileResponse
+from django.http import JsonResponse
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
-from rest_framework.decorators import action
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
-from django.db.models import IntegerField, Q, ForeignKey, OneToOneField, ManyToManyField
+from django.db.models import IntegerField, Q
 from email_service.email import SendEmail
-from io import BytesIO
-from openpyxl import Workbook, load_workbook
-from functools import reduce
-from django.db import transaction
+from .utils import create_excel_workbook, generate_excel_response, handle_excel_upload
+from datetime import datetime
+import pytz
 
 logger = logging.getLogger(__name__)
 
@@ -380,232 +377,35 @@ def complete_transfer(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def export_data_excel(request):
-
-    @staticmethod
-    def get_related_field(obj, field_name):
-        try:
-            return reduce(
-                lambda o, attr: getattr(o, attr, None) if o else None,
-                field_name.split("__"),
-                obj,
-            )
-        except AttributeError:
-            return ""
-
-    manager = request.user.groups.filter(name="managers").exists()
-    shop_user = request.user.groups.filter(name="shop_users").exists()
-
-    if not manager and not shop_user:
+    """
+    Export data as Excel for download.
+    """
+    if not (
+        request.user.groups.filter(name="managers").exists()
+        or request.user.groups.filter(name="shop_users").exists()
+    ):
         logger.debug("Permission denied: user is not in shop_users or managers group.")
         return Response(
             {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
         )
-
-    workbook = Workbook()
-    item_sheet = workbook.active
-    item_sheet.title = "Warehouse Stock"
-    item_fields = ["sku", "description", "retail_price", "quantity"]
-    item_header = ["SKU", "Description", "Retail Price", "Quantity"]
-    item_sheet.append(item_header)
-    for item in Item.objects.only(*item_fields):
-        row_data = [getattr(item, field, "") for field in item_fields]
-        item_sheet.append(row_data)
-    shop_item_sheet = workbook.create_sheet(title="Shop Stock")
-    shop_item_relation_fields = ["shop_user", "item"]
-    shop_item_retrieved_fields = [
-        "shop_user__username",
-        "item__sku",
-        "item__description",
-        "item__retail_price",
-        "quantity",
-    ]
-    shop_item_header = [
-        "Shop User",
-        "SKU",
-        "Description",
-        "Retail Price",
-        "Quantity",
-    ]
-    shop_item_queryset = ShopItem.objects.select_related(
-        *shop_item_relation_fields
-    ).only(*shop_item_retrieved_fields)
-    shop_item_queryset = (
-        shop_item_queryset.filter(**{"shop_user__username": request.user.username})
-        if not manager
-        else shop_item_queryset
+    formatted_datetime = datetime.now(pytz.timezone("EUROPE/LONDON")).strftime(
+        "%d%b%Y_%H%M%S%Z"
     )
-    shop_item_sheet.append(shop_item_header)
-    for shop_item in shop_item_queryset:
-        row_data = [
-            get_related_field(shop_item, field) for field in shop_item_retrieved_fields
-        ]
-        shop_item_sheet.append(row_data)
-    output = BytesIO()
-    workbook.save(output)
-    output.seek(0)
-    return FileResponse(
-        output,
-        as_attachment=True,
-        filename="ssm_data.xlsx",
-        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    return generate_excel_response(
+        user=request.user, filename=f"SSM_DATA_{formatted_datetime}.xlsx"
     )
 
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def import_data_excel(request):
+    """
+    Import data from an uploaded Excel file.
+    """
+    # Only allow managers to perform the upload.
     if not request.user.groups.filter(name="managers").exists():
         logger.debug("Permission denied: user is not in managers group.")
-        return Response({"detail": "Permission denied."}, status=403)
-    
-    if not getattr(settings, "ALLOW_UPLOADS", False):
-        logger.debug("Attempted upload when disabled.")
-        return Response({"detail": "Uploads are disabled in the app configuration."}, status=400)
-
-    @staticmethod
-    def field_changed(instance, field_name, new_value):
-        """
-        Check whether a field on an instance would change if updated with new_value.
-        Uses the model field's to_python() to convert the new value.
-        """
-        try:
-            field_obj = instance._meta.get_field(field_name)
-            norm_new_value = field_obj.to_python(new_value)
-        except Exception:
-            norm_new_value = (
-                new_value  # fallback if field not found or conversion fails
-            )
-
-        # Handle None vs. empty string
-        old_value = getattr(instance, field_name)
-        if old_value is None and norm_new_value in [None, ""]:
-            return False
-        return old_value != norm_new_value
-
-    file = request.FILES.get("file")
-    if not file or not file.name.endswith(".xlsx"):
         return Response(
-            {"detail": "Invalid file format. Please upload an .xlsx file."},
-            status=400,
+            {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
         )
-
-    # Define field mappings for Item and ShopItem models.
-    item_field_mapping = {
-        "SKU": "sku",
-        "Description": "description",
-        "Retail Price": "retail_price",
-        "Quantity": "quantity",
-    }
-    shop_item_field_mapping = {
-        "Shop User": "shop_user__username",
-        "SKU": "item__sku",
-        "Description": "item__description",
-        "Retail Price": "item__retail_price",
-        "Quantity": "quantity",
-    }
-
-    # We'll track which records are present in the Excel data.
-    excel_item_skus = set()  # For Item (sku is the primary key)
-    excel_shopitem_keys = (
-        set()
-    )  # For ShopItem (tuple of (shop_user.username, item.sku))
-
-    try:
-        workbook = load_workbook(file)
-        with transaction.atomic():
-            # Process "Warehouse Stock" sheet for Item model
-            if "Warehouse Stock" in workbook.sheetnames:
-                item_sheet = workbook["Warehouse Stock"]
-                headers = [cell.value for cell in next(item_sheet.iter_rows(max_row=1))]
-                for row in item_sheet.iter_rows(min_row=2, values_only=True):
-                    # Build a data dictionary using the mapping
-                    data = {
-                        item_field_mapping[headers[i]]: value
-                        for i, value in enumerate(row)
-                        if headers[i] in item_field_mapping
-                    }
-                    sku = data.get("sku")
-                    if not sku:
-                        continue  # skip rows without an SKU
-                    excel_item_skus.add(sku)
-                    obj, created = Item.objects.get_or_create(sku=sku, defaults=data)
-                    if not created:
-                        updated = False
-                        for key, value in data.items():
-                            if field_changed(obj, key, value):
-                                setattr(obj, key, value)
-                                updated = True
-                        if updated:
-                            obj.save()
-
-            # Process "Shop Stock" sheet for ShopItem model
-            if "Shop Stock" in workbook.sheetnames:
-                shop_item_sheet = workbook["Shop Stock"]
-                headers = [
-                    cell.value for cell in next(shop_item_sheet.iter_rows(max_row=1))
-                ]
-                for row in shop_item_sheet.iter_rows(min_row=2, values_only=True):
-                    raw_data = {
-                        shop_item_field_mapping[headers[i]]: value
-                        for i, value in enumerate(row)
-                        if headers[i] in shop_item_field_mapping
-                    }
-                    # Resolve related fields: fetch shop_user and item.
-                    shop_username = raw_data.pop("shop_user__username", None)
-                    item_sku = raw_data.pop("item__sku", None)
-                    if not shop_username or not item_sku:
-                        continue  # skip row if key data is missing
-
-                    # Track the combination key
-                    excel_shopitem_keys.add((shop_username, item_sku))
-
-                    shop_user = User.objects.get(username=shop_username)
-                    item = Item.objects.get(sku=item_sku)
-                    obj, created = ShopItem.objects.get_or_create(
-                        shop_user=shop_user, item=item
-                    )
-
-                    item_updated = False
-                    shop_item_updated = False
-
-                    for key, value in raw_data.items():
-                        if key.startswith("item__"):
-                            field = key.split("__", 1)[1]
-                            if field_changed(item, field, value):
-                                setattr(item, field, value)
-                                item_updated = True
-                        else:
-                            if field_changed(obj, key, value):
-                                setattr(obj, key, value)
-                                shop_item_updated = True
-
-                    if item_updated:
-                        item.save()
-                    if shop_item_updated:
-                        obj.save()
-
-            allow_delete = getattr(settings, "ALLOW_RECORD_DELETE_FROM_XLSX", False)
-            if allow_delete:
-                # Delete Items that are in the DB but not in the Excel file.
-                # (Excel file is considered the source of truth.)
-                if "Warehouse Stock" in workbook.sheetnames:
-                    deleted_items_count, _ = Item.objects.exclude(
-                        sku__in=excel_item_skus
-                    ).delete()
-                    logger.debug(
-                        "Deleted %s Item records not present in Excel", deleted_items_count
-                    )
-
-                # Delete ShopItem records that are in the DB but not in the Excel file.
-                # Iterate over all ShopItem records and delete those that do not match any Excel key.
-                if "Shop Stock" in workbook.sheetnames:
-                    for shop_item in ShopItem.objects.select_related("shop_user", "item"):
-                        key = (shop_item.shop_user.username, shop_item.item.sku)
-                        if key not in excel_shopitem_keys:
-                            shop_item.delete()
-
-    except Exception as e:
-        logger.debug("Error while importing Excel file: %s", str(e))
-        return Response({"detail": str(e)}, status=400)
-
-    return Response({"detail": "Data successfully imported."}, status=200)
+    return handle_excel_upload(request)

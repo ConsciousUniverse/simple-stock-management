@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Item, ShopItem, TransferItem
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User
 import re
 
 
