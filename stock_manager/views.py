@@ -588,19 +588,21 @@ def import_data_excel(request):
             if allow_delete:
                 # Delete Items that are in the DB but not in the Excel file.
                 # (Excel file is considered the source of truth.)
-                deleted_items_count, _ = Item.objects.exclude(
-                    sku__in=excel_item_skus
-                ).delete()
-                logger.debug(
-                    "Deleted %s Item records not present in Excel", deleted_items_count
-                )
+                if "Warehouse Stock" in workbook.sheetnames:
+                    deleted_items_count, _ = Item.objects.exclude(
+                        sku__in=excel_item_skus
+                    ).delete()
+                    logger.debug(
+                        "Deleted %s Item records not present in Excel", deleted_items_count
+                    )
 
                 # Delete ShopItem records that are in the DB but not in the Excel file.
                 # Iterate over all ShopItem records and delete those that do not match any Excel key.
-                for shop_item in ShopItem.objects.select_related("shop_user", "item"):
-                    key = (shop_item.shop_user.username, shop_item.item.sku)
-                    if key not in excel_shopitem_keys:
-                        shop_item.delete()
+                if "Shop Stock" in workbook.sheetnames:
+                    for shop_item in ShopItem.objects.select_related("shop_user", "item"):
+                        key = (shop_item.shop_user.username, shop_item.item.sku)
+                        if key not in excel_shopitem_keys:
+                            shop_item.delete()
 
     except Exception as e:
         logger.debug("Error while importing Excel file: %s", str(e))
