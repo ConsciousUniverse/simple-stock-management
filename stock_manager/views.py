@@ -408,4 +408,8 @@ def import_data_excel(request):
         return Response(
             {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
         )
-    return handle_excel_upload(request)
+    if not getattr(settings, "ALLOW_UPLOADS", False):
+        logger.debug("Attempted upload when disabled.")
+        return Response({"detail": "Uploads are disabled in the app configuration."}, status=400)
+    allow_delete = getattr(settings, "ALLOW_RECORD_DELETE_FROM_XLSX", False)
+    return handle_excel_upload(request, allow_delete=allow_delete)

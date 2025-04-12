@@ -112,7 +112,7 @@ def field_changed(instance, field_name, new_value):
         return False
     return old_value != norm_new_value
 
-def handle_excel_upload(request):
+def handle_excel_upload(request, allow_delete=False):
     """
     Process the uploaded Excel workbook(s) and return the response
     """
@@ -217,8 +217,6 @@ def handle_excel_upload(request):
                         item.save()
                     if shop_item_updated:
                         obj.save()
-
-            allow_delete = getattr(settings, "ALLOW_RECORD_DELETE_FROM_XLSX", False)
             if allow_delete:
                 # Delete Items that are in the DB but not in the Excel file.
                 # (Excel file is considered the source of truth.)
