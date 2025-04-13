@@ -10,10 +10,32 @@ User.add_to_class("__str__", lambda self: self.username)
 
 class Admin(models.Model):
     edit_lock = models.BooleanField(default=False)
+    allow_uploads = models.BooleanField(default=False)
+    allow_upload_deletions = models.BooleanField(default=False)
+    allow_email_notifications = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "App Configuation"
+        verbose_name_plural = "App Configuration"
 
     @staticmethod
     def is_edit_locked():
         return Admin.objects.values_list("edit_lock", flat=True)[0]
+
+    @staticmethod
+    def is_allow_updoads():
+        return Admin.objects.values_list("allow_uploads", flat=True)[0]
+
+    @staticmethod
+    def is_allow_upload_deletions():
+        return Admin.objects.values_list("allow_upload_deletions", flat=True)[0]
+
+    @staticmethod
+    def is_allow_email_notifications():
+        return Admin.objects.values_list("allow_email_notifications", flat=True)[0]
+
+    def __str__(self):
+        return f"Configuration Options"
 
 
 class Item(models.Model):

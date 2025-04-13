@@ -5,12 +5,13 @@ from openpyxl import Workbook
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import FileResponse
-from .models import Item, ShopItem, User
+from .models import Item, ShopItem, User, Admin
 from io import BytesIO
 from openpyxl import Workbook, load_workbook
 from functools import reduce
 from django.db import transaction
-from django.conf import settings
+from datetime import datetime
+import pytz
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +37,7 @@ def create_excel_workbook(user):
       - 'Shop Stock' for ShopItems.
     The user must be in either the 'managers' or 'shop_users' group.
     """
-    
+
     workbook = Workbook()
 
     # Create the 'Warehouse Stock' sheet
@@ -78,10 +79,14 @@ def create_excel_workbook(user):
     return workbook
 
 
-def generate_excel_response(user, filename="ssm_data_.xlsx"):
+def generate_excel_response(user):
     """
     Convert an Excel workbook into a Django FileResponse that triggers a download.
     """
+    formatted_datetime = datetime.now(pytz.timezone("EUROPE/LONDON")).strftime(
+        "%d%b%Y_%H%M%S%Z"
+    )
+    filename = f"SSM_DATA_{formatted_datetime}.xlsx"
     workbook = create_excel_workbook(user)
     output = BytesIO()
     workbook.save(output)
@@ -93,6 +98,7 @@ def generate_excel_response(user, filename="ssm_data_.xlsx"):
         content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
+
 def field_changed(instance, field_name, new_value):
     """
     Check whether a field on an instance would change if updated with new_value.
@@ -102,9 +108,7 @@ def field_changed(instance, field_name, new_value):
         field_obj = instance._meta.get_field(field_name)
         norm_new_value = field_obj.to_python(new_value)
     except Exception:
-        norm_new_value = (
-            new_value  # fallback if field not found or conversion fails
-        )
+        norm_new_value = new_value  # fallback if field not found or conversion fails
 
     # Handle None vs. empty string
     old_value = getattr(instance, field_name)
@@ -112,7 +116,8 @@ def field_changed(instance, field_name, new_value):
         return False
     return old_value != norm_new_value
 
-def handle_excel_upload(request, allow_delete=False):
+
+def handle_excel_upload(request):
     """
     Process the uploaded Excel workbook(s) and return the response
     """
@@ -217,7 +222,7 @@ def handle_excel_upload(request, allow_delete=False):
                         item.save()
                     if shop_item_updated:
                         obj.save()
-            if allow_delete:
+            if Admin.is_allow_upload_deletions():
                 # Delete Items that are in the DB but not in the Excel file.
                 # (Excel file is considered the source of truth.)
                 if "Warehouse Stock" in workbook.sheetnames:
@@ -242,5 +247,5 @@ def handle_excel_upload(request, allow_delete=False):
     except Exception as e:
         logger.debug("Error while importing Excel file: %s", str(e))
         return Response({"detail": str(e)}, status=400)
-    
+
     return Response({"detail": "Data successfully imported."}, status=200)

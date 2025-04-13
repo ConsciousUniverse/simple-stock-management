@@ -92,6 +92,7 @@ The backend is still Django Rest Framework, while the frontend is now plain old 
 - Login to the admin section with your superuser (e.g., https://your-site.domain/admin) and create your warehouse manager user and shop users.
 - Still in the admin section, create the 'managers', 'shop_users' and 'receive_mail' user groups.
 - Assign the warehouse manager user to the 'managers' group, the shop users to the 'shop_users' group, and those managers who you wish to receive notification emails to the 'receive_mail' group.
+- Still in the admin section, head to SSM > App Configuation > Configuration Options to switch on/off uploads, upload deletions and notificaiton emails.
 - If you wish to use the notification email feature, you'd need an account with a mail provider. The installation described here uses Sparkpost, but this may be changed in the settings provided the correct version of Anymail is installed (via Pip or Pipenv).
 
 Remeber not to host the app on a server containing any personal or other sensitive information, as it has not been vetted for security, and cannot be considered secure!

@@ -1,5 +1,4 @@
 import logging
-from django.conf import settings
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from rest_framework import viewsets
@@ -21,8 +20,6 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.db.models import IntegerField, Q
 from email_service.email import SendEmail
 from .utils import create_excel_workbook, generate_excel_response, handle_excel_upload
-from datetime import datetime
-import pytz
 
 logger = logging.getLogger(__name__)
 
@@ -388,12 +385,7 @@ def export_data_excel(request):
         return Response(
             {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
         )
-    formatted_datetime = datetime.now(pytz.timezone("EUROPE/LONDON")).strftime(
-        "%d%b%Y_%H%M%S%Z"
-    )
-    return generate_excel_response(
-        user=request.user, filename=f"SSM_DATA_{formatted_datetime}.xlsx"
-    )
+    return generate_excel_response(user=request.user)
 
 
 @api_view(["POST"])
@@ -408,8 +400,9 @@ def import_data_excel(request):
         return Response(
             {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
         )
-    if not getattr(settings, "ALLOW_UPLOADS", False):
+    if not Admin.is_allow_updoads():
         logger.debug("Attempted upload when disabled.")
-        return Response({"detail": "Uploads are disabled in the app configuration."}, status=400)
-    allow_delete = getattr(settings, "ALLOW_RECORD_DELETE_FROM_XLSX", False)
-    return handle_excel_upload(request, allow_delete=allow_delete)
+        return Response(
+            {"detail": "Uploads are disabled in the app configuration."}, status=400
+        )
+    return handle_excel_upload(request)

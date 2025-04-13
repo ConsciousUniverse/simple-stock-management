@@ -7,7 +7,8 @@ import logging
 from anymail.exceptions import AnymailAPIError
 from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User
+from stock_manager.models import Admin
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
 from datetime import datetime
@@ -51,7 +52,7 @@ class SendEmail:
             self.email_validate(email_from)
             if not self.email_invalid:
                 try:
-                    if settings.SEND_NOTIFICATION_EMAIL:
+                    if Admin.is_allow_email_notifications():
                         msg = EmailMultiAlternatives(
                             subject if subject else SendEmail.DEFAULT_SUBJECT,
                             body_plaintext,
