@@ -703,7 +703,7 @@
     <td>${window.userGroups && window.userGroups.includes("managers") ? `<input class="form-control" type="number" min="0" value="${getXferVals(shop_user, item.item.sku)}" id="quantity3-${item.item.sku}" data-shop_user_id="${item.shop_user.username}">` : getXferVals(shop_user, item.item.sku)}</td>
     <td class="actions">
     ${window.userGroups && window.userGroups.includes("managers") ? `<button onclick="completeTransfer('${item.item.sku}', '${shop_user}', 'false')" class="btn btn-info" id="dispatchButton-${item.item.sku}">Dispatch</button>` : ''} 
-    <button ${window.userGroups && !window.userGroups.includes("shop_superusers") && !window.userGroups.includes("managers") && item.ordered ? 'disabled' : ''} onclick="completeTransfer('${item.item.sku}', '${shop_user}', 'true')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
+    <button ${window.userGroups && !window.userGroups.includes("managers") && item.ordered ? 'disabled' : ''} onclick="completeTransfer('${item.item.sku}', '${shop_user}', 'true')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
     </td>
 </tr>`;
                             }

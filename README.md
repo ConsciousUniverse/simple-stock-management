@@ -89,8 +89,10 @@ The backend is still Django Rest Framework, while the frontend is now plain old 
 - Do the database migrations, i.e., from the project root run: `python manage.py makemigrations`, `python makemigrations stock_manager`,  then `python manage.py migrate`.
 - Start the 'systemd' service, and enable at boot: `systemctl start ssm-gunicorn` and `systemctl enable ssm-gunicorn`.
 - Create the superuser, i.e., from the project root run: `python manage.py createsuperuser`.
-- Login to the admin section with your superuser (e.g., https://your-site.domain/admin) and create your warehouse manager user and shop users.
+- Login to the admin section with your superuser (e.g., https://your-site.domain/admin) and create your superadmin user, warehouse manager user, and shop users.
+- Assign the 'staff status' permission to the warehouse manager user.
 - Still in the admin section, create the 'managers', 'shop_users' and 'receive_mail' user groups.
+- It's recommended to assign all 'SSM | App Configuration' permissions to the 'managers' group.
 - Assign the warehouse manager user to the 'managers' group, the shop users to the 'shop_users' group, and those managers who you wish to receive notification emails to the 'receive_mail' group.
 - Still in the admin section, head to SSM > App Configuation > Configuration Options to switch on/off uploads, upload deletions and notificaiton emails.
 - If you wish to use the notification email feature, you'd need an account with a mail provider. The installation described here uses Sparkpost, but this may be changed in the settings provided the correct version of Anymail is installed (via Pip or Pipenv).
