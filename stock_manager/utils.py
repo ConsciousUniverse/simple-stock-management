@@ -145,9 +145,8 @@ def handle_excel_upload(request):
 
     # We'll track which records are present in the Excel data.
     excel_item_skus = set()  # For Item (sku is the primary key)
-    excel_shopitem_keys = (
-        set()
-    )  # For ShopItem (tuple of (shop_user.username, item.sku))
+    unique_shop_items_in_excel = set()
+    unique_shop_users_in_excel = set()
 
     try:
         workbook = load_workbook(file_obj)
@@ -194,19 +193,16 @@ def handle_excel_upload(request):
                     item_sku = raw_data.pop("item__sku", None)
                     if not shop_username or not item_sku:
                         continue  # skip row if key data is missing
-
                     # Track the combination key
-                    excel_shopitem_keys.add((shop_username, item_sku))
-
+                    unique_shop_items_in_excel.add(item_sku)
                     shop_user = User.objects.get(username=shop_username)
+                    unique_shop_users_in_excel.add(shop_user)
                     item = Item.objects.get(sku=item_sku)
                     obj, created = ShopItem.objects.get_or_create(
                         shop_user=shop_user, item=item
                     )
-
                     item_updated = False
                     shop_item_updated = False
-
                     for key, value in raw_data.items():
                         if key.startswith("item__"):
                             field = key.split("__", 1)[1]
@@ -217,7 +213,6 @@ def handle_excel_upload(request):
                             if field_changed(obj, key, value):
                                 setattr(obj, key, value)
                                 shop_item_updated = True
-
                     if item_updated:
                         item.save()
                     if shop_item_updated:
@@ -236,13 +231,14 @@ def handle_excel_upload(request):
 
                 # Delete ShopItem records that are in the DB but not in the Excel file.
                 # Iterate over all ShopItem records and delete those that do not match any Excel key.
+
                 if "Shop Stock" in workbook.sheetnames:
-                    for shop_item in ShopItem.objects.select_related(
-                        "shop_user", "item"
-                    ):
-                        key = (shop_item.shop_user.username, shop_item.item.sku)
-                        if key not in excel_shopitem_keys:
-                            shop_item.delete()
+                    for user in unique_shop_users_in_excel:
+                        for shop_item in ShopItem.objects.select_related(
+                            "shop_user", "item"
+                        ).filter(shop_user__username=user):
+                            if shop_item.item.sku not in unique_shop_items_in_excel:
+                                shop_item.delete()
 
     except Exception as e:
         logger.debug("Error while importing Excel file: %s", str(e))

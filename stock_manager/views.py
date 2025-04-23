@@ -19,7 +19,7 @@ from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.db.models import IntegerField, Q
 from email_service.email import SendEmail
-from .utils import create_excel_workbook, generate_excel_response, handle_excel_upload
+from .utils import generate_excel_response, handle_excel_upload
 
 logger = logging.getLogger(__name__)
 
