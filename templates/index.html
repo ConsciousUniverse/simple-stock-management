@@ -48,18 +48,25 @@
             color: var(--primary-color) !important;
         }
 
+        .btn {
+            font-weight: bolder !important;
+        }
+
         .btn-outline-primary {
             color: var(--secondary-color);
+            font-weight: bolder;
             border-color: var(--secondary-color);
             border-radius: var(--border-radius);
         }
 
         .btn-outline-primary:hover {
+            font-weight: bolder;
             background-color: var(--secondary-color);
             color: var(--primary-color);
         }
 
         .btn-warning {
+            font-weight: bolder;
             background-color: var(--secondary-color);
             border-color: var (--secondary-color);
             color: var(--primary-color);
@@ -67,12 +74,14 @@
         }
 
         .btn-warning:hover {
+            font-weight: bolder;
             background-color: var(--primary-color);
             border-color: var(--primary-color);
             color: var(--secondary-color);
         }
 
         .btn-info {
+            font-weight: bolder;
             background-color: var(--secondary-color);
             border-color: var(--secondary-color);
             color: var(--primary-color);
@@ -80,17 +89,20 @@
         }
 
         .btn-info:hover {
+            font-weight: bolder;
             background-color: var(--text-color);
             border-color: var(--primary-color);
             color: var(--primary-color);
         }
 
         .btn-warning#updateModeToggle:hover {
+            font-weight: bolder;
             background-color: var(--text-color);
             color: var(--primary-color);
         }
 
         .btn-primary {
+            font-weight: bolder;
             background-color: var(--secondary-color);
             border-color: var(--secondary-color);
             color: var(--primary-color);
@@ -98,12 +110,14 @@
         }
 
         .btn-primary:hover {
+            font-weight: bolder;
             background-color: var(--text-color);
             border-color: var(--primary-color);
             color: var(--primary-color) !important;
         }
 
         .btn-outline-primary#authLink {
+            font-weight: bolder;
             background-color: var(--primary-color);
             color: var(--secondary-color);
             border-color: var(--primary-color);
@@ -111,17 +125,20 @@
         }
 
         .btn-outline-primary#authLink:hover {
+            font-weight: bolder;
             background-color: var(--secondary-color);
             color: var(--primary-color);
         }
 
         button#refreshInventory {
+            font-weight: bolder;
             margin: 0 0 0 50%;
             width: 50%;
         }
 
         button#refreshTransfersPending,
         button#submitTransferRequest {
+            font-weight: bolder;
             width: 25%;
             margin: 0 3px;
         }
@@ -198,45 +215,53 @@
         }
 
         .btn-danger:hover {
+            font-weight: bolder;
             background-color: var(--text-color);
             border-color: var(--primary-color);
             color: var(--primary-color);
         }
 
         .btn-warning:active {
+            font-weight: bolder;
             background-color: var(--primary-color) !important;
             border-color: var(--primary-color) !important;
             color: var(--secondary-color) !important;
         }
 
         .btn-info:active {
+            font-weight: bolder;
             background-color: var(--primary-color) !important;
             border-color: var(--primary-color) !important;
             color: var(--secondary-color) !important;
         }
 
         .btn-warning#updateModeToggle.update-mode-on {
+            font-weight: bolder;
             background-color: red;
             color: white;
         }
 
         .btn-success {
+            font-weight: bolder;
             background-color: green;
             border-color: green;
             color: white;
         }
 
         .btn-danger {
+            font-weight: bolder;
             background-color: rgb(187, 0, 0);
             border-color: rgb(135, 0, 0);
             color: white;
         }
 
         button#refreshInventory {
+            font-weight: bolder;
             margin-left: 5px;
         }
 
         button#refreshWarehouse {
+            font-weight: bolder;
             height: 38px;
             width: fit-content;
             padding: 0 15px;
@@ -333,11 +358,13 @@
         }
 
         button#downloadStockData {
+            font-weight: bolder;
             background-color: var(--primary-color);
             color: var(--secondary-color);
         }
 
         button#downloadStockData:hover {
+            font-weight: bolder;
             background-color: var(--text-color);
             color: var(--primary-color);
         }
@@ -350,11 +377,13 @@
         }
 
         #uploadStockDataButton {
+            font-weight: bolder;
             background-color: var(--primary-color);
             color: var(--secondary-color);
         }
 
         #uploadStockDataButton:hover {
+            font-weight: bolder;
             background-color: var(--text-color);
             color: var(--primary-color);
         }
@@ -449,7 +478,7 @@
         <div class="d-flex justify-content-between mb-2">
             <input type="text" id="searchBox3" class="form-control" placeholder="Search Transfers Pending..."
                 onkeyup="search(3, this.value)">
-            <button id="refreshTransfersPending" class="btn btn-info">Refresh Transfers Status</button>
+            <button id="refreshTransfersPending" class="btn btn-info">Refresh Status</button>
             <button id="submitTransferRequest" class="btn btn-info d-none">Send Transfer Request</button>
         </div>
         <table class="table table-bordered xfersPendingTable">
