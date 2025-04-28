@@ -19,7 +19,7 @@ from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.db.models import IntegerField, Q
 from email_service.email import SendEmail
-from .utils import generate_excel_response, handle_excel_upload
+from .utils import SpreadsheetTools
 
 logger = logging.getLogger(__name__)
 
@@ -385,7 +385,7 @@ def export_data_excel(request):
         return Response(
             {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
         )
-    return generate_excel_response(user=request.user)
+    return SpreadsheetTools(request).generate_excel_response()
 
 
 @api_view(["POST"])
@@ -405,4 +405,4 @@ def import_data_excel(request):
         return Response(
             {"detail": "Uploads are disabled in the app configuration."}, status=400
         )
-    return handle_excel_upload(request)
+    return SpreadsheetTools(request).handle_excel_upload()
