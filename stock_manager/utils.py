@@ -44,17 +44,13 @@ class SpreadsheetTools:
             return ""
 
     def convert_custom_incoming_format(self, workbook):
-        # returns a Workbook or None
-        try:
-            if HAS_SPREADSHEET_CONVERT:
-                return spreadsheet_convert.convert_excel(workbook)
-            else:
-                raise Exception(
-                    "A 'custom_funcs/spreadsheet.convert.py' file does not exist and the incoming spreadsheet is of an invalid format."
-                )
-        except Exception as e:
-            logger.error(f"Error invoking excel schema conversion function: {e}")
-            return Response({"detail": e}, status=400)
+        # returns a Workbook or raises Exception
+        if HAS_SPREADSHEET_CONVERT:
+            return spreadsheet_convert.convert_excel(workbook)
+        else:
+            raise Exception(
+                "A 'custom_funcs/spreadsheet.convert.py' file does not exist and the incoming spreadsheet is of an invalid format."
+            )
 
     def create_excel_workbook(self):
         """
@@ -184,7 +180,11 @@ class SpreadsheetTools:
                 required_sheets = ["Warehouse Stock", "Shop Stock"]
                 # convert custom input formats
                 if any(sheet not in workbook.sheetnames for sheet in required_sheets):
-                    workbook = self.convert_custom_incoming_format(workbook)
+                    try:
+                        workbook = self.convert_custom_incoming_format(workbook)
+                    except Exception as e:
+                        logger.error(f"Error converting custom incoming format: {e}")
+                        return Response({"detail": str(e)}, status=400)
                 # Process "Warehouse Stock" sheet for Item model
                 if "Warehouse Stock" in workbook.sheetnames:
                     item_sheet = workbook["Warehouse Stock"]
