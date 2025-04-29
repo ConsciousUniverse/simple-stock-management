@@ -28,6 +28,10 @@ class Admin(models.Model):
         return Admin.objects.values_list("allow_uploads", flat=True)[0]
 
     @staticmethod
+    def is_allow_upload_deletions():
+        return Admin.objects.values_list("allow_upload_deletions", flat=True)[0]
+
+    @staticmethod
     def get_records_per_page():
         return Admin.objects.values_list("records_per_page", flat=True)[0]
 
