@@ -13,9 +13,10 @@ django-axes = {extras = ["ipware"], version = "*"}
 django-anymail = {extras = ["sparkpost"], version = "*"}
 openpyxl = "*"
 pytz = "*"
+pandas = "*"
 
 [dev-packages]
-pandas = "*"
+
 
 [requires]
 python_version = "3.13"
