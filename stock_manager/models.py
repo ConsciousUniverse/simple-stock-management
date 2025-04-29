@@ -13,6 +13,7 @@ class Admin(models.Model):
     allow_uploads = models.BooleanField(default=False)
     allow_upload_deletions = models.BooleanField(default=False)
     allow_email_notifications = models.BooleanField(default=False)
+    records_per_page = models.IntegerField(default=25, validators=[MinValueValidator(1)])
 
     class Meta:
         verbose_name = "App Configuation"
@@ -27,12 +28,8 @@ class Admin(models.Model):
         return Admin.objects.values_list("allow_uploads", flat=True)[0]
 
     @staticmethod
-    def is_allow_upload_deletions():
-        return Admin.objects.values_list("allow_upload_deletions", flat=True)[0]
-
-    @staticmethod
-    def is_allow_email_notifications():
-        return Admin.objects.values_list("allow_email_notifications", flat=True)[0]
+    def get_records_per_page():
+        return Admin.objects.values_list("records_per_page", flat=True)[0]
 
     def __str__(self):
         return f"Configuration Options"

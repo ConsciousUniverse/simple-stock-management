@@ -2,7 +2,7 @@ import logging
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import Item, ShopItem, TransferItem, Admin
 from .serializers import ItemSerializer, ShopItemSerializer, TransferItemSerializer
 from .pagination import CustomPagination
@@ -10,11 +10,9 @@ from django.contrib.auth.models import User  # For accessing the User model
 from rest_framework.response import (
     Response,
 )  # For returning HTTP responses in REST framework
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from django.db.models.functions import Lower, Cast
-from rest_framework.decorators import permission_classes
 from django.http import JsonResponse
-from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.db.models import IntegerField, Q
@@ -369,6 +367,16 @@ def complete_transfer(request):
     return Response(
         {"detail": "Transfer action successful."}, status=status.HTTP_200_OK
     )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def app_config(request):
+    config = Admin.objects.first()
+    return Response({
+        "records_per_page": config.records_per_page if config else 25,
+        # Add other config values here if needed
+    })
 
 
 @api_view(["GET"])

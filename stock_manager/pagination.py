@@ -1,8 +1,14 @@
+from .models import Admin
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 class CustomPagination(PageNumberPagination):
-    page_size = 5
+    def get_page_size(self, request):
+        # Use the admin-configured value unless overridden by query param
+        try:
+            return int(request.query_params.get('page_size', Admin.get_records_per_page()))
+        except Exception:
+            return 25
     page_size_query_param = 'page_size'
     max_page_size = 100
 
