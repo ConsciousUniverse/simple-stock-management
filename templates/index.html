@@ -938,7 +938,18 @@
                         [1, 2].forEach(tn => fetchItems(tn));
                     },
                     error: xhr => {
-                        alert(xhr.responseJSON.detail || 'Failed to upload stock data.');
+                        let msg = 'Failed to upload stock data.';
+                        if (xhr.responseJSON && xhr.responseJSON.detail) {
+                            msg = xhr.responseJSON.detail;
+                        } else if (xhr.responseText) {
+                            try {
+                                const data = JSON.parse(xhr.responseText);
+                                if (data.detail) msg = data.detail;
+                            } catch (e) {
+                                // responseText is not JSON, keep default msg
+                            }
+                        }
+                        alert(msg);
                     }
                 });
             };
@@ -1087,7 +1098,7 @@
         })();
     </script>
     <footer class="text-center mt-5 footer">
-        <small>Simpler Stock Management v5.2.11-beta+ac7d633. (c)2025 <a href="https://github.com/consciousuniverse"
+        <small>Simpler Stock Management v5.2.12-beta+049bca0. (c)2025 <a href="https://github.com/consciousuniverse"
                 target="_blank">Dan Bright</a>. License GPLv3.</small>
     </footer>
 </body>
