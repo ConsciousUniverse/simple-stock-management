@@ -28,7 +28,8 @@ In addition, regular updates of Python dependencies to the latest versions is ne
 - **Upload Stock Data**: Both warehouse and shop stock data may be uploaded as an excel spreadsheet and ingested into the database. The spreadsheet is considered the 'source of truth'! Important note: the unique identifer for each record is the SKU.
     - If records exist in the spreadsheet but not in the database, they are added to the database.
     - If records on the spreadsheet differ, the database is updated.
-    - If records already in the database are not present on the spreadsheet, they are deleted from the database (this is optional and may be configured in the .env file). 
+    - If records already in the database are not present on the spreadsheet, they are deleted from the database (this is optional and may be configured though a checkbox on the system admin page).
+    - Excel spreadsheets may be uploaded either in the system default schema (i.e., what you get when you download the warehouse and shop inventories), or in a custom schema. If uploading a custom schema, a conversion function file may be added to translate your spreadsheet columns into the system schema (an example custom function is included).
 
 ### Search and Sort
 - **Search**: Search for items in the warehouse and shop by SKU, description, or other attributes.
@@ -105,7 +106,7 @@ Simpler Stock Management is licensed under the GPLv3. See the [LICENSE](LICENSE)
 
 ## Current Version
 
-v5.2.6-beta+7b06005
+v5.2.7-beta+d1def28
 
 ## Author
 
