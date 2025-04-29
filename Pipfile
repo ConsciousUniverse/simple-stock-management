@@ -12,6 +12,7 @@ gevent = "*"
 django-axes = {extras = ["ipware"], version = "*"}
 django-anymail = {extras = ["sparkpost"], version = "*"}
 openpyxl = "*"
+pytz = "*"
 
 [dev-packages]
 pandas = "*"
