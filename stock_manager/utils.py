@@ -294,15 +294,20 @@ class SpreadsheetTools:
                         )
 
                     # Delete ShopItem records that are in the DB but not in the Excel file.
-                    # Iterate over all ShopItem records and delete those that do not match any Excel key.
-
+                    # Build a set of (shop_user.username, item.sku) pairs from the Excel data.
                     if "Shop Stock" in workbook.sheetnames:
-                        for user in unique_shop_users_in_excel:
-                            for shop_item in ShopItem.objects.select_related(
-                                "shop_user", "item"
-                            ).filter(shop_user__username=user):
-                                if shop_item.item.sku not in unique_shop_items_in_excel:
-                                    shop_item.delete()
+                        excel_shopitem_keys = set()
+                        for row in shop_item_sheet.iter_rows(min_row=2, values_only=True):
+                            row_dict = {headers[i]: value for i, value in enumerate(row) if headers[i] in shop_item_field_mapping}
+                            shop_username = row_dict.get("Shop User")
+                            item_sku = row_dict.get("SKU")
+                            if shop_username and item_sku:
+                                excel_shopitem_keys.add((shop_username, item_sku))
+                        # Now delete ShopItems not present in Excel
+                        for shop_item in ShopItem.objects.select_related("shop_user", "item").all():
+                            key = (shop_item.shop_user.username, shop_item.item.sku)
+                            if key not in excel_shopitem_keys:
+                                shop_item.delete()
 
         except Exception as e:
             logger.error("Error while importing Excel file: %s", str(e))
