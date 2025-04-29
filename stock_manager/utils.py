@@ -53,7 +53,7 @@ class SpreadsheetTools:
                     "A 'custom_funcs/spreadsheet.convert.py' file does not exist and the incoming spreadsheet is of an invalid format."
                 )
         except Exception as e:
-            logger.error(e)
+            logger.error(f"Error invoking excel schema conversion function: {e}")
             return Response({"detail": e}, status=400)
 
     def create_excel_workbook(self):

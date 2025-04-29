@@ -106,7 +106,7 @@ Simpler Stock Management is licensed under the GPLv3. See the [LICENSE](LICENSE)
 
 ## Current Version
 
-v5.2.12-beta+235beb4
+v5.2.13-beta+ab28044
 
 ## Author
 
