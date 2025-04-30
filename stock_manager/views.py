@@ -375,6 +375,7 @@ def app_config(request):
     config = Admin.objects.first()
     return Response({
         "records_per_page": config.records_per_page if config else 25,
+        "allow_upload_deletions": config.allow_upload_deletions if config else False,
         # Add other config values here if needed
     })
 
