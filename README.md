@@ -52,7 +52,7 @@ In addition, regular updates of Python dependencies to the latest versions is ne
 
 ## Live demo
 
-[Try the live demo at: https://ssm.zaziork.com](https://ssm.zaziork.com).
+Try the live demo at: [https://ssm.danbright.uk](https://ssm.danbright.uk).
 
 (Note that some functionality has been disabled in the demo, such as file uploads and password changes. Also, if two more people are signed onto the demo with the same username at the same time, you will observe unexpected changes to the data - YMMV!).
 
@@ -111,7 +111,7 @@ Simpler Stock Management is licensed under the GPLv3. See the [LICENSE](LICENSE)
 
 ## Current Version
 
-v5.2.17-beta+72209fd
+v5.2.19-beta+3afd57d
 
 ## Author
 
