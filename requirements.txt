@@ -1,7 +1,7 @@
 asgiref==3.8.1
 certifi==2025.1.31
 charset-normalizer==3.4.1
-django==5.2
+django==5.2.1
 django-anymail==13.0
 django-axes==7.0.2
 django-ipware==7.0.1
