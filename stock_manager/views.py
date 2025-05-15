@@ -18,6 +18,7 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.db.models import IntegerField, Q
 from email_service.email import SendEmail
 from .utils import SpreadsheetTools
+from natsort import natsorted
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +40,11 @@ class ItemViewSet(viewsets.ModelViewSet):
             )  # 🔍 Search filter
         ordering = self.request.query_params.get("ordering", None)
         if ordering:
+            if ordering.lstrip('-') == "sku":
+                items = list(queryset)
+                reverse = ordering.startswith('-')
+                items = natsorted(items, key=lambda x: x.sku, reverse=reverse)
+                return items
             if ordering.startswith("-"):
                 field = ordering[1:]
                 if field == "quantity":
@@ -96,17 +102,23 @@ class ShopItemViewSet(viewsets.ModelViewSet):
                 | Q(item__sku__icontains=search_query)
             )  # 🔍 Search filter
         ordering = self.request.query_params.get("ordering", None)
-        if ordering.startswith("-"):
-            field = ordering[1:]
-            if field == "quantity":
-                queryset = queryset.order_by(Cast(field, IntegerField()).desc())
+        if ordering:
+            if ordering.lstrip('-') == "sku":
+                items = list(queryset)
+                reverse = ordering.startswith('-')
+                items = natsorted(items, key=lambda x: x.item.sku, reverse=reverse)
+                return items
+            if ordering.startswith("-"):
+                field = ordering[1:]
+                if field == "quantity":
+                    queryset = queryset.order_by(Cast(field, IntegerField()).desc())
+                else:
+                    queryset = queryset.order_by(Lower(field)).reverse()
             else:
-                queryset = queryset.order_by(Lower(field)).reverse()
-        else:
-            if ordering == "quantity":
-                queryset = queryset.order_by(Cast(ordering, IntegerField()))
-            else:
-                queryset = queryset.order_by(Lower(ordering))
+                if ordering == "quantity":
+                    queryset = queryset.order_by(Cast(ordering, IntegerField()))
+                else:
+                    queryset = queryset.order_by(Lower(ordering))
         return queryset
 
 
@@ -130,17 +142,23 @@ class TransferItemViewSet(viewsets.ModelViewSet):
                 | Q(item__sku__icontains=search_query)
             )  # 🔍 Search filter
         ordering = self.request.query_params.get("ordering", None)
-        if ordering.startswith("-"):
-            field = ordering[1:]
-            if field == "quantity":
-                queryset = queryset.order_by(Cast(field, IntegerField()).desc())
+        if ordering:
+            if ordering.lstrip('-') == "sku":
+                items = list(queryset)
+                reverse = ordering.startswith('-')
+                items = natsorted(items, key=lambda x: x.item.sku, reverse=reverse)
+                return items
+            if ordering.startswith("-"):
+                field = ordering[1:]
+                if field == "quantity":
+                    queryset = queryset.order_by(Cast(field, IntegerField()).desc())
+                else:
+                    queryset = queryset.order_by(Lower(field)).reverse()
             else:
-                queryset = queryset.order_by(Lower(field)).reverse()
-        else:
-            if ordering == "quantity":
-                queryset = queryset.order_by(Cast(ordering, IntegerField()))
-            else:
-                queryset = queryset.order_by(Lower(ordering))
+                if ordering == "quantity":
+                    queryset = queryset.order_by(Cast(ordering, IntegerField()))
+                else:
+                    queryset = queryset.order_by(Lower(ordering))
         return queryset
 
 

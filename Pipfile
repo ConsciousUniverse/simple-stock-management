@@ -14,9 +14,9 @@ django-anymail = {extras = ["sparkpost"], version = "*"}
 openpyxl = "*"
 pytz = "*"
 pandas = "*"
+natsort = "*"
 
 [dev-packages]
-
 
 [requires]
 python_version = "3.13"
