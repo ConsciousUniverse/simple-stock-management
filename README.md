@@ -40,7 +40,7 @@ In addition, regular updates of Python dependencies to the latest versions is ne
 ### Search and Sort
 
 - **Search**: Search for items in the warehouse and shop by SKU, description, or other attributes.
-- **Sort**: Sort items by SKU, description, retail price, or quantity.
+- **Sort**: Sort items by SKU, description, retail price, or quantity. SKU field uses a natural sort algorithm.
 
 ### Warehouse Maintenance
 
@@ -118,7 +118,7 @@ Simpler Stock Management is licensed under the GPLv3. See the [LICENSE](LICENSE)
 
 ## Current Version
 
-v5.2.26-beta+3fc64e8
+v5.2.27-beta+b79fcb1
 
 ## Author
 
