@@ -854,14 +854,25 @@
 
             // Delete an item using AJAX DELETE.
             const deleteItem = (sku, tableNum) => {
-                const apiUrl = tableNum === 1 ? `/api/items/${sku}/` : `/api/shop_items/${sku}/`;
+                const apiUrl = tableNum === 1 ? `/api/items/${encodeURIComponent(sku)}/` : `/api/shop_items/${encodeURIComponent(sku)}/`;
                 $.ajax({
                     url: apiUrl,
                     type: 'DELETE',
                     headers: { 'X-CSRFToken': getCSRFToken() },
                     success: () => fetchItems(tableNum),
                     error: xhr => {
-                        alert(xhr.responseJSON.detail);
+                        let msg = 'An error occurred.';
+                        if (xhr.responseJSON && xhr.responseJSON.detail) {
+                            msg = xhr.responseJSON.detail;
+                        } else if (xhr.responseText) {
+                            try {
+                                const data = JSON.parse(xhr.responseText);
+                                if (data.detail) msg = data.detail;
+                            } catch (e) {
+                                // responseText is not JSON, keep default msg
+                            }
+                        }
+                        alert(msg);
                     }
                 });
             };
@@ -1107,7 +1118,7 @@
         })();
     </script>
     <footer class="text-center mt-5 footer">
-        <small>Simpler Stock Management v5.2.27-beta+b79fcb1. (c)2025 <a href="https://github.com/consciousuniverse"
+        <small>Simpler Stock Management v5.2.28-beta+c20ba36. (c)2025 <a href="https://github.com/consciousuniverse"
                 target="_blank">Dan Bright</a>. License GPLv3.</small>
     </footer>
 </body>

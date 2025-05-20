@@ -19,7 +19,16 @@ from rest_framework.authtoken.views import obtain_auth_token
 from django.conf.urls.static import static
 from django.conf import settings
 
-router = DefaultRouter()
+from rest_framework import routers
+
+class PathRouter(DefaultRouter):
+    def get_lookup_regex(self, viewset, lookup_prefix=''):
+        # Use path converter for detail routes
+        lookup_field = getattr(viewset, 'lookup_field', 'pk')
+        return r'(?P<%s>.+)' % (lookup_prefix + lookup_field)
+
+# Use PathRouter instead of DefaultRouter
+router = PathRouter()
 router.register(r"items", ItemViewSet)
 router.register(r"shop_items", ShopItemViewSet)
 router.register(r"transfer_items", TransferItemViewSet)
