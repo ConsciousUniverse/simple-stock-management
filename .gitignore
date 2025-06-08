@@ -16,4 +16,5 @@ db_bk.sqlite3
 .env
 import_data/
 spreadsheet_convert.py
+.vscode
 
