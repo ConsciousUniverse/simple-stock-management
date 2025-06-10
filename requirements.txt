@@ -1,7 +1,7 @@
 asgiref==3.8.1
 certifi==2025.4.26
 charset-normalizer==3.4.2
-django==5.2.2
+django==5.2.3
 django-anymail==13.0
 django-axes==8.0.0
 django-ipware==7.0.1
@@ -21,7 +21,7 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.1.0
 python-ipware==3.0.0
 pytz==2025.2
-requests==2.32.3
+requests==2.32.4
 setuptools==80.9.0
 six==1.17.0
 sqlparse==0.5.3
