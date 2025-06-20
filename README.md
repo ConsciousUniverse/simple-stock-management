@@ -110,7 +110,7 @@ The backend is still Django Rest Framework, while the frontend is now plain old 
 - Still in the admin section, head to SSM > App Configuation > Configuration Options to switch on/off uploads, upload deletions and notificaiton emails.
 - If you wish to use the notification email feature, you'd need an account with a mail provider. The installation described here uses Sparkpost, but this may be changed in the settings provided the correct version of Anymail is installed (via Pip or Pipenv).
 
-Remeber not to host the app on a server containing any personal or other sensitive information, as it has not been vetted for security, and cannot be considered secure!
+Remember not to host the app on a server containing any personal or other sensitive information, as it has not been vetted for security, and cannot be considered secure!
 
 ## License
 
@@ -118,7 +118,7 @@ Simpler Stock Management is licensed under the GPLv3. See the [LICENSE](LICENSE)
 
 ## Current Version
 
-v5.2.32-beta+3517438
+v5.2.33-beta+0d35074
 
 ## Author
 
