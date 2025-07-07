@@ -29,12 +29,30 @@ class ItemSerializer(serializers.ModelSerializer):
 
 
 class ShopItemSerializer(serializers.ModelSerializer):
-    item = ItemSerializer()
+    item = ItemSerializer(required=False, allow_null=True)
     shop_user = UserSerializer()
+    item_is_active = serializers.SerializerMethodField()
+    item_description = serializers.SerializerMethodField()
+    item_sku = serializers.SerializerMethodField()
 
     class Meta:
         model = ShopItem
-        fields = ["shop_user", "item", "quantity", "last_updated"]
+        fields = ["shop_user", "item", "quantity", "last_updated", "item_is_active", "item_description", "item_sku"]
+
+    def get_item_is_active(self, obj):
+        if obj.item:
+            return getattr(obj.item, 'is_active', False)
+        return False
+
+    def get_item_description(self, obj):
+        if obj.item:
+            return getattr(obj.item, 'description', None)
+        return None
+
+    def get_item_sku(self, obj):
+        if obj.item:
+            return getattr(obj.item, 'sku', None)
+        return None
 
 
 class TransferItemSerializer(serializers.ModelSerializer):

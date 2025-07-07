@@ -45,9 +45,10 @@ class Item(models.Model):
     retail_price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.IntegerField(validators=[MinValueValidator(0)])
     last_updated = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)  # Soft-delete flag
 
     def __str__(self):
-        return self.sku
+        return f"{self.sku} ({'Active' if self.is_active else 'Inactive'})"
 
     def save(self, *args, **kwargs):
         if not re.match(r"^\d+(\.\d{1,2})?$", str(self.retail_price)):
@@ -62,7 +63,9 @@ class ShopItem(models.Model):
     shop_user = models.ForeignKey(
         User, on_delete=models.CASCADE
     )  # Relates item to a User
-    item = models.ForeignKey(Item, on_delete=models.CASCADE)  # Relates ShopItem to Item
+    item = models.ForeignKey(
+        Item, on_delete=models.SET_NULL, null=True, blank=True
+    )  # Relates ShopItem to Item, allows null if Item is deleted
     quantity = models.IntegerField(default=0)
     last_updated = models.DateTimeField(auto_now=True)
 
@@ -73,7 +76,7 @@ class ShopItem(models.Model):
         )  # Ensure unique combination of shop_user and item
 
     def __str__(self):
-        return f"{self.shop_user.username} - {self.item.sku}"
+        return f"{self.shop_user.username} - {self.item.sku if self.item else 'Item Deleted'}"
 
 
 class TransferItem(models.Model):

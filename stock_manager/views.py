@@ -25,14 +25,14 @@ logger = logging.getLogger(__name__)
 
 # API View
 class ItemViewSet(viewsets.ModelViewSet):
-    queryset = Item.objects.all()
+    queryset = Item.objects.filter(is_active=True)
     serializer_class = ItemSerializer
     lookup_field = "sku"
     permission_classes = [IsAuthenticated]
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        queryset = Item.objects.all()
+        queryset = Item.objects.filter(is_active=True)
         search_query = self.request.query_params.get("search", None)
         if search_query:
             queryset = queryset.filter(
@@ -60,20 +60,47 @@ class ItemViewSet(viewsets.ModelViewSet):
             queryset = queryset.order_by("last_updated").reverse()
         return queryset
 
+    def create(self, request, *args, **kwargs):
+        sku = request.data.get("sku")
+        if sku:
+            try:
+                item = Item.objects.get(sku=sku)
+                if not item.is_active:
+                    # Reactivate and update fields
+                    serializer = ItemSerializer(item, data=request.data, partial=True)
+                    if serializer.is_valid():
+                        serializer.save(is_active=True)
+                        return Response(serializer.data, status=status.HTTP_200_OK)
+                    else:
+                        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    return Response({"error": "Item with this SKU already exists."}, status=status.HTTP_400_BAD_REQUEST)
+            except Item.DoesNotExist:
+                pass
+        return super().create(request, *args, **kwargs)
+
     def update(self, request, *args, **kwargs):
         if not request.user.groups.filter(name="managers").exists():
             return Response(
                 {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
             )
+        sku = request.data.get("sku")
         try:
-            item = Item.objects.get(sku=request.data.get("sku"))
+            item = Item.objects.get(sku=sku)
+            if not item.is_active:
+                serializer = ItemSerializer(item, data=request.data, partial=True)
+                if serializer.is_valid():
+                    serializer.save(is_active=True)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+                else:
+                    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Item.DoesNotExist:
             return Response(
                 {"error": "Item not found."}, status=status.HTTP_404_NOT_FOUND
             )
         serializer = ItemSerializer(item, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()  # Save the changes to the database
+            serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -83,7 +110,14 @@ class ItemViewSet(viewsets.ModelViewSet):
             return Response(
                 {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
             )
-        return super().destroy(request, *args, **kwargs)
+        sku = kwargs.get("sku")
+        try:
+            item = Item.objects.get(sku=sku)
+            item.is_active = False
+            item.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Item.DoesNotExist:
+            return Response({"error": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
 class ShopItemViewSet(viewsets.ModelViewSet):
@@ -94,7 +128,7 @@ class ShopItemViewSet(viewsets.ModelViewSet):
     pagination_class = CustomPagination
 
     def get_queryset(self):
-        queryset = ShopItem.objects.filter(shop_user=self.request.user)
+        queryset = ShopItem.objects.filter(shop_user=self.request.user).exclude(item=None)
         search_query = self.request.query_params.get("search", None)
         if search_query:
             queryset = queryset.filter(
@@ -106,7 +140,7 @@ class ShopItemViewSet(viewsets.ModelViewSet):
             if ordering.lstrip('-') == "sku":
                 items = list(queryset)
                 reverse = ordering.startswith('-')
-                items = natsorted(items, key=lambda x: x.item.sku, reverse=reverse)
+                items = natsorted(items, key=lambda x: x.item.sku if x.item else '', reverse=reverse)
                 return items
             if ordering.startswith("-"):
                 field = ordering[1:]
