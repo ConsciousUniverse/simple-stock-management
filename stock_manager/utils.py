@@ -221,6 +221,10 @@ class SpreadsheetTools:
                                 if self.field_changed(obj, key, value):
                                     setattr(obj, key, value)
                                     updated = True
+                            # Reactivate if previously soft-deleted
+                            if obj.is_active is False:
+                                obj.is_active = True
+                                updated = True
                             if updated:
                                 obj.save()
                 # Process "Shop Stock" sheet for ShopItem model
@@ -259,7 +263,11 @@ class SpreadsheetTools:
                             continue  # skip row if key data is missing
                         # Track the combination key
                         unique_shop_items_in_excel.add(item_sku)
-                        shop_user = User.objects.get(username=shop_username)
+                        try:
+                            shop_user = User.objects.get(username=shop_username)
+                        except User.DoesNotExist:
+                            logger.warning(f"Shop user '{shop_username}' not found. Skipping row.")
+                            continue  # skip this row if user does not exist
                         unique_shop_users_in_excel.add(shop_user)
                         item = Item.objects.get(sku=item_sku)
                         obj, created = ShopItem.objects.get_or_create(
@@ -305,6 +313,8 @@ class SpreadsheetTools:
                                 excel_shopitem_keys.add((shop_username, item_sku))
                         # Now delete ShopItems not present in Excel
                         for shop_item in ShopItem.objects.select_related("shop_user", "item").all():
+                            if shop_item.item is None:
+                                continue  # skip if item is None
                             key = (shop_item.shop_user.username, shop_item.item.sku)
                             if key not in excel_shopitem_keys:
                                 shop_item.delete()
