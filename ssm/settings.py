@@ -140,6 +140,12 @@ LOGGING = {
             "filename": LOG_FILE,
             "formatter": "verbose",
         },
+        "file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": LOG_FILE,
+            "formatter": "verbose",
+        },
     },
     "loggers": {
         "django": {
