@@ -147,12 +147,25 @@ class SpreadsheetTools:
             return False
         return old_value != norm_new_value
 
+    def cleanup_orphaned_shopitems(self):
+        """
+        Remove ShopItem rows where item is NULL or item_id points to a non-existent Item (sku).
+        """
+        # Delete ShopItem rows where item is NULL
+        ShopItem.objects.filter(item__isnull=True).delete()
+        # Delete ShopItem rows where item_id points to a non-existent Item.sku (using ORM)
+        orphaned_shopitems = ShopItem.objects.exclude(item__isnull=True).exclude(item_id__in=Item.objects.values_list('sku', flat=True))
+        count_orphans = orphaned_shopitems.count()
+        orphaned_shopitems.delete()
+        if count_orphans:
+            logger.warning("Deleted %d orphaned ShopItem rows with invalid item_id (not matching Item.sku)", count_orphans)
+
     def handle_excel_upload(self):
         """
         Process the uploaded Excel workbook(s) and return the response
         """
-        # Sanity check: delete ShopItem rows where item is NULL BEFORE processing
-        ShopItem.objects.filter(item__isnull=True).delete()
+        # Sanity check: remove orphaned ShopItem rows before processing
+        self.cleanup_orphaned_shopitems()
         file_obj = self.request.FILES.get("file")
         if not file_obj or not file_obj.name.endswith(".xlsx"):
             return Response(
@@ -237,7 +250,11 @@ class SpreadsheetTools:
                             logger.warning(f"Shop user '{shop_username}' not found. Skipping row.")
                             continue
                         unique_shop_users_in_excel.add(shop_user)
-                        item = Item.objects.get(sku=item_sku)
+                        try:
+                            item = Item.objects.get(sku=item_sku)
+                        except Item.DoesNotExist:
+                            logger.warning(f"Item with SKU '{item_sku}' not found. Skipping ShopItem row for user '{shop_username}'.")
+                            continue
                         obj, created = ShopItem.objects.get_or_create(shop_user=shop_user, item=item)
                         item_updated = False
                         shop_item_updated = False
