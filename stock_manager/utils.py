@@ -151,6 +151,8 @@ class SpreadsheetTools:
         """
         Process the uploaded Excel workbook(s) and return the response
         """
+        # Sanity check: delete ShopItem rows where item is NULL BEFORE processing
+        ShopItem.objects.filter(item__isnull=True).delete()
         file_obj = self.request.FILES.get("file")
         if not file_obj or not file_obj.name.endswith(".xlsx"):
             return Response(
@@ -267,15 +269,12 @@ class SpreadsheetTools:
                             item_sku = row_dict.get("SKU")
                             if shop_username and item_sku:
                                 excel_shopitem_keys.add((shop_username, item_sku))
-                        for shop_item in ShopItem.objects.select_related("shop_user", "item").all():
-                            if shop_item.item is None:
-                                continue
+                        # Only delete ShopItems with non-null item before checking for deletion
+                        for shop_item in ShopItem.objects.select_related("shop_user", "item").filter(item__isnull=False):
                             key = (shop_item.shop_user.username, shop_item.item.sku)
                             if key not in excel_shopitem_keys:
                                 shop_item.delete()
         except Exception as e:
             logger.error("Error while importing Excel file: %s", str(e))
             return Response({"detail": str(e)}, status=400)
-        # Sanity check: delete ShopItem rows where item is NULL
-        ShopItem.objects.filter(item__isnull=True).delete()
         return Response({"detail": "Data successfully imported."}, status=200)
