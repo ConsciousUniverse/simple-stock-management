@@ -46,10 +46,14 @@ class SpreadsheetTools:
     def convert_custom_incoming_format(self, workbook):
         # returns a Workbook or raises Exception
         if HAS_SPREADSHEET_CONVERT:
-            return spreadsheet_convert.convert_excel(workbook)
+            try:
+                return spreadsheet_convert.convert_excel(workbook)
+            except Exception as e:
+                logger.warning(f"Warning: {e}")
+                raise Exception(f"Warning: {e}")
         else:
             raise Exception(
-                "A 'custom_funcs/spreadsheet.convert.py' file does not exist and the incoming spreadsheet is of an invalid format."
+                "A 'custom_funcs/spreadsheet_convert.py' file does not exist and the incoming spreadsheet is of an invalid format."
             )
 
     def create_excel_workbook(self):
@@ -147,14 +151,12 @@ class SpreadsheetTools:
         """
         Process the uploaded Excel workbook(s) and return the response
         """
-        # Check that a file is provided and that it's an .xlsx file.
         file_obj = self.request.FILES.get("file")
         if not file_obj or not file_obj.name.endswith(".xlsx"):
             return Response(
                 {"detail": "Invalid file format. Please upload an .xlsx file."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        # Define field mappings for Item and ShopItem models.
         item_field_mapping = {
             "SKU": "sku",
             "Description": "description",
@@ -168,111 +170,73 @@ class SpreadsheetTools:
             "Retail Price": "item__retail_price",
             "Quantity": "quantity",
         }
-
-        # We'll track which records are present in the Excel data.
-        excel_item_skus = set()  # For Item (sku is the primary key)
+        excel_item_skus = set()
         unique_shop_items_in_excel = set()
         unique_shop_users_in_excel = set()
-
         try:
             workbook = load_workbook(file_obj)
             with transaction.atomic():
-                required_sheets = ["Warehouse Stock", "Shop Stock"]
-                # convert custom input formats
-                if any(sheet not in workbook.sheetnames for sheet in required_sheets):
+                # Only process sheets that exist; do not error if one is missing
+                # Convert custom input format only for the missing sheet, not both
+                if "Warehouse Stock" not in workbook.sheetnames:
                     try:
-                        workbook = self.convert_custom_incoming_format(workbook)
+                        converted = self.convert_custom_incoming_format(workbook)
+                        if "Warehouse Stock" in converted.sheetnames:
+                            workbook = converted
                     except Exception as e:
-                        logger.error(f"Error converting custom incoming format: {e}")
-                        return Response({"detail": str(e)}, status=400)
-                # Process "Warehouse Stock" sheet for Item model
+                        logger.warning(f"Could not convert missing 'Warehouse Stock': {e}")
                 if "Warehouse Stock" in workbook.sheetnames:
                     item_sheet = workbook["Warehouse Stock"]
-                    headers = [
-                        cell.value for cell in next(item_sheet.iter_rows(max_row=1))
-                    ]
-                    if not all(
-                        col in headers
-                        for col in ["SKU", "Description", "Retail Price", "Quantity"]
-                    ):
-                        logger.warning(
-                            "Default headers could not be mapped. Consulting custom mappings..."
-                        )
-                        item_sheet = self.convert_custom_incoming_format(workbook)[
-                            "Warehouse Stock"
-                        ]
+                    headers = [cell.value for cell in next(item_sheet.iter_rows(max_row=1))]
+                    if not all(col in headers for col in ["SKU", "Description", "Retail Price", "Quantity"]):
+                        logger.warning("Default headers could not be mapped. Consulting custom mappings...")
+                        item_sheet = self.convert_custom_incoming_format(workbook)["Warehouse Stock"]
                     for row in item_sheet.iter_rows(min_row=2, values_only=True):
-                        # Build a data dictionary using the mapping
-                        data = {
-                            item_field_mapping[headers[i]]: value
-                            for i, value in enumerate(row)
-                            if headers[i] in item_field_mapping
-                        }
+                        data = {item_field_mapping[headers[i]]: value for i, value in enumerate(row) if headers[i] in item_field_mapping}
                         sku = data.get("sku")
                         if not sku:
-                            continue  # skip rows without an SKU
+                            continue
                         excel_item_skus.add(sku)
-                        obj, created = Item.objects.get_or_create(
-                            sku=sku, defaults=data
-                        )
+                        obj, created = Item.objects.get_or_create(sku=sku, defaults=data)
                         if not created:
                             updated = False
                             for key, value in data.items():
                                 if self.field_changed(obj, key, value):
                                     setattr(obj, key, value)
                                     updated = True
-                            # Reactivate if previously soft-deleted
                             if obj.is_active is False:
                                 obj.is_active = True
                                 updated = True
                             if updated:
                                 obj.save()
-                # Process "Shop Stock" sheet for ShopItem model
+                if "Shop Stock" not in workbook.sheetnames:
+                    try:
+                        converted = self.convert_custom_incoming_format(workbook)
+                        if "Shop Stock" in converted.sheetnames:
+                            workbook = converted
+                    except Exception as e:
+                        logger.warning(f"Could not convert missing 'Shop Stock': {e}")
                 if "Shop Stock" in workbook.sheetnames:
                     shop_item_sheet = workbook["Shop Stock"]
-                    headers = [
-                        cell.value
-                        for cell in next(shop_item_sheet.iter_rows(max_row=1))
-                    ]
-                    if not all(
-                        col in headers
-                        for col in [
-                            "SKU",
-                            "Description",
-                            "Retail Price",
-                            "Quantity",
-                            "Shop User",
-                        ]
-                    ):
-                        logger.warning(
-                            "Default headers could not be mapped. Consulting custom mappings..."
-                        )
-                        item_sheet = self.convert_custom_incoming_format(workbook)[
-                            "Shop Stock"
-                        ]
+                    headers = [cell.value for cell in next(shop_item_sheet.iter_rows(max_row=1))]
+                    if not all(col in headers for col in ["SKU", "Description", "Retail Price", "Quantity", "Shop User"]):
+                        logger.warning("Default headers could not be mapped. Consulting custom mappings...")
+                        shop_item_sheet = self.convert_custom_incoming_format(workbook)["Shop Stock"]
                     for row in shop_item_sheet.iter_rows(min_row=2, values_only=True):
-                        raw_data = {
-                            shop_item_field_mapping[headers[i]]: value
-                            for i, value in enumerate(row)
-                            if headers[i] in shop_item_field_mapping
-                        }
-                        # Resolve related fields: fetch shop_user and item.
+                        raw_data = {shop_item_field_mapping[headers[i]]: value for i, value in enumerate(row) if headers[i] in shop_item_field_mapping}
                         shop_username = raw_data.pop("shop_user__username", None)
                         item_sku = raw_data.pop("item__sku", None)
                         if not shop_username or not item_sku:
-                            continue  # skip row if key data is missing
-                        # Track the combination key
+                            continue
                         unique_shop_items_in_excel.add(item_sku)
                         try:
                             shop_user = User.objects.get(username=shop_username)
                         except User.DoesNotExist:
                             logger.warning(f"Shop user '{shop_username}' not found. Skipping row.")
-                            continue  # skip this row if user does not exist
+                            continue
                         unique_shop_users_in_excel.add(shop_user)
                         item = Item.objects.get(sku=item_sku)
-                        obj, created = ShopItem.objects.get_or_create(
-                            shop_user=shop_user, item=item
-                        )
+                        obj, created = ShopItem.objects.get_or_create(shop_user=shop_user, item=item)
                         item_updated = False
                         shop_item_updated = False
                         for key, value in raw_data.items():
@@ -290,19 +254,9 @@ class SpreadsheetTools:
                         if shop_item_updated:
                             obj.save()
                 if Admin.is_allow_upload_deletions():
-                    # Delete Items that are in the DB but not in the Excel file.
-                    # (Excel file is considered the source of truth.)
                     if "Warehouse Stock" in workbook.sheetnames:
-                        deleted_items_count, _ = Item.objects.exclude(
-                            sku__in=excel_item_skus
-                        ).delete()
-                        logger.error(
-                            "Deleted %s Item records not present in Excel",
-                            deleted_items_count,
-                        )
-
-                    # Delete ShopItem records that are in the DB but not in the Excel file.
-                    # Build a set of (shop_user.username, item.sku) pairs from the Excel data.
+                        deleted_items_count, _ = Item.objects.exclude(sku__in=excel_item_skus).delete()
+                        logger.error("Deleted %s Item records not present in Excel", deleted_items_count)
                     if "Shop Stock" in workbook.sheetnames:
                         excel_shopitem_keys = set()
                         for row in shop_item_sheet.iter_rows(min_row=2, values_only=True):
@@ -311,16 +265,13 @@ class SpreadsheetTools:
                             item_sku = row_dict.get("SKU")
                             if shop_username and item_sku:
                                 excel_shopitem_keys.add((shop_username, item_sku))
-                        # Now delete ShopItems not present in Excel
                         for shop_item in ShopItem.objects.select_related("shop_user", "item").all():
                             if shop_item.item is None:
-                                continue  # skip if item is None
+                                continue
                             key = (shop_item.shop_user.username, shop_item.item.sku)
                             if key not in excel_shopitem_keys:
                                 shop_item.delete()
-
         except Exception as e:
             logger.error("Error while importing Excel file: %s", str(e))
             return Response({"detail": str(e)}, status=400)
-
         return Response({"detail": "Data successfully imported."}, status=200)
