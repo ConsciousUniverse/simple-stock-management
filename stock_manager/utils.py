@@ -255,8 +255,10 @@ class SpreadsheetTools:
                             obj.save()
                 if Admin.is_allow_upload_deletions():
                     if "Warehouse Stock" in workbook.sheetnames:
-                        deleted_items_count, _ = Item.objects.exclude(sku__in=excel_item_skus).delete()
-                        logger.error("Deleted %s Item records not present in Excel", deleted_items_count)
+                        # Instead of hard-deleting, soft-delete Items not present in Excel
+                        items_to_soft_delete = Item.objects.exclude(sku__in=excel_item_skus)
+                        count = items_to_soft_delete.update(is_active=False)
+                        logger.error("Soft-deleted %s Item records not present in Excel", count)
                     if "Shop Stock" in workbook.sheetnames:
                         excel_shopitem_keys = set()
                         for row in shop_item_sheet.iter_rows(min_row=2, values_only=True):
@@ -274,4 +276,6 @@ class SpreadsheetTools:
         except Exception as e:
             logger.error("Error while importing Excel file: %s", str(e))
             return Response({"detail": str(e)}, status=400)
+        # Sanity check: delete ShopItem rows where item is NULL
+        ShopItem.objects.filter(item__isnull=True).delete()
         return Response({"detail": "Data successfully imported."}, status=200)
