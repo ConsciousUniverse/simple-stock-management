@@ -74,7 +74,7 @@ class ItemViewSet(viewsets.ModelViewSet):
                     else:
                         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
                 else:
-                    return Response({"error": "Item with this SKU already exists."}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"detail": "Item with this SKU already exists."}, status=status.HTTP_400_BAD_REQUEST)
             except Item.DoesNotExist:
                 pass
         return super().create(request, *args, **kwargs)
