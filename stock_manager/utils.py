@@ -76,7 +76,7 @@ class SpreadsheetTools:
         item_fields = ["sku", "description", "retail_price", "quantity"]
         item_header = ["SKU", "Description", "Retail Price", "Quantity"]
         item_sheet.append(item_header)
-        for item in Item.objects.only(*item_fields):
+        for item in Item.objects.filter(is_active=True).only(*item_fields):
             row_data = [getattr(item, field, "") for field in item_fields]
             item_sheet.append(row_data)
 
@@ -258,6 +258,9 @@ class SpreadsheetTools:
                                 updated = True
                             if updated:
                                 obj.save()
+                # --- Deactivate warehouse items not present in the spreadsheet if deletions allowed ---
+                if Admin.is_allow_upload_deletions():
+                    Item.objects.filter(is_active=True).exclude(sku__in=excel_item_skus).update(is_active=False)
                 if "Shop Stock" not in workbook.sheetnames:
                     try:
                         converted = self.convert_custom_incoming_format(workbook)

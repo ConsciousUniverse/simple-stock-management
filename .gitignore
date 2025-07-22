@@ -13,8 +13,8 @@ mapped_stockdata.csv
 import_items.py
 import_shop_items.py
 db_bk.sqlite3
+*.sqlite3
 .env
 import_data/
 spreadsheet_convert.py
 .vscode
-
