@@ -32,6 +32,10 @@ class Admin(models.Model):
         return Admin.objects.values_list("allow_upload_deletions", flat=True)[0]
 
     @staticmethod
+    def is_allow_email_notifications():
+        return Admin.objects.values_list("allow_email_notifications", flat=True)[0]
+
+    @staticmethod
     def get_records_per_page():
         return Admin.objects.values_list("records_per_page", flat=True)[0]
 
