@@ -1,8 +1,11 @@
 import pandas as pd
+import numpy as np
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.workbook.workbook import Workbook as OpenpyxlWorkbook
 
+import logging
+logger = logging.getLogger(__name__)
 
 def _df_from_wb(wb: OpenpyxlWorkbook, sheet_name: str) -> pd.DataFrame:
     """
@@ -17,7 +20,7 @@ def _df_from_wb(wb: OpenpyxlWorkbook, sheet_name: str) -> pd.DataFrame:
 
 def convert_excel(workbook: OpenpyxlWorkbook) -> OpenpyxlWorkbook:
     """
-    Reads defined Worksheets from a passe-in openpyxl Workbook, and maps the sheets and fields to the correct format for the system to parse and submit to the database.
+    Reads defined Worksheets from a passed-in openpyxl Workbook, and maps the sheets and fields to the correct format for the system to parse and submit to the database.
     Output MUST yield a Workbook (type OpenpyxlWorkbook) with the following:
         - One or both Worksheets named: 'Warehouse Stock' and 'Shop Stock'
         - If 'Warehouse Stock' Worksheet, must have headers "SKU", "Description", "Retail Price", "Quantity".
@@ -43,15 +46,33 @@ def convert_excel(workbook: OpenpyxlWorkbook) -> OpenpyxlWorkbook:
         "New York": "shop.ny",
         "Amsterdam": "shop.amsterdam",
     }
-     # Drop rows without SKU
+    # Drop rows without SKU
     if sku_col in df_input.columns:
         df_input = df_input[df_input[sku_col].notna() & (df_input[sku_col] != "")]
 
-    # Cast and fill numeric columns
+    # Step 1 & 2: Detect and fill empty/None/whitespace-only/NaN with 0
     for col in shop_users + wh_locs + [price_col]:
         if col in df_input.columns:
-            df_input[col] = pd.to_numeric(df_input[col], errors="coerce").fillna(0)
-
+            df_input[col] = df_input[col].apply(lambda x: 0 if pd.isna(x) or (isinstance(x, str) and x.strip() == "") else x)
+    # Step 3: Convert to numeric, coercing errors to NaN
+    for col in shop_users + wh_locs + [price_col]:
+        if col in df_input.columns:
+            df_input[col] = pd.to_numeric(df_input[col], errors="coerce")
+    # Now, any NaN is a true error
+    nan_details = []
+    sku_col_present = sku_col in df_input.columns
+    for col in [c for c in shop_users + wh_locs if c in df_input.columns]:
+        for idx, val in df_input[col].items():
+            if pd.isna(val):
+                sku_val = df_input[sku_col][idx] if sku_col_present else None
+                logger.error(f"NaN TRIGGER: Row {idx+2}, SKU={sku_val}, col={col}, value={val!r} (type={type(val).__name__})")
+                nan_details.append((idx+2, col, sku_val, type(val).__name__, val))
+    if nan_details:
+        raise ValueError(
+            "Invalid NaN values detected in one or more quantity fields. "
+            "This means your spreadsheet has missing or non-numeric data in these cells. "
+            "Please ensure all quantity fields are filled with valid numbers (not blank, None, or NaN)."
+        )
     # Prepare Shop Stock if configured
     shop_df = None
     if shop_users:
@@ -59,8 +80,7 @@ def convert_excel(workbook: OpenpyxlWorkbook) -> OpenpyxlWorkbook:
         if shop_cols:
             # Melt into shop-level rows
             shop_df = (
-                df_input[[sku_col, desc_col, price_col] + shop_cols]
-                .melt(
+                df_input[[sku_col, desc_col, price_col] + shop_cols].melt(
                     id_vars=[sku_col, desc_col, price_col],
                     value_vars=shop_cols,
                     var_name="Shop User",
@@ -68,26 +88,28 @@ def convert_excel(workbook: OpenpyxlWorkbook) -> OpenpyxlWorkbook:
                 )
                 # Map shop codes to final Shop User values
                 .assign(
-                    **{'Shop User': lambda df: df['Shop User']
+                    **{
+                        "Shop User": lambda df: df["Shop User"]
                         .map(shop_users_map)
-                        .fillna(df['Shop User'])}
+                        .fillna(df["Shop User"])
+                    }
                 )
                 # Ensure quantities are int
                 .assign(
-                    Quantity=lambda df: pd.to_numeric(
-                        df['Quantity'], errors='coerce'
-                    ).fillna(0).astype(int)
+                    Quantity=lambda df: pd.to_numeric(df["Quantity"], errors="coerce")
+                    .fillna(0)
+                    .astype(int)
                 )
                 # Drop zero quantities
-                .loc[lambda df: df['Quantity'] > 0]
+                .loc[lambda df: df["Quantity"] > 0]
                 # Rename and reorder columns
                 .rename(
                     columns={
-                        sku_col:   'SKU',
-                        desc_col:  'Description',
-                        price_col: 'Retail Price'
+                        sku_col: "SKU",
+                        desc_col: "Description",
+                        price_col: "Retail Price",
                     }
-                )[['Shop User', 'SKU', 'Description', 'Retail Price', 'Quantity']]
+                )[["Shop User", "SKU", "Description", "Retail Price", "Quantity"]]
             )
 
     # Prepare Warehouse Stock if configured
@@ -97,21 +119,19 @@ def convert_excel(workbook: OpenpyxlWorkbook) -> OpenpyxlWorkbook:
         if wh_cols:
             warehouse_main = (
                 df_input[[sku_col, desc_col, price_col] + wh_cols]
-                .assign(
-                    Quantity=lambda df: df[wh_cols].sum(axis=1).astype(int)
-                )
-                .rename(columns={
-                    sku_col:   'SKU',
-                    desc_col:  'Description',
-                    price_col: 'Retail Price'
-                })[['SKU','Description','Retail Price','Quantity']]
+                .assign(Quantity=lambda df: df[wh_cols].sum(axis=1).astype(int))
+                .rename(
+                    columns={
+                        sku_col: "SKU",
+                        desc_col: "Description",
+                        price_col: "Retail Price",
+                    }
+                )[["SKU", "Description", "Retail Price", "Quantity"]]
             )
             # Aggregate duplicates
-            warehouse_df = (
-                warehouse_main
-                .groupby(['SKU','Description','Retail Price'], as_index=False)
-                .agg({'Quantity':'sum'})
-            )
+            warehouse_df = warehouse_main.groupby(
+                ["SKU", "Description", "Retail Price"], as_index=False
+            ).agg({"Quantity": "sum"})
 
     # Create output workbook
     wb_out = Workbook()
