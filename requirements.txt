@@ -1,14 +1,14 @@
-asgiref==3.9.1
+asgiref==3.9.2
 certifi==2025.8.3
 charset-normalizer==3.4.3
-django==5.2.6
+django==5.2.7
 django-anymail==13.1
 django-axes==8.0.0
 django-ipware==7.0.1
 djangorestframework==3.16.1
 dotenv==0.9.9
 et-xmlfile==2.0.0
-gevent==25.8.2
+gevent==25.9.1
 greenlet==3.2.4
 gunicorn==23.0.0
 idna==3.10
@@ -16,7 +16,7 @@ natsort==8.4.0
 numpy==2.3.3
 openpyxl==3.1.5
 packaging==25.0
-pandas==2.3.2
+pandas==2.3.3
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.1
 python-ipware==3.0.0
@@ -27,5 +27,5 @@ six==1.17.0
 sqlparse==0.5.3
 tzdata==2025.2
 urllib3==2.5.0
-zope.event==5.1.1
-zope.interface==7.2
+zope.event==6.0
+zope.interface==8.0.1
