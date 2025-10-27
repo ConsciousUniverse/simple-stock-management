@@ -247,9 +247,12 @@ class SpreadsheetTools:
                         if "Warehouse Stock" in converted.sheetnames:
                             workbook = converted
                     except Exception as e:
-                        logger.warning(
-                            f"The Warehouse Stock sheet was missing. If you intended to upload a warehouse stock sheet and map it onto the warehouse stock database table using a custom spreadsheet_convert.py file, this failed with the following message (if you did not intend to upload a warehouse stock sheet, then all is fine!)': {e}"
+                        logger.error(
+                            "Custom conversion failed for Warehouse Stock: %s",
+                            e,
+                            exc_info=True,
                         )
+                        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
                 if "Warehouse Stock" in workbook.sheetnames:
                     item_sheet = workbook["Warehouse Stock"]
                     headers = [
@@ -300,9 +303,12 @@ class SpreadsheetTools:
                         if "Shop Stock" in converted.sheetnames:
                             workbook = converted
                     except Exception as e:
-                        logger.warning(
-                            f"The Shop Stock sheet was missing. If you intended to upload a shop stock sheet and map it onto the shop stock database table using a custom spreadsheet_convert.py file, this failed with the following message (if you did not intend to upload a shop stock sheet, then all is fine!)': {e}"
+                        logger.error(
+                            "Custom conversion failed for Shop Stock: %s",
+                            e,
+                            exc_info=True,
                         )
+                        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
                 if "Shop Stock" in workbook.sheetnames:
                     shop_item_sheet = workbook["Shop Stock"]
                     headers = [
