@@ -49,7 +49,6 @@ def convert_excel(workbook: OpenpyxlWorkbook) -> OpenpyxlWorkbook:
     # Drop rows without SKU
     if sku_col in df_input.columns:
         df_input = df_input[df_input[sku_col].notna() & (df_input[sku_col] != "")]
-
     # Step 1 & 2: Detect and fill empty/None/whitespace-only/NaN with 0
     for col in shop_users + wh_locs + [price_col]:
         if col in df_input.columns:
@@ -58,6 +57,9 @@ def convert_excel(workbook: OpenpyxlWorkbook) -> OpenpyxlWorkbook:
     for col in shop_users + wh_locs + [price_col]:
         if col in df_input.columns:
             df_input[col] = pd.to_numeric(df_input[col], errors="coerce")
+    # Round price column to 2 dp if present
+    if price_col in df_input.columns:
+        df_input[price_col] = df_input[price_col].round(2)
     # Now, any NaN is a true error
     nan_details = []
     sku_col_present = sku_col in df_input.columns
@@ -73,44 +75,42 @@ def convert_excel(workbook: OpenpyxlWorkbook) -> OpenpyxlWorkbook:
             "This means your spreadsheet has missing or non-numeric data in these cells. "
             "Please ensure all quantity fields are filled with valid numbers (not blank, None, or NaN)."
         )
-    # Prepare Shop Stock if configured
-    shop_df = None
-    if shop_users:
-        shop_cols = [c for c in shop_users if c in df_input.columns]
-        if shop_cols:
-            # Melt into shop-level rows
-            shop_df = (
-                df_input[[sku_col, desc_col, price_col] + shop_cols].melt(
-                    id_vars=[sku_col, desc_col, price_col],
-                    value_vars=shop_cols,
-                    var_name="Shop User",
-                    value_name="Quantity",
-                )
-                # Map shop codes to final Shop User values
-                .assign(
-                    **{
-                        "Shop User": lambda df: df["Shop User"]
-                        .map(shop_users_map)
-                        .fillna(df["Shop User"])
-                    }
-                )
-                # Ensure quantities are int
-                .assign(
-                    Quantity=lambda df: pd.to_numeric(df["Quantity"], errors="coerce")
-                    .fillna(0)
-                    .astype(int)
-                )
-                # Drop zero quantities
-                .loc[lambda df: df["Quantity"] > 0]
-                # Rename and reorder columns
-                .rename(
-                    columns={
-                        sku_col: "SKU",
-                        desc_col: "Description",
-                        price_col: "Retail Price",
-                    }
-                )[["Shop User", "SKU", "Description", "Retail Price", "Quantity"]]
+    shop_df = None  # Ensure shop_df is always defined
+    shop_cols = [c for c in shop_users if c in df_input.columns]
+    if shop_cols:
+        # Melt into shop-level rows
+        shop_df = (
+            df_input[[sku_col, desc_col, price_col] + shop_cols].melt(
+                id_vars=[sku_col, desc_col, price_col],
+                value_vars=shop_cols,
+                var_name="Shop User",
+                value_name="Quantity",
             )
+            # Map shop codes to final Shop User values
+            .assign(
+                **{
+                    "Shop User": lambda df: df["Shop User"]
+                    .map(shop_users_map)
+                    .fillna(df["Shop User"])
+                }
+            )
+            # Ensure quantities are int
+            .assign(
+                Quantity=lambda df: pd.to_numeric(df["Quantity"], errors="coerce")
+                .fillna(0)
+                .astype(int)
+            )
+            # Drop zero quantities
+            .loc[lambda df: df["Quantity"] > 0]
+            # Rename and reorder columns
+            .rename(
+                columns={
+                    sku_col: "SKU",
+                    desc_col: "Description",
+                    price_col: "Retail Price",
+                }
+            )[["Shop User", "SKU", "Description", "Retail Price", "Quantity"]]
+        )
 
     # Prepare Warehouse Stock if configured
     warehouse_df = None

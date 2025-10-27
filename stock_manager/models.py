@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 import re
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from django.core.validators import MinValueValidator
 
 # Override the __str__ method of the User model to return the username
@@ -55,11 +55,27 @@ class Item(models.Model):
         return f"{self.sku} ({'Active' if self.is_active else 'Inactive'})"
 
     def save(self, *args, **kwargs):
-        if not re.match(r"^\d+(\.\d{1,2})?$", str(self.retail_price)):
+        """
+        Coerce retail_price to a Decimal with 2 decimal places and validate.
+        This handles Decimal representations that may use scientific notation
+        (e.g. '0E-2') by converting to a fixed-point string before regex check.
+        """
+        try:
+            dec = Decimal(self.retail_price)
+        except (InvalidOperation, TypeError, ValueError):
+            raise ValueError("Retail price must be a valid number.")
+
+        # Quantize to two decimal places using HALF_UP rounding
+        dec = dec.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+        # Use a fixed-point string representation for validation (avoids scientific notation)
+        dec_str = format(dec, 'f')
+        if not re.match(r"^\d+(\.\d{1,2})?$", dec_str):
             raise ValueError(
                 "Retail price must be a valid number with up to 2 decimal places."
             )
-        self.retail_price = Decimal(self.retail_price).quantize(Decimal("1.00"))
+
+        self.retail_price = dec
         super().save(*args, **kwargs)
 
 
