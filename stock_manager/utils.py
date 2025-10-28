@@ -234,6 +234,7 @@ class SpreadsheetTools:
         excel_item_skus = set()
         unique_shop_items_in_excel = set()
         unique_shop_users_in_excel = set()
+        skipped_skus = []
         try:
             logger.info("Starting handle_excel_upload for user: %s", self.user.username)
             workbook = load_workbook(file_obj)
@@ -424,6 +425,12 @@ class SpreadsheetTools:
                                         value,
                                         exc,
                                     )
+                                    # record skipped SKU so frontend can be informed
+                                    try:
+                                        if item_sku not in skipped_skus:
+                                            skipped_skus.append(item_sku)
+                                    except Exception:
+                                        pass
                                     # Don't assign an invalid retail_price to the model; skip this field
                                     continue
                             if key.startswith("item__"):
@@ -471,7 +478,8 @@ class SpreadsheetTools:
         except Exception as e:
             logger.error("Error while importing Excel file: %s", str(e), exc_info=True)
             return Response({"detail": "Failed to upload stock data."}, status=400)
-        return Response(
-            {"detail": "Data has been processed according to configuration."},
-            status=200,
-        )
+        resp_body = {"detail": "Data has been processed according to configuration."}
+        if skipped_skus:
+            resp_body["skipped_skus"] = skipped_skus
+            resp_body["detail"] = "Data processed with some skipped retail_price values. See skipped_skus for list."
+        return Response(resp_body, status=200)
