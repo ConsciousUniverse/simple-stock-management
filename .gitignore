@@ -18,3 +18,4 @@ db_bk.sqlite3
 import_data/
 spreadsheet_convert.py
 .vscode
+requirements.txt
