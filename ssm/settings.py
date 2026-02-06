@@ -42,7 +42,7 @@ MIDDLEWARE = [
 ]
 AXES_FAILURE_LIMIT = int(os.getenv("AXES_FAILURE_LIMIT"))
 AXES_COOLOFF_TIME = int(os.getenv("AXES_COOLOFF_TIME"))
-AXES_LOCKOUT_PARAMETERS = ["username"]
+AXES_LOCKOUT_PARAMETERS = ["username", "ip_address"]
 AXES_CLIENT_IP_CALLABLE = lambda x: None  # Disable logging IP
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
