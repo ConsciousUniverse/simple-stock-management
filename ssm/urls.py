@@ -8,6 +8,8 @@ urlpatterns = []
 if not getattr(settings, "ALLOW_PW_CHANGE", True):
     urlpatterns += [
         path("accounts/password_change/", RedirectView.as_view(url="/")),
+        path("admin/password_change/", RedirectView.as_view(url="/admin/")),
+        path("admin/password_change/done/", RedirectView.as_view(url="/admin/")),
     ]
 
 urlpatterns += [
