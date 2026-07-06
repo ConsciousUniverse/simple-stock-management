@@ -17,6 +17,9 @@ pandas = "*"
 natsort = "*"
 
 [dev-packages]
+pytest = "*"
+pytest-django = "*"
+pytest-playwright = "*"
 
 [requires]
 python_version = "3.13"

@@ -10,7 +10,7 @@ This is an entire rewrite of the earlier (pre-V5) 'Simple Stock Management' app,
 
 ## Security
 
-A focused security review was carried out for the v5.3.1-beta release. The issues it identified — including a stored cross-site scripting (XSS) flaw, a broken access-control check on item creation, an insecure direct object reference on transfer cancellation, and spreadsheet formula injection on export — have been fixed, and defence-in-depth measures added (a Content-Security-Policy, HTTPS/secure-cookie hardening, and read-only stock endpoints). See the [release notes](RELEASE_NOTES.md) for the full list.
+A focused security review was carried out for the v5.3.3-beta release. The issues it identified — including a stored cross-site scripting (XSS) flaw, a broken access-control check on item creation, an insecure direct object reference on transfer cancellation, and spreadsheet formula injection on export — have been fixed, and defence-in-depth measures added (a Content-Security-Policy, HTTPS/secure-cookie hardening, and read-only stock endpoints). See the [release notes](RELEASE_NOTES.md) for the full list.
 
 This is **not** a substitute for a professional third-party audit, and the app has not undergone one. Undiscovered vulnerabilities may still exist. Please continue to deploy conservatively:
 
@@ -136,7 +136,7 @@ Simpler Stock Management is licensed under the GPLv3. See the [LICENSE](LICENSE)
 
 ## Current Version
 
-v5.3.1-beta
+v5.3.3-beta
 
 See the [release notes](RELEASE_NOTES.md) for what changed. (Append the release commit hash — `+<short-hash>` — when tagging this release, per the previous convention.)
 
