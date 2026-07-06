@@ -16,7 +16,7 @@ class Admin(models.Model):
     records_per_page = models.IntegerField(default=25, validators=[MinValueValidator(1)])
 
     class Meta:
-        verbose_name = "App Configuation"
+        verbose_name = "App Configuration"
         verbose_name_plural = "App Configuration"
 
     # The accessors below must not assume the configuration row exists yet
