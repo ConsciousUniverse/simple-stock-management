@@ -298,9 +298,17 @@ def transfer_item(request):
     except Item.DoesNotExist:
         logger.debug("Item not found: sku=%s", sku)
         return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        logger.debug("Error during transfer: %s", str(e))
+    except (ValueError, LookupError) as e:
+        # Intentional, user-facing business-rule messages.
+        logger.debug("Transfer rejected: %s", str(e))
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception:
+        # Do not leak unexpected internal error detail to the client.
+        logger.error("Unexpected error during transfer.", exc_info=True)
+        return Response(
+            {"detail": "An unexpected error occurred while processing the transfer."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
     return Response({"detail": "Transfer successful."}, status=status.HTTP_200_OK)
 
 
@@ -383,9 +391,13 @@ def submit_transfer_request(request):
                 },
                 status=status.HTTP_403_FORBIDDEN,
             )
-    except Exception as e:
-        logger.debug("Error while submitting transfer: %s", str(e))
-        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception:
+        # Do not leak unexpected internal error detail to the client.
+        logger.error("Unexpected error while submitting transfer.", exc_info=True)
+        return Response(
+            {"detail": "An unexpected error occurred while submitting the transfer request."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
     return Response(
         {"detail": "Transfer successfully submitted."}, status=status.HTTP_200_OK
     )
@@ -434,11 +446,17 @@ def complete_transfer(request):
     except Item.DoesNotExist:
         logger.debug("Item not found: sku=%s", sku)
         return Response({"detail": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
-    except ValueError as e:
-        logger.debug("ValueError during transfer: %s", str(e))
+    except (ValueError, LookupError) as e:
+        # Intentional, user-facing business-rule messages.
+        logger.debug("Transfer action rejected: %s", str(e))
         return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    except Exception as e:
-        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception:
+        # Do not leak unexpected internal error detail to the client.
+        logger.error("Unexpected error during transfer action.", exc_info=True)
+        return Response(
+            {"detail": "An unexpected error occurred while processing the transfer action."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
     return Response(
         {"detail": "Transfer action successful."}, status=status.HTTP_200_OK
     )

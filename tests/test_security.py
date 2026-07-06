@@ -274,3 +274,83 @@ class TestContentSecurityPolicy:
         client.force_login(shop_user)
         response = client.get("/")
         assert "Content-Security-Policy" in response
+
+
+class TestErrorMessagesDoNotLeakInternals:
+    """
+    Unexpected exceptions must not have their raw text returned to the client
+    (CWE-209). Intentional, user-facing validation messages (e.g. "Not enough
+    stock") are still shown; only unexpected internal errors are masked.
+    """
+
+    SECRET = "internal-detail-hostname-42"
+
+    def test_transfer_item_masks_unexpected_error(
+        self, shop_client, app_config, make_item, monkeypatch
+    ):
+        make_item(quantity=10)
+
+        def boom(*args, **kwargs):
+            raise RuntimeError(self.SECRET)
+
+        monkeypatch.setattr("stock_manager.views.transfer_to_shop", boom)
+        response = shop_client.post(
+            "/api/transfer/",
+            {"sku": "SKU-1", "transfer_quantity": "1"},
+            format="json",
+        )
+        assert response.status_code == 400
+        assert self.SECRET not in response.json()["detail"]
+
+    def test_transfer_item_still_shows_intended_message(
+        self, shop_client, app_config, make_item
+    ):
+        # A genuine business-rule error must remain visible to the user.
+        make_item(quantity=1)
+        response = shop_client.post(
+            "/api/transfer/",
+            {"sku": "SKU-1", "transfer_quantity": "5"},
+            format="json",
+        )
+        assert response.status_code == 400
+        assert "Not enough stock" in response.json()["detail"]
+
+    def test_complete_transfer_masks_unexpected_error(
+        self, manager_client, shop_user, app_config, make_item, monkeypatch
+    ):
+        item = make_item(quantity=10)
+        TransferItem.objects.create(
+            shop_user=shop_user, item=item, quantity=4, ordered=True
+        )
+
+        def boom(*args, **kwargs):
+            raise RuntimeError(self.SECRET)
+
+        monkeypatch.setattr("stock_manager.views.transfer_to_shop", boom)
+        response = manager_client.post(
+            "/api/complete-transfer/",
+            {"sku": "SKU-1", "quantity": 4, "shop_user_id": "shop1", "cancel": "false"},
+            format="json",
+        )
+        assert response.status_code == 400
+        assert self.SECRET not in response.json()["detail"]
+
+    def test_submit_transfer_request_masks_unexpected_error(
+        self, shop_client, shop_user, app_config, make_item, monkeypatch
+    ):
+        TransferItem.objects.create(
+            shop_user=shop_user, item=make_item(), quantity=2
+        )
+
+        def boom(*args, **kwargs):
+            raise RuntimeError(self.SECRET)
+
+        # SendEmail.compose is invoked inside the try; make it blow up.
+        monkeypatch.setattr(
+            "stock_manager.views.SendEmail.compose", boom
+        )
+        response = shop_client.post(
+            "/api/submit-transfer-request/", {}, format="json"
+        )
+        assert response.status_code == 400
+        assert self.SECRET not in response.json()["detail"]
