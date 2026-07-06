@@ -10,11 +10,14 @@ This is an entire rewrite of the earlier (pre-V5) 'Simple Stock Management' app,
 
 ## Security
 
-This app has not been audited for security and probably does contain vulnerabilities that could expose data contained on the host system to unauthorized manipulation or disclosure.
+A focused security review was carried out for the v5.3.1-beta release. The issues it identified — including a stored cross-site scripting (XSS) flaw, a broken access-control check on item creation, an insecure direct object reference on transfer cancellation, and spreadsheet formula injection on export — have been fixed, and defence-in-depth measures added (a Content-Security-Policy, HTTPS/secure-cookie hardening, and read-only stock endpoints). See the [release notes](RELEASE_NOTES.md) for the full list.
 
-Deploy at your own risk and on a server that has **no access** to your primary systems, or indeed any system where compromise could reveal personally identifiable information or other sensitive data. For example, a standalone VPS machine. Please also remember to remotely back up the sqlite database.
+This is **not** a substitute for a professional third-party audit, and the app has not undergone one. Undiscovered vulnerabilities may still exist. Please continue to deploy conservatively:
 
-In addition, regular updates of Python dependencies to the latest versions is necessary, to ensure patching of any discovered vulnerabilities (this may be achieved through your python package manager, such as pip or pipenv).
+- Deploy on a server that has **no access** to your primary systems, or indeed any system where compromise could reveal personally identifiable information or other sensitive data — for example, a standalone VPS machine.
+- Remember to remotely back up the sqlite database.
+- Keep the Python dependencies updated to the latest versions, to ensure patching of any discovered vulnerabilities (this may be achieved through your python package manager, such as pip or pipenv).
+- Run behind a TLS-terminating reverse proxy (see the installation steps below); with `DEBUG=False` the app enables secure cookies, HSTS and HTTPS redirection, and expects the proxy to set the `X-Forwarded-Proto` header.
 
 ## Features & Usage
 
@@ -99,6 +102,8 @@ The backend is still Django Rest Framework, while the frontend is now plain old 
 - Set up your forwarding (reverse proxy) web server, and configure 'systemd' to run gunicorn. As an example: by creating this file `/etc/systemd/ssm-gunicorn.service` with this content:
 
     ![Example systemd file](github_assets/image.png)
+    - Terminate TLS at the reverse proxy and ensure it sets/forwards the `X-Forwarded-Proto: https` header. With `DEBUG=False` the app enables secure cookies and HTTPS redirection and relies on this header (via `SECURE_PROXY_SSL_HEADER`) to recognise secure requests; without it you may see redirect loops or cookies that fail to set.
+    - The app sends a Content-Security-Policy that allow-lists the jQuery and Bootstrap CDN hosts referenced by the templates. If you change those CDN URLs, update `CONTENT_SECURITY_POLICY` in `ssm/settings.py` to match.
 - Do the database migrations, i.e., from the project root run: `python manage.py makemigrations`, `python makemigrations stock_manager`,  then `python manage.py migrate`.
 - Start the 'systemd' service, and enable at boot: `systemctl start ssm-gunicorn` and `systemctl enable ssm-gunicorn`.
 - Create the superuser, i.e., from the project root run: `python manage.py createsuperuser`.
@@ -110,7 +115,20 @@ The backend is still Django Rest Framework, while the frontend is now plain old 
 - Still in the admin section, head to SSM > App Configuation > Configuration Options to switch on/off uploads, upload deletions and notificaiton emails.
 - If you wish to use the notification email feature, you'd need an account with a mail provider. The installation described here uses Sparkpost, but this may be changed in the settings provided the correct version of Anymail is installed (via Pip or Pipenv).
 
-Remember not to host the app on a server containing any personal or other sensitive information, as it has not been vetted for security, and cannot be considered secure!
+Remember not to host the app on a server containing any personal or other sensitive information. Although a security review has been carried out (see the [Security](#security) section), the app has not undergone a professional third-party audit and should not be treated as guaranteed secure.
+
+## Testing
+
+The project ships with an automated test suite (pytest, plus Playwright for browser-based end-to-end tests). To run it:
+
+```bash
+pipenv install --dev                     # installs pytest, pytest-django, pytest-playwright
+pipenv run playwright install chromium   # one-time, for the browser tests
+pipenv run pytest                        # full suite (includes browser e2e)
+pipenv run pytest -m "not e2e"           # backend only, no browser needed
+```
+
+The test tooling is a development-only dependency and is not required to run the app in production (`pipenv install --deploy`).
 
 ## License
 
@@ -118,7 +136,9 @@ Simpler Stock Management is licensed under the GPLv3. See the [LICENSE](LICENSE)
 
 ## Current Version
 
-v5.2.137-beta
+v5.3.1-beta
+
+See the [release notes](RELEASE_NOTES.md) for what changed. (Append the release commit hash — `+<short-hash>` — when tagging this release, per the previous convention.)
 
 ## Author
 

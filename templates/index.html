@@ -604,6 +604,20 @@
                 });
             };
 
+            // Escape server-supplied values before interpolating them into
+            // HTML. Covers element-content and quoted-attribute contexts so
+            // stored data (e.g. item SKU / description) cannot inject markup
+            // or break out of an attribute (XSS).
+            const escapeHtml = (value) => {
+                if (value === null || value === undefined) return '';
+                return String(value)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            };
+
             // Get CSRF token from cookies.
             const getCSRFToken = () => {
                 return document.cookie.split('; ')
@@ -719,19 +733,20 @@
                         data.results.forEach(item => {
                             let row = '';
                             if (tableNum === 1) {
+                                const safeSku = escapeHtml(item.sku);
                                 const quantityField = (window.userGroups && window.userGroups.includes("managers"))
-                                    ? `<input type="number" min="0" value="${item.quantity}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="quantity">`
+                                    ? `<input type="number" min="0" value="${item.quantity}" class="form-control wh_editable-field" data-sku="${safeSku}" data-field="quantity">`
                                     : item.quantity;
                                 const retailPriceField = (window.userGroups && window.userGroups.includes("managers"))
-                                    ? `<input type="number" min="0" step="0.01" value="${item.retail_price}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="retail_price">`
+                                    ? `<input type="number" min="0" step="0.01" value="${item.retail_price}" class="form-control wh_editable-field" data-sku="${safeSku}" data-field="retail_price">`
                                     : item.retail_price;
                                 const descriptionField = (window.userGroups && window.userGroups.includes("managers"))
-                                    ? `<input type="text" value="${item.description}" class="form-control wh_editable-field" data-sku="${item.sku}" data-field="description">`
-                                    : item.description;
-                                const transferQuantityField = `<input type="number" min="0" class="form-control xferQntField wh_editable-field" ${window.editLock ? 'disabled' : ''} value="" placeholder="How many units?" data-sku="${item.sku}" data-field="xfer_qnt">`;
+                                    ? `<input type="text" value="${escapeHtml(item.description)}" class="form-control wh_editable-field" data-sku="${safeSku}" data-field="description">`
+                                    : escapeHtml(item.description);
+                                const transferQuantityField = `<input type="number" min="0" class="form-control xferQntField wh_editable-field" ${window.editLock ? 'disabled' : ''} value="" placeholder="How many units?" data-sku="${safeSku}" data-field="xfer_qnt">`;
                                 row = `
 <tr>
-    <td>${item.sku}</td>
+    <td>${safeSku}</td>
     <td>${descriptionField}</td>
     <td>${retailPriceField}</td>
     <td>${quantityField}</td>
@@ -741,31 +756,33 @@
                             } else if (tableNum === 2) {
                                 row = `
 <tr>
-    <td>${item.item.sku}</td>
-    <td>${item.item.description}</td>
+    <td>${escapeHtml(item.item.sku)}</td>
+    <td>${escapeHtml(item.item.description)}</td>
     <td>${parseFloat(item.item.retail_price).toFixed(2)}</td>
-    <td><input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity2-${item.item.sku}" data-shop_user_id="${item.shop_user.username}" disabled></td>
+    <td><input type="number" min="0" value="${item.quantity}" class="form-control" id="quantity2-${escapeHtml(item.item.sku)}" data-shop_user_id="${escapeHtml(item.shop_user.username)}" disabled></td>
 </tr>`;
                             } else if (tableNum === 3) {
                                 const highlightClass = item.ordered && window.userGroups && window.userGroups.includes("shop_users") ? 'highlight-ordered' : '';
                                 const shop_user = item.shop_user && item.shop_user.username ? item.shop_user.username : window.loggedInUsername;
                                 setXferVals(shop_user, item.item.sku, item.quantity);
+                                const safeSku = escapeHtml(item.item.sku);
+                                const safeShopUser = escapeHtml(shop_user);
                                 row = `
-<tr class="${highlightClass}" data-ordered="${item.ordered}" data-sku="${item.item.sku}" data-quantity="${item.quantity}">
-    ${window.userGroups && window.userGroups.includes("managers") ? `<td>${shop_user}</td>` : ''}
-    <td>${item.item.sku}</td>
-    <td>${item.item.description}</td>
-    <td>${window.userGroups && window.userGroups.includes("managers") ? `<input class="form-control" type="number" min="0" value="${getXferVals(shop_user, item.item.sku)}" id="quantity3-${item.item.sku}" data-shop_user_id="${item.shop_user.username}">` : getXferVals(shop_user, item.item.sku)}</td>
+<tr class="${highlightClass}" data-ordered="${item.ordered}" data-sku="${safeSku}" data-quantity="${item.quantity}">
+    ${window.userGroups && window.userGroups.includes("managers") ? `<td>${safeShopUser}</td>` : ''}
+    <td>${safeSku}</td>
+    <td>${escapeHtml(item.item.description)}</td>
+    <td>${window.userGroups && window.userGroups.includes("managers") ? `<input class="form-control" type="number" min="0" value="${getXferVals(shop_user, item.item.sku)}" id="quantity3-${safeSku}" data-shop_user_id="${safeShopUser}">` : getXferVals(shop_user, item.item.sku)}</td>
     <td class="actions">
-    ${window.userGroups && window.userGroups.includes("managers") ? `<button onclick="completeTransfer('${item.item.sku}', '${shop_user}', 'false')" class="btn btn-info" id="dispatchButton-${item.item.sku}">Dispatch</button>` : ''} 
-    <button ${window.userGroups && !window.userGroups.includes("managers") && item.ordered ? 'disabled' : ''} onclick="completeTransfer('${item.item.sku}', '${shop_user}', 'true')" class="btn btn-danger" id="deleteButton-${item.item.sku}">Cancel</button>
+    ${window.userGroups && window.userGroups.includes("managers") ? `<button class="dispatch-btn btn btn-info" data-sku="${safeSku}" data-shop-user="${safeShopUser}" id="dispatchButton-${safeSku}">Dispatch</button>` : ''}
+    <button class="cancel-btn btn btn-danger" data-sku="${safeSku}" data-shop-user="${safeShopUser}" ${window.userGroups && !window.userGroups.includes("managers") && item.ordered ? 'disabled' : ''} id="deleteButton-${safeSku}">Cancel</button>
     </td>
 </tr>`;
                             }
                             $tableBody.append(row);
                             if (tableNum === 1 && window.userGroups && window.userGroups.includes("managers")) {
                                 $tableBody.find('tr:last .actions').append(`
-<button onclick="deleteItem('${item.sku}', 1)" class="btn btn-danger"}>Delete</button>
+<button class="delete-item-btn btn btn-danger" data-sku="${escapeHtml(item.sku)}">Delete</button>
 `);
                             }
                         });
@@ -1112,6 +1129,20 @@
                 }
             });
 
+            // Transfer action buttons carry the SKU / shop user as data
+            // attributes (read as exact strings) rather than interpolating
+            // them into inline onclick handlers, so hostile values cannot
+            // inject JavaScript.
+            $(document).on("click", ".dispatch-btn", function () {
+                completeTransfer($(this).attr('data-sku'), $(this).attr('data-shop-user'), 'false');
+            });
+            $(document).on("click", ".cancel-btn", function () {
+                completeTransfer($(this).attr('data-sku'), $(this).attr('data-shop-user'), 'true');
+            });
+            $(document).on("click", ".delete-item-btn", function () {
+                deleteItem($(this).attr('data-sku'), 1);
+            });
+
             $(document).on("blur", `input[id^="quantity3-"]`, function () {
                 const id = $(this).attr('id')
                 const sku = id.replace('quantity3-', '')
@@ -1136,7 +1167,7 @@
         })();
     </script>
     <footer class="text-center mt-5 footer">
-        <small>Simpler Stock Management v5.2.137-beta. (c)2025 <a href="https://github.com/consciousuniverse"
+        <small>Simpler Stock Management v5.3.1-beta. (c)2025 <a href="https://github.com/consciousuniverse"
                 target="_blank">Dan Bright</a>. License GPLv3.</small>
     </footer>
 </body>

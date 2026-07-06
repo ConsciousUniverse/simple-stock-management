@@ -42,12 +42,11 @@ class SendEmail:
         email_from=None,
         subject=None,
     ):
-        email_to = [] if not isinstance(email_to, list) else email_to
+        # Drop any empty email addresses before validating.
+        email_to = [e for e in email_to if e] if isinstance(email_to, list) else []
         if body_plaintext and body_html and email_to:
             # validate email addresses first
-            for c, e in enumerate(email_to):
-                if e == "":  # remove any empty email addresses
-                    email_to.pop(c)
+            for e in email_to:
                 self.email_validate(e)
             self.email_validate(email_from)
             if not self.email_invalid:

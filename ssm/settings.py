@@ -18,6 +18,37 @@ ALLOWED_HOSTS = [
     host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
 ]
 ALLOW_PW_CHANGE = get_bool_env(os.getenv("ALLOW_PW_CHANGE"))
+# --- HTTPS / cookie hardening ---
+# Enabled automatically whenever DEBUG is off (i.e. any real deployment). The
+# app is intended to run behind a TLS-terminating reverse proxy, so trust its
+# X-Forwarded-Proto header when deciding whether a request arrived over HTTPS.
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_HTTPONLY = True
+SECURE_SSL_REDIRECT = not DEBUG
+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG
+SECURE_HSTS_PRELOAD = not DEBUG
+SECURE_CONTENT_TYPE_NOSNIFF = True
+# Content-Security-Policy (set by ssm.middleware.ContentSecurityPolicyMiddleware).
+# 'unsafe-inline' is required because the templates use inline event handlers
+# and inline styles; the value of this policy is the tight host allowlisting of
+# script-src/connect-src (blocks external miners/malware and data exfiltration)
+# and the deliberate omission of 'unsafe-eval'/'wasm-unsafe-eval'. Update the
+# script-src/style-src hosts if the CDN sources in the templates change.
+CONTENT_SECURITY_POLICY = (
+    "default-src 'self'; "
+    "script-src 'self' 'unsafe-inline' https://code.jquery.com; "
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+    "img-src 'self' data:; "
+    "font-src 'self' https://cdn.jsdelivr.net data:; "
+    "connect-src 'self'; "
+    "object-src 'none'; "
+    "base-uri 'self'; "
+    "frame-ancestors 'none'; "
+    "form-action 'self'"
+)
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -32,6 +63,7 @@ INSTALLED_APPS = [
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "ssm.middleware.ContentSecurityPolicyMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -42,8 +74,16 @@ MIDDLEWARE = [
 ]
 AXES_FAILURE_LIMIT = int(os.getenv("AXES_FAILURE_LIMIT"))
 AXES_COOLOFF_TIME = int(os.getenv("AXES_COOLOFF_TIME"))
-AXES_LOCKOUT_PARAMETERS = ["username", "ip_address"]
+# Lock out by username only: the client IP is deliberately not logged (see
+# AXES_CLIENT_IP_CALLABLE below), so including "ip_address" here would give
+# every client the same null IP identity and one user's failures would lock
+# out all users.
+AXES_LOCKOUT_PARAMETERS = ["username"]
 AXES_CLIENT_IP_CALLABLE = lambda x: None  # Disable logging IP
+# axes.W006 recommends adding "ip_address" to AXES_LOCKOUT_PARAMETERS, but
+# that advice does not apply here: with the client IP nulled above, every
+# request shares one IP identity and the lockout would become global.
+SILENCED_SYSTEM_CHECKS = ["axes.W006"]
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework.authentication.SessionAuthentication",
@@ -133,12 +173,6 @@ LOGGING = {
             "level": "DEBUG",
             "class": "logging.StreamHandler",
             "formatter": "simple",
-        },
-        "file": {
-            "level": "DEBUG",
-            "class": "logging.FileHandler",
-            "filename": LOG_FILE,
-            "formatter": "verbose",
         },
         "file": {
             "level": "INFO",

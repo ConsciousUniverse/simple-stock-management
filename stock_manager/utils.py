@@ -56,6 +56,23 @@ except ImportError:
     HAS_SPREADSHEET_CONVERT = False
 
 
+# Characters that, at the start of a spreadsheet cell, make Excel/LibreOffice
+# treat the value as a formula (CSV/Excel formula injection).
+FORMULA_TRIGGERS = ("=", "+", "-", "@", "\t", "\r")
+
+
+def escape_formula(value):
+    """
+    Neutralise formula injection in a text cell by prefixing a leading
+    apostrophe when the value begins with a formula trigger character, so the
+    spreadsheet renders it as literal text. Non-string values are returned
+    unchanged.
+    """
+    if isinstance(value, str) and value[:1] in FORMULA_TRIGGERS:
+        return "'" + value
+    return value
+
+
 class SpreadsheetTools:
 
     def __init__(self, request=None):
@@ -108,7 +125,7 @@ class SpreadsheetTools:
         item_header = ["SKU", "Description", "Retail Price", "Quantity"]
         item_sheet.append(item_header)
         for item in Item.objects.filter(is_active=True).only(*item_fields):
-            row_data = [getattr(item, field, "") for field in item_fields]
+            row_data = [escape_formula(getattr(item, field, "")) for field in item_fields]
             item_sheet.append(row_data)
 
         # Create the 'Shop Stock' sheet
@@ -140,7 +157,7 @@ class SpreadsheetTools:
 
         for shop_item in queryset:
             row_data = [
-                self.get_related_field(shop_item, field)
+                escape_formula(self.get_related_field(shop_item, field))
                 for field in shop_item_retrieved_fields
             ]
             shop_item_sheet.append(row_data)
@@ -239,22 +256,32 @@ class SpreadsheetTools:
             logger.info("Starting handle_excel_upload for user: %s", self.user.username)
             workbook = load_workbook(file_obj)
             logger.info("Workbook loaded successfully.")
+            # Only attempt the custom-schema conversion when neither default
+            # sheet is present; a workbook containing either default sheet is
+            # processed as-is (sheets that are absent are simply skipped).
+            default_sheets = {"Warehouse Stock", "Shop Stock"}
+            if not default_sheets.intersection(workbook.sheetnames):
+                try:
+                    workbook = self.convert_custom_incoming_format(workbook)
+                except Exception as e:
+                    logger.error(
+                        "Custom conversion failed: %s", e, exc_info=True
+                    )
+                    return Response(
+                        {"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST
+                    )
+                if not default_sheets.intersection(workbook.sheetnames):
+                    return Response(
+                        {
+                            "detail": "No 'Warehouse Stock' or 'Shop Stock' sheet "
+                            "found after custom conversion."
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
             with transaction.atomic():
-                # Only process sheets that exist; do not error if one is missing
-                # Convert custom input format only for the missing sheet, not both
-                if "Warehouse Stock" not in workbook.sheetnames:
-                    try:
-                        converted = self.convert_custom_incoming_format(workbook)
-                        if "Warehouse Stock" in converted.sheetnames:
-                            workbook = converted
-                    except Exception as e:
-                        logger.error(
-                            "Custom conversion failed for Warehouse Stock: %s",
-                            e,
-                            exc_info=True,
-                        )
-                        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                warehouse_sheet_processed = False
                 if "Warehouse Stock" in workbook.sheetnames:
+                    warehouse_sheet_processed = True
                     item_sheet = workbook["Warehouse Stock"]
                     headers = [
                         cell.value for cell in next(item_sheet.iter_rows(max_row=1))
@@ -296,20 +323,10 @@ class SpreadsheetTools:
                             if updated:
                                 obj.save()
                 # --- Deactivate warehouse items not present in the spreadsheet if deletions allowed ---
-                if Admin.is_allow_upload_deletions():
+                # Deletions are per sheet: only applied when the Warehouse
+                # Stock sheet was actually part of this upload.
+                if warehouse_sheet_processed and Admin.is_allow_upload_deletions():
                     Item.objects.filter(is_active=True).exclude(sku__in=excel_item_skus).update(is_active=False)
-                if "Shop Stock" not in workbook.sheetnames:
-                    try:
-                        converted = self.convert_custom_incoming_format(workbook)
-                        if "Shop Stock" in converted.sheetnames:
-                            workbook = converted
-                    except Exception as e:
-                        logger.error(
-                            "Custom conversion failed for Shop Stock: %s",
-                            e,
-                            exc_info=True,
-                        )
-                        return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
                 if "Shop Stock" in workbook.sheetnames:
                     shop_item_sheet = workbook["Shop Stock"]
                     headers = [

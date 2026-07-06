@@ -19,25 +19,33 @@ class Admin(models.Model):
         verbose_name = "App Configuation"
         verbose_name_plural = "App Configuration"
 
+    # The accessors below must not assume the configuration row exists yet
+    # (e.g. on a fresh install); they fall back to the field defaults.
+
     @staticmethod
     def is_edit_locked():
-        return Admin.objects.values_list("edit_lock", flat=True)[0]
+        config = Admin.objects.first()
+        return config.edit_lock if config else False
 
     @staticmethod
     def is_allow_updoads():
-        return Admin.objects.values_list("allow_uploads", flat=True)[0]
+        config = Admin.objects.first()
+        return config.allow_uploads if config else False
 
     @staticmethod
     def is_allow_upload_deletions():
-        return Admin.objects.values_list("allow_upload_deletions", flat=True)[0]
+        config = Admin.objects.first()
+        return config.allow_upload_deletions if config else False
 
     @staticmethod
     def is_allow_email_notifications():
-        return Admin.objects.values_list("allow_email_notifications", flat=True)[0]
+        config = Admin.objects.first()
+        return config.allow_email_notifications if config else False
 
     @staticmethod
     def get_records_per_page():
-        return Admin.objects.values_list("records_per_page", flat=True)[0]
+        config = Admin.objects.first()
+        return config.records_per_page if config else 25
 
     def __str__(self):
         return f"Configuration Options"

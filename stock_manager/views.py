@@ -12,9 +12,8 @@ from rest_framework.response import (
 )  # For returning HTTP responses in REST framework
 from rest_framework.decorators import api_view, permission_classes
 from django.db.models.functions import Lower, Cast
-from django.http import JsonResponse
 from rest_framework import status
-from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.db.models import IntegerField, Q
 from email_service.email import SendEmail
 from .utils import SpreadsheetTools
@@ -61,6 +60,10 @@ class ItemViewSet(viewsets.ModelViewSet):
         return queryset
 
     def create(self, request, *args, **kwargs):
+        if not request.user.groups.filter(name="managers").exists():
+            return Response(
+                {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
+            )
         sku = request.data.get("sku")
         if sku:
             try:
@@ -120,7 +123,9 @@ class ItemViewSet(viewsets.ModelViewSet):
             return Response({"error": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
-class ShopItemViewSet(viewsets.ModelViewSet):
+class ShopItemViewSet(viewsets.ReadOnlyModelViewSet):
+    # Read-only: shop stock is only ever moved via the transfer/complete
+    # endpoints, so this collection exposes no write verbs.
     queryset = ShopItem.objects.all()
     serializer_class = ShopItemSerializer
     lookup_field = "item__sku"
@@ -153,10 +158,16 @@ class ShopItemViewSet(viewsets.ModelViewSet):
                     queryset = queryset.order_by(Cast(ordering, IntegerField()))
                 else:
                     queryset = queryset.order_by(Lower(ordering))
+        else:
+            # Deterministic default ordering keeps pagination stable.
+            queryset = queryset.order_by("-last_updated")
         return queryset
 
 
-class TransferItemViewSet(viewsets.ModelViewSet):
+class TransferItemViewSet(viewsets.ReadOnlyModelViewSet):
+    # Read-only: transfers are created via /api/transfer/ and dispatched or
+    # cancelled via /api/complete-transfer/, so this collection exposes no
+    # write verbs.
     queryset = TransferItem.objects.all()
     serializer_class = TransferItemSerializer
     lookup_field = "item__sku"
@@ -193,6 +204,9 @@ class TransferItemViewSet(viewsets.ModelViewSet):
                     queryset = queryset.order_by(Cast(ordering, IntegerField()))
                 else:
                     queryset = queryset.order_by(Lower(ordering))
+        else:
+            # Deterministic default ordering keeps pagination stable.
+            queryset = queryset.order_by("-last_updated")
         return queryset
 
 
@@ -214,12 +228,10 @@ def set_edit_lock_status(request):
     )
 
 
-@csrf_exempt
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def get_edit_lock_status(request):
-    if request.method == "GET":
-        edit_lock = Admin.is_edit_locked()
-        return JsonResponse({"edit_lock": edit_lock})
-    return JsonResponse({"error": "Invalid request method"}, status=400)
+    return Response({"edit_lock": Admin.is_edit_locked()})
 
 
 # Main Page View
@@ -251,7 +263,7 @@ def get_user(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def transfer_item(request):
-    if Admin.objects.first().edit_lock:
+    if Admin.is_edit_locked():
         logger.debug("Transfer attempt while update mode is enabled.")
         return Response(
             {
@@ -265,14 +277,15 @@ def transfer_item(request):
             {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
         )
     sku = request.data.get("sku")
-    transfer_quantity = request.data.get("transfer_quantity")
-    if not transfer_quantity.isdigit():
+    # Accept the quantity as either a string or a JSON number.
+    try:
+        transfer_quantity = int(str(request.data.get("transfer_quantity")))
+    except (TypeError, ValueError):
         logger.debug("Invalid transfer quantity: not an integer.")
         return Response(
             {"detail": "Transfer quantity must be an integer."},
             status=status.HTTP_400_BAD_REQUEST,
         )
-    transfer_quantity = int(transfer_quantity)
     if transfer_quantity <= 0:
         logger.debug("Invalid transfer quantity: less than or equal to zero.")
         return Response(
@@ -393,15 +406,25 @@ def complete_transfer(request):
         return Response(
             {"detail": "Shop user not found."}, status=status.HTTP_400_BAD_REQUEST
         )
-    if not request.user.groups.filter(name="managers").exists() and not cancel:
-        return Response(
-            {"detail": "Permission denied. User is not in managers group."},
-            status=status.HTTP_403_FORBIDDEN,
-        )
+    is_manager = request.user.groups.filter(name="managers").exists()
+    if not is_manager:
+        # Non-managers may only cancel, and only their own transfers. The
+        # shop_user_id in the request body must not let one shop user act on
+        # another's pending transfers.
+        if not cancel:
+            return Response(
+                {"detail": "Permission denied. User is not in managers group."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if shop_user != request.user:
+            return Response(
+                {"detail": "Permission denied. You may only cancel your own transfers."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
     try:
         item = Item.objects.get(sku=sku)
         transfer_to_shop(
-            manager=request.user.groups.filter(name="managers").exists(),
+            manager=is_manager,
             item=item,
             shop_user=shop_user_id,
             transfer_quantity=quantity,
