@@ -1064,7 +1064,7 @@
                     xhrFields: { withCredentials: true },
                     success: data => {
                         if (data.username) {
-                            $("#userStatus").html(`Hello ${data.username}<br/><a id="change_pw_link" href="{% url 'password_change' %}">Change my password</a>`);
+                            $("#userStatus").html(`Hello ${escapeHtml(data.username)}<br/><a id="change_pw_link" href="{% url 'password_change' %}">Change my password</a>`);
                             window.loggedInUsername = data.username;
                             window.userGroups = data.groups;
                             tailor_dashboard();

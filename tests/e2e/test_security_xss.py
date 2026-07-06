@@ -101,3 +101,21 @@ class TestTransferButtonInjection:
         expect(page.locator('#itemTable3 tr[data-sku="SKU-1"]')).to_have_count(0)
         item.refresh_from_db()
         assert item.quantity == 6
+
+
+class TestUsernameXSS:
+    def test_own_username_rendered_inertly_in_userstatus(
+        self, page, live_server, login, groups, app_config
+    ):
+        # The greeting in #userStatus is built with .html(), so a username
+        # containing markup must be escaped. Usernames are normally validated
+        # to exclude such characters, but this guards the sink regardless.
+        from django.contrib.auth.models import User
+
+        user = User.objects.create_user(username=IMG_PAYLOAD, password="test-pass-123")
+        user.groups.add(groups["shop_users"])
+
+        login(IMG_PAYLOAD)
+
+        expect(page.locator("#userStatus")).to_contain_text("Hello")
+        assert xss_fired(page) is False
