@@ -118,3 +118,16 @@ class TestAppConfigEndpoint:
             "records_per_page": 25,
             "allow_upload_deletions": False,
         }
+
+
+class TestDeadTokenEndpointRemoved:
+    """
+    The token-auth endpoint was unused: DRF token authentication is not
+    configured (no TokenAuthentication class, and rest_framework.authtoken is
+    not installed), so it could only ever error. It is removed to shrink the
+    attack surface.
+    """
+
+    def test_token_endpoint_returns_404(self, client):
+        assert client.post("/auth/token/", {}).status_code == 404
+        assert client.post("/api/auth/token/", {}).status_code == 404

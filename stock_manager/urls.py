@@ -15,7 +15,6 @@ from .views import (
     import_data_excel,
     app_config,  # Add this import
 )
-from rest_framework.authtoken.views import obtain_auth_token
 from django.conf.urls.static import static
 from django.conf import settings
 
@@ -37,9 +36,6 @@ urlpatterns = [
     path("", index, name="index"),
     path("api/", include(router.urls)),
     path("auth/user/", get_user, name="get_user"),  # Custom user endpoint
-    path(
-        "auth/token/", obtain_auth_token, name="api_token_auth"
-    ),  # Optional token login
     path("api/transfer/", transfer_item, name="transfer_item"),
     path(
         "api/submit-transfer-request/",
