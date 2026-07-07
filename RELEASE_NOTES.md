@@ -92,6 +92,12 @@ A follow-up review pass added further defence-in-depth:
   whole notification send.
 - **Logging config.** Removed a duplicate logging handler definition in
   settings.
+- **Transfer dispatch quantity/stock integrity.** Dispatch now requires a
+  positive integer quantity (a negative value previously inflated warehouse
+  stock), and the warehouse decrement is a single atomic conditional update,
+  so concurrent dispatches cannot oversell.
+- **Removed a dead API endpoint.** The unused `auth/token/` token-auth
+  endpoint (token authentication was never configured) has been removed.
 
 ### Added — automated tests
 
