@@ -303,6 +303,52 @@ class TestCompleteTransfer:
         assert shop_item.quantity == 4
         assert not TransferItem.objects.filter(shop_user=shop_user, item=item).exists()
 
+    def test_dispatch_rejects_negative_quantity(
+        self, manager_client, shop_user, app_config, make_item
+    ):
+        # A negative dispatch quantity would otherwise *inflate* warehouse
+        # stock and reduce shop stock.
+        item = make_item(quantity=10)
+        TransferItem.objects.create(
+            shop_user=shop_user, item=item, quantity=4, ordered=True
+        )
+        response = manager_client.post(
+            "/api/complete-transfer/", self.payload(quantity=-5), format="json"
+        )
+        assert response.status_code == 400
+        item.refresh_from_db()
+        assert item.quantity == 10
+        assert not ShopItem.objects.filter(shop_user=shop_user, item=item).exists()
+
+    def test_dispatch_rejects_zero_quantity(
+        self, manager_client, shop_user, app_config, make_item
+    ):
+        item = make_item(quantity=10)
+        TransferItem.objects.create(
+            shop_user=shop_user, item=item, quantity=4, ordered=True
+        )
+        response = manager_client.post(
+            "/api/complete-transfer/", self.payload(quantity=0), format="json"
+        )
+        assert response.status_code == 400
+        item.refresh_from_db()
+        assert item.quantity == 10
+
+    def test_dispatch_rejects_non_integer_quantity(
+        self, manager_client, shop_user, app_config, make_item
+    ):
+        item = make_item(quantity=10)
+        TransferItem.objects.create(
+            shop_user=shop_user, item=item, quantity=4, ordered=True
+        )
+        response = manager_client.post(
+            "/api/complete-transfer/", self.payload(quantity="abc"), format="json"
+        )
+        assert response.status_code == 400
+        assert "integer" in response.json()["detail"].lower()
+        item.refresh_from_db()
+        assert item.quantity == 10
+
     def test_dispatch_accumulates_existing_shop_stock(
         self, manager_client, shop_user, app_config, make_item
     ):

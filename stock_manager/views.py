@@ -14,7 +14,8 @@ from rest_framework.decorators import api_view, permission_classes
 from django.db.models.functions import Lower, Cast
 from rest_framework import status
 from django.views.decorators.csrf import ensure_csrf_cookie
-from django.db.models import IntegerField, Q
+from django.db import transaction
+from django.db.models import IntegerField, Q, F
 from email_service.email import SendEmail
 from .utils import SpreadsheetTools
 from natsort import natsorted
@@ -325,6 +326,8 @@ def transfer_to_shop(
         ).delete()
     else:
         transfer_quantity = int(transfer_quantity)
+        if transfer_quantity <= 0:
+            raise ValueError("Transfer quantity must be greater than zero.")
         if item.quantity < transfer_quantity:
             raise ValueError("Not enough stock to transfer")
         if not complete:
@@ -338,20 +341,25 @@ def transfer_to_shop(
             xfer_item.quantity = transfer_quantity
             xfer_item.save()
         else:
-            if item.quantity < int(transfer_quantity):
-                raise ValueError("Not enough stock to transfer")
-            # transfer to ShopItem database
+            # Dispatch: move stock from the warehouse to the shop. The
+            # warehouse decrement is a single conditional UPDATE, so two
+            # concurrent dispatches cannot oversell (guards against a
+            # check-then-update race).
             shop_user = User.objects.get(id=shop_user)
-            shop_item, created = ShopItem.objects.get_or_create(
-                item=item, shop_user=shop_user
-            )
-            shop_item.quantity += transfer_quantity
-            shop_item.save()
-            # change quantity recorded for stock Item in warehouse
-            item.quantity -= transfer_quantity
-            item.save()
-            # delete item from pending transfer
-            TransferItem.objects.get(item=item, shop_user=shop_user).delete()
+            with transaction.atomic():
+                rows = Item.objects.filter(
+                    pk=item.pk, quantity__gte=transfer_quantity
+                ).update(quantity=F("quantity") - transfer_quantity)
+                if not rows:
+                    raise ValueError("Not enough stock to transfer")
+                shop_item, _ = ShopItem.objects.get_or_create(
+                    item=item, shop_user=shop_user
+                )
+                ShopItem.objects.filter(pk=shop_item.pk).update(
+                    quantity=F("quantity") + transfer_quantity
+                )
+                TransferItem.objects.filter(item=item, shop_user=shop_user).delete()
+            item.refresh_from_db()
 
 
 @api_view(["POST"])
@@ -432,6 +440,21 @@ def complete_transfer(request):
             return Response(
                 {"detail": "Permission denied. You may only cancel your own transfers."},
                 status=status.HTTP_403_FORBIDDEN,
+            )
+    if not cancel:
+        # Dispatch requires a valid positive quantity; a negative value would
+        # otherwise inflate warehouse stock.
+        try:
+            quantity = int(str(quantity))
+        except (TypeError, ValueError):
+            return Response(
+                {"detail": "Quantity must be a positive integer."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if quantity <= 0:
+            return Response(
+                {"detail": "Quantity must be a positive integer."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
     try:
         item = Item.objects.get(sku=sku)
