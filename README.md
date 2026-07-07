@@ -10,7 +10,7 @@ This is an entire rewrite of the earlier (pre-V5) 'Simple Stock Management' app,
 
 ## Security
 
-A focused security review was carried out for the v5.3.0-beta release. The issues it identified — including a stored cross-site scripting (XSS) flaw, a broken access-control check on item creation, an insecure direct object reference on transfer cancellation, and spreadsheet formula injection on export — have been fixed, and defence-in-depth measures added (a Content-Security-Policy, HTTPS/secure-cookie hardening, and read-only stock endpoints). See the [release notes](RELEASE_NOTES.md) for the full list.
+A focused security review (carried out over two passes) was undertaken for the v5.3.0-beta release. The issues it identified — including a stored cross-site scripting (XSS) flaw, a broken access-control check on item creation, an insecure direct object reference on transfer cancellation, and spreadsheet formula injection on export — have been fixed, and defence-in-depth measures added (a Content-Security-Policy, HTTPS/secure-cookie hardening, read-only stock endpoints, output escaping in the dashboard and notification emails, and non-revealing API error messages). See the [release notes](RELEASE_NOTES.md) for the full list.
 
 This is **not** a substitute for a professional third-party audit, and the app has not undergone one. Undiscovered vulnerabilities may still exist. Please continue to deploy conservatively:
 

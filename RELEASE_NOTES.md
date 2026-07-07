@@ -51,6 +51,22 @@ with the precautions in the README.
   `transfer_items` endpoints are now read-only (stock is only ever moved via
   the dedicated transfer/complete endpoints), removing unused write verbs.
 
+A follow-up review pass added further defence-in-depth:
+
+- **API error messages no longer leak internals.** The transfer, submit and
+  complete-transfer endpoints returned the raw text of any caught exception,
+  so an unexpected internal error could disclose implementation detail
+  (CWE-209). Unexpected errors are now logged server-side and answered with a
+  generic message; intentional business-rule messages (e.g. "Not enough
+  stock") are unchanged.
+- **Notification email output escaped.** Item SKU/description and the
+  requesting user's name and email are now HTML-escaped in the notification
+  email body, preventing markup injection into the message sent to managers
+  (CWE-116).
+- **Dashboard greeting escaped.** The username shown in the header greeting was
+  interpolated via `.html()` without escaping; it is now escaped, consistent
+  with the rest of the frontend.
+
 ### Fixed
 
 - **Brute-force lockout was global.** The django-axes lockout keyed on a
