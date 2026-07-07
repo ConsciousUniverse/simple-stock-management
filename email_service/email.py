@@ -11,6 +11,7 @@ from django.contrib.auth.models import User
 from stock_manager.models import Admin
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
+from django.utils.html import escape
 from datetime import datetime
 import pytz
 
@@ -101,7 +102,7 @@ class SendEmail:
                 f"""The following order has been placed by {user.username} [{user.email}] on {formatted_time}."""
             ]
             body_html = [
-                f"""<p>The following order has been placed by {user.username} [<a href="mailto:{user.email}">{user.email}</a>] on {formatted_time}. """
+                f"""<p>The following order has been placed by {escape(user.username)} [<a href="mailto:{escape(user.email)}">{escape(user.email)}</a>] on {formatted_time}. """
             ]
             if ordered_items:
                 for stock_record in ordered_items:
@@ -117,10 +118,10 @@ class SendEmail:
                     body_html.append(
                         f"""        <h2>Stock Order Details</h2>
                                     <ul>
-                                    <li>SKU: {stock_record['item__sku']}</li>
-                                    <li>Description: {stock_record['item__description']}</li>
-                                    <li>Units transferred: {stock_record['quantity']}</li>
-                                    <li>Unit price: {stock_record['item__retail_price']}</li>
+                                    <li>SKU: {escape(stock_record['item__sku'])}</li>
+                                    <li>Description: {escape(stock_record['item__description'])}</li>
+                                    <li>Units transferred: {escape(stock_record['quantity'])}</li>
+                                    <li>Unit price: {escape(stock_record['item__retail_price'])}</li>
                                     </ul>
                                     """
                     )

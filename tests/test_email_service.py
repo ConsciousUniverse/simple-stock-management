@@ -118,6 +118,29 @@ class TestCompose:
         html_body = message.alternatives[0][0]
         assert "SKU-1" in html_body
 
+    def test_html_body_escapes_item_fields(
+        self, notifications_enabled, recipient, shop_user, mailoutbox
+    ):
+        # A hostile item description must not be rendered as live markup in
+        # the HTML email sent to warehouse managers.
+        records = [
+            {
+                "id": 1,
+                "item__sku": "SKU-1",
+                "item__description": '<img src=x onerror="alert(1)">',
+                "item__retail_price": "9.99",
+                "quantity": 3,
+            }
+        ]
+        SendEmail().compose(
+            records=records,
+            user=shop_user,
+            notification_type=SendEmail.EmailType.STOCK_TRANSFER,
+        )
+        html_body = mailoutbox[0].alternatives[0][0]
+        assert '<img src=x onerror' not in html_body
+        assert "&lt;img" in html_body
+
     def test_duplicate_recipient_addresses_deduplicated(
         self, notifications_enabled, recipient, groups, shop_user, mailoutbox
     ):
