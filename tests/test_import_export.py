@@ -4,6 +4,7 @@ import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from stock_manager.models import Item, ShopItem
+from stock_manager.utils import HAS_SPREADSHEET_CONVERT
 
 from .conftest import (
     SHOP_HEADER,
@@ -381,6 +382,10 @@ class TestImportSingleSheet:
         assert ShopItem.objects.filter(shop_user=shop_user, item=item).exists()
 
 
+@pytest.mark.skipif(
+    not HAS_SPREADSHEET_CONVERT,
+    reason="custom spreadsheet_convert.py not present (user-supplied, gitignored)",
+)
 class TestImportCustomSchema:
     def test_unrecognised_workbook_rejected(self, manager_client, uploads_enabled):
         response = post_xlsx(

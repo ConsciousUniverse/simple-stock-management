@@ -7,7 +7,13 @@ Unit tests for the example custom spreadsheet conversion function
 import pytest
 from openpyxl import Workbook
 
-from stock_manager.custom_funcs.spreadsheet_convert import convert_excel
+# The custom converter (spreadsheet_convert.py) is user-supplied and gitignored,
+# so it is absent from a fresh checkout / deployment. Skip this whole module when
+# it isn't present rather than failing collection.
+convert_excel = pytest.importorskip(
+    "stock_manager.custom_funcs.spreadsheet_convert",
+    reason="custom spreadsheet_convert.py not present (user-supplied, gitignored)",
+).convert_excel
 
 FULL_HEADER = ["SKUCode", "Item", "BL Price", "Barn", "Feed Barn", "Mengham", "Bog"]
 
