@@ -2,11 +2,16 @@ from decimal import Decimal
 from io import StringIO
 
 import pytest
-from django.core.management import call_command
+from django.core.management import call_command, get_commands
 
 from stock_manager.models import Item, ShopItem
 
 pytestmark = pytest.mark.django_db
+
+# The import_items / import_shop_items management commands are user-supplied and
+# gitignored, so they are absent from a fresh clone or deployment. Skip their
+# tests when the command isn't registered rather than failing.
+_COMMANDS = get_commands()
 
 
 def write_csv(path, header, rows):
@@ -15,6 +20,10 @@ def write_csv(path, header, rows):
     return str(path)
 
 
+@pytest.mark.skipif(
+    "import_items" not in _COMMANDS,
+    reason="import_items management command not present (user-supplied, gitignored)",
+)
 class TestImportItems:
     HEADER = ["sku", "desc", "unit_price", "units_total"]
 
@@ -53,6 +62,10 @@ class TestImportItems:
         assert "SKU-1 updated" in out.getvalue()
 
 
+@pytest.mark.skipif(
+    "import_shop_items" not in _COMMANDS,
+    reason="import_shop_items management command not present (user-supplied, gitignored)",
+)
 class TestImportShopItems:
     HEADER = ["sku", "owner_id", "units_total"]
 

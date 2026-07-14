@@ -51,3 +51,30 @@ def login(page, live_server):
         page.wait_for_url(f"{live_server.url}/")
 
     return _login
+
+
+def _chromium_available():
+    """True only if Playwright's Chromium binary is actually installed."""
+    try:
+        from playwright.sync_api import sync_playwright
+
+        with sync_playwright() as p:
+            return os.path.exists(p.chromium.executable_path)
+    except Exception:
+        # If we can't determine it, don't silently skip — let it behave as
+        # before (the browser fixture will error) rather than hide a problem.
+        return True
+
+
+def pytest_collection_modifyitems(config, items):
+    """Skip the browser-driven e2e tests when Chromium isn't installed (e.g. on
+    a server) so the full suite runs cleanly instead of erroring on launch."""
+    e2e_items = [item for item in items if item.get_closest_marker("e2e")]
+    if not e2e_items or _chromium_available():
+        return
+    skip = pytest.mark.skip(
+        reason="Playwright Chromium not installed "
+        "(run: pipenv run playwright install chromium)"
+    )
+    for item in e2e_items:
+        item.add_marker(skip)
