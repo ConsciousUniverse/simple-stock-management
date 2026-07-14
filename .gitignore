@@ -17,5 +17,4 @@ import_data/
 spreadsheet_convert.py
 .vscode
 requirements.txt
-Pipfile.lock
 .pytest_cache/
