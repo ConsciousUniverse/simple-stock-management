@@ -18,3 +18,4 @@ spreadsheet_convert.py
 .vscode
 requirements.txt
 .pytest_cache/
+Pipfile.lock
