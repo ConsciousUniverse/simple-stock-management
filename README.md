@@ -6,7 +6,7 @@ Note, this is an early beta release. It is intended for testing only, and is not
 
 This is an entire rewrite of the earlier (pre-V5) 'Simple Stock Management' app, from scratch. Little-used functionality has been removed and the code is now simpler and [more maintainable](#what-changed). The earlier legacy version is now unmaintained, however the code may still be accessed in the [legacy_v4 branch](https://github.com/consciousuniverse/simple-stock-management/tree/legacy_v4).
 
-[Live demo available below](#live-demo).
+~~[Live demo available below](#live-demo).~~
 
 ## Security
 
@@ -62,19 +62,9 @@ If you'd like to discuss options to have this application installed and/or maint
 
 ## Live demo
 
-Try the live demo at: [https://ssm.danbright.uk](https://ssm.danbright.uk).
+The live demo is currently unavailable.
 
-(Note that some functionality has been disabled in the demo, such as file uploads and password changes. Also, if two or more people are signed onto the demo with the same username at the same time, you will observe unexpected changes to the data - YMMV!).
-
-Warehouse manager login:
-
-- Username: demo_manager
-- Password: Gui7u6QxWEdZwq
-
-Shop user login:
-
-- Username: demo_shop_user
-- Password: Gui7u6QxWEdZwq
+If anyone genuinely wants to see this in action and cannot get it running for some reason, ping me and I'll deploy an instance.
 
 ## Screenshots
 
