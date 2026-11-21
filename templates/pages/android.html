@@ -1,0 +1,142 @@
+{% extends "base_app.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Android app" %}{% endblock %}
+{% block crumb %}{% trans "Android app" %}{% endblock %}
+{% block heading %}{% trans "Android app" %}{% endblock %}
+{% block subheading %}{% trans "The build to install on the phone, and how it connects to this server." %}{% endblock %}
+
+{% block content %}
+<div class="sap-tiles">
+    <div class="sap-tile">
+        <span class="sap-tile__label">{% trans "Current version" %}</span>
+        <span class="sap-tile__value" id="currentVersion">{{ latest.version|default:"—" }}</span>
+    </div>
+    <div class="sap-tile sap-tile--neutral">
+        <span class="sap-tile__label">{% trans "Published builds" %}</span>
+        <span class="sap-tile__value">{{ releases|length }}</span>
+    </div>
+</div>
+
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Install the app" %}</h2>
+        {% if latest %}
+        <div class="sap-card__header-actions">
+            <a class="sap-btn sap-btn--emphasized" href="{{ latest.download_url }}" id="downloadApk"
+                target="_blank" rel="noopener">
+                <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-download"></use></svg>
+                {% blocktrans with version=latest.version %}Download {{ version }}{% endblocktrans %}
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    <div class="sap-card__body">
+        {% if latest %}
+        <p class="sap-muted" id="releaseNotes">
+            {% if latest.notes %}{{ latest.notes|linebreaksbr }}{% else %}{% trans "No release notes." %}{% endif %}
+        </p>
+        <ol class="sap-steps">
+            <li>{% trans "Open the download link on the phone and install the file (allow installing apps from this source if the phone asks)." %}</li>
+            <li>{% trans "Sign in with the same user name and password you use here." %}</li>
+            <li>{% trans "The app reads the server address from the field below; it is already set for this deployment." %}</li>
+        </ol>
+        {% else %}
+        <div class="sap-empty">
+            <span class="sap-empty__title">{% trans "No build has been published yet." %}</span>
+            <span class="sap-empty__hint">{% trans "A warehouse manager publishes the download address below." %}</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Server address" %}</h2>
+    </div>
+    <div class="sap-card__body">
+        <label class="sap-field">
+            <span class="sap-label">{% trans "API address" %}</span>
+            <input class="sap-input" type="text" value="{{ api_root }}" readonly id="apiRoot"
+                onclick="this.select()">
+            <span class="sap-field__hint">{% trans "The app uses this address to reach the warehouse data." %}</span>
+        </label>
+    </div>
+</div>
+
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Published builds" %}</h2>
+    </div>
+    <div class="sap-card__body sap-card__body--flush">
+        <div class="sap-tablewrap">
+            <table class="sap-table" id="releasesTable">
+                <thead>
+                    <tr>
+                        <th>{% trans "Version" %}</th>
+                        <th>{% trans "Published" %}</th>
+                        <th>{% trans "By" %}</th>
+                        <th>{% trans "Notes" %}</th>
+                        <th>{% trans "Download" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for release in releases %}
+                    <tr>
+                        <td>
+                            {{ release.version }}
+                            {% if release.is_current %}
+                            <span class="sap-pill sap-pill--positive">{% trans "Current" %}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ release.created_at|date:"Y-m-d" }}</td>
+                        <td>{{ release.created_by.get_username|default:"—" }}</td>
+                        <td>{{ release.notes|default:"—"|truncatechars:80 }}</td>
+                        <td><a class="sap-btn sap-btn--ghost sap-btn--sm" href="{{ release.download_url }}"
+                                target="_blank" rel="noopener">{% trans "Open" %}</a></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="sap-empty">
+                            <span class="sap-empty__title">{% trans "No build has been published yet." %}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if is_manager %}
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Publish a build" %}</h2>
+    </div>
+    <div class="sap-card__body">
+        <form method="post" action="/android/" class="sap-form-grid" id="publishReleaseForm">
+            {% csrf_token %}
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Version" %}</span>
+                <input class="sap-input" type="text" name="version" placeholder="1.0.1" required>
+            </label>
+            <label class="sap-field sap-field--wide">
+                <span class="sap-label">{% trans "Download address" %}</span>
+                <input class="sap-input" type="text" name="download_url" placeholder="https://…/app-release.apk"
+                    required>
+                <span class="sap-field__hint">
+                    {% trans "A durable address, not a file on this server: the server's disk is wiped on every deploy." %}
+                </span>
+            </label>
+            <label class="sap-field sap-field--wide">
+                <span class="sap-label">{% trans "Release notes" %}</span>
+                <textarea class="sap-input" name="notes" rows="3"></textarea>
+            </label>
+            <div class="sap-form-actions">
+                <button class="sap-btn sap-btn--emphasized" type="submit">{% trans "Publish" %}</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

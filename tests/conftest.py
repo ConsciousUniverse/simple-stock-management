@@ -103,6 +103,7 @@ def make_item(db):
         retail_price="9.99",
         quantity=10,
         is_active=True,
+        unit="",
     ):
         return Item.objects.create(
             sku=sku,
@@ -110,6 +111,7 @@ def make_item(db):
             retail_price=retail_price,
             quantity=quantity,
             is_active=is_active,
+            unit=unit,
         )
 
     return _make_item

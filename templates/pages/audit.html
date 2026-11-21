@@ -1,0 +1,112 @@
+{% extends "base_app.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Audit log" %}{% endblock %}
+{% block crumb %}{% trans "Audit log" %}{% endblock %}
+{% block heading %}{% trans "Audit log" %}{% endblock %}
+{% block subheading %}{% trans "Every recorded action: who did what, and when." %}{% endblock %}
+
+{% block content %}
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Filter" %}</h2>
+        <div class="sap-card__header-actions">
+            <span class="sap-muted">{% trans "Events" %}: {{ total }}</span>
+        </div>
+    </div>
+    <div class="sap-card__body">
+        <form method="get" action="/audit/" class="sap-form-grid" id="auditFilter">
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Area" %}</span>
+                <select class="sap-input" name="area">
+                    <option value="">{% trans "All areas" %}</option>
+                    {% for value, label in areas %}
+                    <option value="{{ value }}" {% if filters.area == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "User" %}</span>
+                <input class="sap-input" type="search" name="actor" value="{{ filters.actor }}"
+                    placeholder="{% trans 'User name' %}">
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Search" %}</span>
+                <input class="sap-input" type="search" name="q" value="{{ filters.q }}"
+                    placeholder="{% trans 'Document number, item code, wording' %}">
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "From" %}</span>
+                <input class="sap-input" type="date" name="from" value="{{ filters.from }}">
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "To" %}</span>
+                <input class="sap-input" type="date" name="to" value="{{ filters.to }}">
+            </label>
+            <div class="sap-form-actions">
+                <button class="sap-btn sap-btn--emphasized" type="submit">{% trans "Filter" %}</button>
+                <a class="sap-btn sap-btn--ghost" href="/audit/">{% trans "Clear" %}</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Events" %}</h2>
+    </div>
+    <div class="sap-card__body sap-card__body--flush">
+        <div class="sap-tablewrap">
+            <table class="sap-table sap-table--dense" id="auditTable">
+                <thead>
+                    <tr>
+                        <th>{% trans "When" %}</th>
+                        <th>{% trans "User" %}</th>
+                        <th>{% trans "Action" %}</th>
+                        <th>{% trans "Details" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in events %}
+                    <tr>
+                        <td dir="ltr">{{ event.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>{{ event.actor_name|default:"—" }}</td>
+                        <td>
+                            <span class="sap-pill sap-pill--neutral">{{ event.action_label }}</span>
+                        </td>
+                        <td>{{ event.description|default:"—" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="sap-empty">
+                            <span class="sap-empty__title">{% trans "No events match this filter." %}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if page_obj.paginator.num_pages > 1 %}
+    <div class="sap-card__footer">
+        <div class="sap-pagination">
+            {% if page_obj.has_previous %}
+            <a class="sap-btn sap-btn--ghost sap-btn--sm"
+                href="/audit/?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                {% trans "Previous" %}
+            </a>
+            {% endif %}
+            <span class="sap-pagination__info">
+                {% blocktrans with number=page_obj.number pages=page_obj.paginator.num_pages %}Page {{ number }} of {{ pages }}{% endblocktrans %}
+            </span>
+            {% if page_obj.has_next %}
+            <a class="sap-btn sap-btn--ghost sap-btn--sm"
+                href="/audit/?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.next_page_number }}">
+                {% trans "Next" %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

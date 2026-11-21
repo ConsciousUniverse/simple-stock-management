@@ -23,7 +23,8 @@ from django.db import IntegrityError, transaction
 from django.db.models import F
 from django.utils import timezone
 
-from .models import Item, ShopItem, StockDocument, StockDocumentLine
+from .audit import record
+from .models import AuditEvent, Item, ShopItem, StockDocument, StockDocumentLine
 
 IN = StockDocument.IN
 OUT = StockDocument.OUT
@@ -50,6 +51,14 @@ COUNTERPARTY_REQUIRED = (
 MAX_NUMBER_ATTEMPTS = 5
 
 
+# Offered as suggestions in the unit box. Free text is allowed: the catalogue
+# mixes Arabic and English articles and a unit is data, not an enum.
+COMMON_UNITS = [
+    "قطعة", "متر", "كجم", "لفة", "كرتونة", "لتر", "عبوة", "طن", "متر مربع",
+    "PCS", "MTR", "KG", "ROLL", "BOX", "LTR", "SET",
+]
+
+
 class DocumentError(ValueError):
     """A refusal the operator can act on (never an internal error)."""
 
@@ -61,14 +70,14 @@ def direction_of(doc_type: str) -> str:
         raise DocumentError(f"Unknown document type: {doc_type}")
 
 
-def parse_lines(raw_lines) -> list[tuple[str, int, str]]:
+def parse_lines(raw_lines) -> list[tuple[str, int, str, str]]:
     """Normalise submitted lines into ``[(sku, quantity, description)]``.
 
     A repeated SKU is summed, so a double-submitted line cannot be booked
     twice, and a line without a quantity is refused rather than dropped: a
     silently dropped line is a document that lies about what it moved.
     """
-    merged: dict[str, tuple[int, str]] = {}
+    merged: dict[str, tuple[int, str, str]] = {}
     for raw in raw_lines or []:
         if not isinstance(raw, dict):
             raise DocumentError("Each line must be an item and a quantity.")
@@ -82,13 +91,18 @@ def parse_lines(raw_lines) -> list[tuple[str, int, str]]:
         if quantity <= 0:
             raise DocumentError("The quantity must be greater than zero.")
         description = str(raw.get("description") or "").strip()
+        unit = str(raw.get("unit") or "").strip()[:20]
         if sku in merged:
-            merged[sku] = (merged[sku][0] + quantity, merged[sku][1] or description)
+            merged[sku] = (
+                merged[sku][0] + quantity,
+                merged[sku][1] or description,
+                merged[sku][2] or unit,
+            )
         else:
-            merged[sku] = (quantity, description)
+            merged[sku] = (quantity, description, unit)
     if not merged:
         raise DocumentError("Add at least one item.")
-    return [(sku, qty, desc) for sku, (qty, desc) in merged.items()]
+    return [(sku, qty, desc, unit) for sku, (qty, desc, unit) in merged.items()]
 
 
 def _next_number(doc_type: str) -> str:
@@ -164,7 +178,7 @@ def create_document(
             source=source,
             pending=pending,
         )
-        for sku, quantity, description in parsed:
+        for sku, quantity, description, unit in parsed:
             item = _item_for_line(sku)
             StockDocumentLine.objects.create(
                 document=document,
@@ -172,11 +186,39 @@ def create_document(
                 sku=sku,
                 description=description or (item.description if item else sku),
                 quantity=quantity,
+                # The line states its own unit; an unstated one comes from the
+                # catalogue at the moment of booking (a snapshot, not a join).
+                unit=unit or (item.unit if item else ""),
             )
         if not pending:
             _apply(document, approved_by=created_by)
     document.refresh_from_db()
+    # Recorded after the transaction: a failed audit write must not roll back a
+    # document that was saved correctly.
+    record(
+        user=created_by,
+        action=AuditEvent.DOCUMENT_CREATED,
+        entity="stock_document",
+        entity_id=document.pk,
+        description=_describe(document),
+    )
     return document
+
+
+def _describe(document) -> str:
+    """A one-line, language-neutral summary for the audit trail."""
+    lines = list(document.lines.all())
+    shown = "، ".join(
+        f"{line.sku} ×{line.quantity}{(' ' + line.unit) if line.unit else ''}"
+        for line in lines[:3]
+    )
+    more = f" (+{len(lines) - 3})" if len(lines) > 3 else ""
+    parts = [document.number, document.get_doc_type_display()]
+    if document.counterparty:
+        parts.append(document.counterparty)
+    if document.site_id:
+        parts.append(document.site.get_username())
+    return " · ".join(str(part) for part in parts) + (f" — {shown}{more}" if shown else "")
 
 
 def _insert_document(**kwargs) -> StockDocument:
@@ -212,6 +254,13 @@ def approve_document(document: StockDocument, user=None, note: str = "") -> Stoc
             raise DocumentError("A rejected document cannot be approved.")
         _apply(locked, approved_by=user, note=note)
         locked.refresh_from_db()
+    record(
+        user=user,
+        action=AuditEvent.DOCUMENT_APPROVED,
+        entity="stock_document",
+        entity_id=locked.pk,
+        description=_describe(locked),
+    )
     return locked
 
 
@@ -226,6 +275,14 @@ def reject_document(document: StockDocument, user=None, note: str = "") -> Stock
         locked.decided_at = timezone.now()
         locked.decision_note = (note or "").strip()
         locked.save(update_fields=["status", "decided_by", "decided_at", "decision_note"])
+    record(
+        user=user,
+        action=AuditEvent.DOCUMENT_REJECTED,
+        entity="stock_document",
+        entity_id=locked.pk,
+        description=_describe(locked)
+        + (f" — {locked.decision_note}" if locked.decision_note else ""),
+    )
     return locked
 
 
@@ -253,6 +310,10 @@ def _apply(document: StockDocument, approved_by=None, note: str = "") -> None:
             if not line.item_id:
                 line.item = item
                 line.save(update_fields=["item"])
+            if line.unit and not item.unit:
+                # An addition is where a new article's unit is first learned.
+                Item.objects.filter(pk=item.pk).update(unit=line.unit)
+                item.refresh_from_db(fields=["unit"])
             Item.objects.filter(pk=item.pk).update(
                 quantity=F("quantity") + line.quantity
             )

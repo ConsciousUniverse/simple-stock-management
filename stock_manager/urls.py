@@ -28,6 +28,7 @@ from .views import (
     stock_documents_api,
     decide_stock_document_api,
 )
+from stock_manager.pages import android_page, audit_page, labels_page, users_page
 from django.conf.urls.static import static
 from django.conf import settings
 
@@ -82,7 +83,11 @@ urlpatterns = [
     path("api/receiving/", receive_from_supplier, name="receive_from_supplier"),
     path("api/receipts/", list_receipts, name="list_receipts"),
     path("api/sites/", list_sites, name="list_sites"),
-    path("labels/", print_labels, name="print_labels"),
+    # The picker; with ?skus= it renders the printable sheet instead.
+    path("labels/", labels_page, name="print_labels"),
+    path("users/", users_page, name="users_page"),
+    path("android/", android_page, name="android_page"),
+    path("audit/", audit_page, name="audit_page"),
     # One page per job: the warehouse, additions, issues, and the issues report.
     path("stock/", stock_page, name="stock_page"),
     path("receipts/", receipts_page, name="receipts_page"),

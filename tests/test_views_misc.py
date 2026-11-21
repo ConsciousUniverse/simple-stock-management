@@ -109,6 +109,9 @@ class TestAppConfigEndpoint:
         assert response.json() == {
             "records_per_page": 50,
             "allow_upload_deletions": True,
+            # The app also learns which Android build is the newest here.
+            "latest_app_version": None,
+            "app_download_url": None,
         }
 
     def test_returns_defaults_without_config_row(self, shop_client):
@@ -117,6 +120,8 @@ class TestAppConfigEndpoint:
         assert response.json() == {
             "records_per_page": 25,
             "allow_upload_deletions": False,
+            "latest_app_version": None,
+            "app_download_url": None,
         }
 
 

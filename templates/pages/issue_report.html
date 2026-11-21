@@ -66,7 +66,7 @@
     </div>
     <div class="sap-card__body sap-card__body--flush">
         <div class="sap-tablewrap">
-            <table class="sap-table" id="reportRows">
+            <table class="sap-table sap-table--dense" id="reportRows">
                 <thead>
                     <tr>
                         <th>{% trans "Date" %}</th>
@@ -75,8 +75,9 @@
                         <th>{% trans "Site / project" %}</th>
                         <th>{% trans "Supplier" %}</th>
                         <th>{% trans "Item code" %}</th>
-                        <th>{% trans "Description" %}</th>
+                        <th class="sap-table__wide">{% trans "Description" %}</th>
                         <th>{% trans "Quantity" %}</th>
+                        <th>{% trans "Unit" %}</th>
                         <th>{% trans "Value" %}</th>
                         <th>{% trans "Issued by" %}</th>
                         <th>{% trans "Approved by" %}</th>
@@ -91,15 +92,16 @@
                         <td>{{ row.destination|default:"—" }}</td>
                         <td>{{ row.supplier|default:"—" }}</td>
                         <td>{{ row.sku }}</td>
-                        <td>{{ row.description }}</td>
+                        <td class="sap-table__wide">{{ row.description }}</td>
                         <td>{{ row.quantity }}</td>
+                        <td>{{ row.unit|default:"—" }}</td>
                         <td>{{ row.value_display }}</td>
                         <td>{{ row.issued_by|default:"—" }}</td>
                         <td>{{ row.approved_by|default:"—" }}</td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="11" class="sap-empty">
+                        <td colspan="12" class="sap-empty">
                             <span class="sap-empty__title">{% trans "Nothing was issued in this period." %}</span>
                             <span class="sap-empty__text">{% trans "Change the dates or record an issue first." %}</span>
                         </td>

@@ -953,6 +953,67 @@ img {
     margin-top: 0.25rem;
 }
 
+/* The dashboard's in-page jump list: a section index, deliberately quieter
+   than the site menu above it so the two do not read as one long list. */
+.sap-sidenav__nav--sections .sap-sidenav__item {
+    padding-inline-start: 1.5rem;
+    font-size: 0.8125rem;
+    color: var(--sap-text-muted);
+}
+
+.sap-sidenav__nav--sections .sap-sidenav__item .sap-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+    opacity: 0.75;
+}
+
+/* A field that sits in a card header (label + small input side by side). */
+.sap-field--inline {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.sap-input--narrow {
+    width: 5rem;
+}
+
+/* Numbered instructions (installing the Android build). */
+.sap-steps {
+    margin: 0.5rem 0 0;
+    padding-inline-start: 1.35rem;
+    color: var(--sap-text-muted);
+    font-size: 0.8125rem;
+    line-height: 1.7;
+}
+
+.sap-empty__hint {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.8125rem;
+    color: var(--sap-text-muted);
+}
+
+/* A field that needs the whole row: a set of checkboxes, a long note. */
+.sap-form-grid > .sap-field--wide {
+    grid-column: 1 / -1;
+}
+
+/* A second form inside the same card: the password reset under the profile. */
+.sap-form-grid--tight {
+    margin-top: 0.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--sap-border);
+}
+
+fieldset.sap-field {
+    border: 0;
+    padding: 0;
+    margin: 0 0 0.75rem;
+    min-width: 0;
+}
+
 /* Switch (maintenance mode) */
 
 .sap-switch {
@@ -1083,6 +1144,19 @@ img {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.875rem;
+}
+
+/* The one column that must stay readable; .sap-tablewrap scrolls sideways
+   rather than wrapping an item name onto three lines. */
+.sap-table__wide {
+    min-width: 12rem;
+}
+
+/* Twelve columns have to fit a laptop screen; the trimmed padding buys the
+   width without dropping a column behind a horizontal scroll. */
+.sap-table.sap-table--dense thead th,
+.sap-table.sap-table--dense tbody td {
+    padding: 0.625rem 0.75rem;
 }
 
 .sap-table thead th {
@@ -1844,7 +1918,7 @@ body.sap-login {
     color: #0a6ed1;
 }
 
-/* One receipt line: item code, description, quantity, remove. */
+/* One document line: item code, description, unit, quantity, remove. */
 .sap-lines {
     display: flex;
     flex-direction: column;
@@ -1853,7 +1927,7 @@ body.sap-login {
 
 .sap-line {
     display: grid;
-    grid-template-columns: minmax(8rem, 12rem) minmax(8rem, 1fr) 5rem 2.25rem;
+    grid-template-columns: minmax(7rem, 10rem) minmax(7rem, 1fr) 6rem 4.5rem 2.25rem;
     gap: 0.5rem;
     align-items: center;
 }
@@ -1865,6 +1939,10 @@ body.sap-login {
 }
 
 .sap-input--qty {
+    text-align: center;
+}
+
+.sap-input--unit {
     text-align: center;
 }
 

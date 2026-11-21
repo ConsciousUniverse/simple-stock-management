@@ -57,6 +57,9 @@ class Item(models.Model):
     description = models.CharField(max_length=250)
     retail_price = models.DecimalField(max_digits=10, decimal_places=2)
     quantity = models.IntegerField(validators=[MinValueValidator(0)])
+    # Unit of measure as the operator writes it (قطعة / متر / كجم ...). A unit
+    # is data, not an enum: the catalogue mixes Arabic and English articles.
+    unit = models.CharField(max_length=20, blank=True, default="")
     last_updated = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)  # Soft-delete flag
 
@@ -167,6 +170,9 @@ class GoodsReceiptLine(models.Model):
     sku = models.CharField(max_length=100)
     description = models.CharField(max_length=250, blank=True, default="")
     quantity = models.IntegerField(validators=[MinValueValidator(1)])
+    # Snapshot of the unit at booking time: changing the catalogue unit later
+    # must not rewrite what a past document said was moved.
+    unit = models.CharField(max_length=20, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -301,6 +307,9 @@ class StockDocumentLine(models.Model):
     sku = models.CharField(max_length=100)
     description = models.CharField(max_length=250, blank=True, default="")
     quantity = models.IntegerField(validators=[MinValueValidator(1)])
+    # Snapshot of the unit at booking time: changing the catalogue unit later
+    # must not rewrite what a past document said was moved.
+    unit = models.CharField(max_length=20, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -308,3 +317,164 @@ class StockDocumentLine(models.Model):
 
     def __str__(self):
         return f"{self.sku} x{self.quantity}"
+
+
+class AuditEvent(models.Model):
+    """One recorded action: who did what, when.
+
+    ``actor_name`` is a snapshot on purpose. Deleting a user must not turn their
+    history anonymous — an audit trail that says "someone" answers nothing.
+
+    No IP address is stored: this project deliberately does not log client IPs
+    (see ``AXES_CLIENT_IP_CALLABLE`` in settings), and the audit trail is about
+    who changed the stock, not where they sat.
+    """
+
+    LOGIN = "login"
+    LOGIN_FAILED = "login_failed"
+    LOGOUT = "logout"
+    PASSWORD_CHANGED = "password_changed"
+    DOCUMENT_CREATED = "document_created"
+    DOCUMENT_APPROVED = "document_approved"
+    DOCUMENT_REJECTED = "document_rejected"
+    ITEM_CREATED = "item_created"
+    ITEM_UPDATED = "item_updated"
+    ITEM_DELETED = "item_deleted"
+    TRANSFER_SENT = "transfer_sent"
+    TRANSFER_COMPLETED = "transfer_completed"
+    DATA_IMPORTED = "data_imported"
+    DATA_EXPORTED = "data_exported"
+    USER_CREATED = "user_created"
+    USER_UPDATED = "user_updated"
+    USER_DEACTIVATED = "user_deactivated"
+    SETTINGS_CHANGED = "settings_changed"
+    RELEASE_PUBLISHED = "release_published"
+
+    ACTION_CHOICES = (
+        (LOGIN, _lazy("Signed in")),
+        (LOGIN_FAILED, _lazy("Sign-in refused")),
+        (LOGOUT, _lazy("Signed out")),
+        (PASSWORD_CHANGED, _lazy("Password changed")),
+        (DOCUMENT_CREATED, _lazy("Document created")),
+        (DOCUMENT_APPROVED, _lazy("Document approved")),
+        (DOCUMENT_REJECTED, _lazy("Document rejected")),
+        (ITEM_CREATED, _lazy("Item created")),
+        (ITEM_UPDATED, _lazy("Item changed")),
+        (ITEM_DELETED, _lazy("Item deleted")),
+        (TRANSFER_SENT, _lazy("Transfer requested")),
+        (TRANSFER_COMPLETED, _lazy("Transfer dispatched")),
+        (DATA_IMPORTED, _lazy("Spreadsheet imported")),
+        (DATA_EXPORTED, _lazy("Spreadsheet exported")),
+        (USER_CREATED, _lazy("User created")),
+        (USER_UPDATED, _lazy("User changed")),
+        (USER_DEACTIVATED, _lazy("User deactivated")),
+        (SETTINGS_CHANGED, _lazy("Settings changed")),
+        (RELEASE_PUBLISHED, _lazy("App release published")),
+    )
+
+    # Grouping for the log's filter: which part of the app an action belongs to.
+    AREA_CHOICES = (
+        ("auth", _lazy("Sign-in")),
+        ("documents", _lazy("Documents")),
+        ("items", _lazy("Items")),
+        ("transfers", _lazy("Transfers")),
+        ("data", _lazy("Spreadsheets")),
+        ("users", _lazy("Users")),
+        ("settings", _lazy("Settings")),
+        ("app", _lazy("Android app")),
+    )
+    ACTION_AREA = {
+        LOGIN: "auth",
+        LOGIN_FAILED: "auth",
+        LOGOUT: "auth",
+        PASSWORD_CHANGED: "auth",
+        DOCUMENT_CREATED: "documents",
+        DOCUMENT_APPROVED: "documents",
+        DOCUMENT_REJECTED: "documents",
+        ITEM_CREATED: "items",
+        ITEM_UPDATED: "items",
+        ITEM_DELETED: "items",
+        TRANSFER_SENT: "transfers",
+        TRANSFER_COMPLETED: "transfers",
+        DATA_IMPORTED: "data",
+        DATA_EXPORTED: "data",
+        USER_CREATED: "users",
+        USER_UPDATED: "users",
+        USER_DEACTIVATED: "users",
+        SETTINGS_CHANGED: "settings",
+        RELEASE_PUBLISHED: "app",
+    }
+
+    actor = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="audit_events",
+    )
+    actor_name = models.CharField(max_length=150, blank=True, default="")
+    action = models.CharField(max_length=32, choices=ACTION_CHOICES)
+    entity = models.CharField(max_length=40, blank=True, default="")
+    entity_id = models.CharField(max_length=80, blank=True, default="")
+    description = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+        verbose_name = "Audit event"
+        verbose_name_plural = "Audit log"
+        indexes = [models.Index(fields=["action", "created_at"])]
+
+    def __str__(self):
+        return f"{self.actor_name or '—'} · {self.get_action_display()}"
+
+    @property
+    def area(self):
+        return self.ACTION_AREA.get(self.action, "")
+
+    @property
+    def action_label(self):
+        return _lazy(self.get_action_display())
+
+
+class AppRelease(models.Model):
+    """A published Android build.
+
+    The APK is NOT uploaded here: Render's disk is ephemeral, so a file written
+    to MEDIA_ROOT disappears on the next deploy and the download link would rot
+    silently. The release stores the address the build is served from instead,
+    which survives deploys and can be checked.
+    """
+
+    version = models.CharField(max_length=40, unique=True)
+    download_url = models.CharField(max_length=500)
+    notes = models.TextField(blank=True, default="")
+    is_current = models.BooleanField(default=True)
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="app_releases",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+        verbose_name = "App release"
+        verbose_name_plural = "App releases"
+
+    def __str__(self):
+        return f"{self.version}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.is_current:
+            # Exactly one current build: the app asks "what is the newest one".
+            AppRelease.objects.filter(is_current=True).exclude(pk=self.pk).update(
+                is_current=False
+            )
+
+    @staticmethod
+    def latest():
+        return AppRelease.objects.filter(is_current=True).first() or AppRelease.objects.first()

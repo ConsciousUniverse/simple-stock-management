@@ -96,6 +96,7 @@ def build_report(date_from: date, date_to: date, *, doc_types=None):
                 "sku": line.sku,
                 "description": line.description,
                 "quantity": line.quantity,
+                "unit": line.unit or (line.item.unit if line.item else ""),
                 "unit_price": unit_price,
                 "value": value,
                 "value_display": money(value),
@@ -139,6 +140,7 @@ def _add(bucket: dict, key: str, row: dict, *, label: str, extra: str = "") -> N
         {
             "label": label,
             "description": extra,
+            "unit": row.get("unit", ""),
             "documents": set(),
             "lines": 0,
             "quantity": 0,
@@ -189,6 +191,7 @@ def workbook_bytes(report) -> bytes:
             "Item code",
             "Description",
             "Quantity",
+            "Unit",
             "Unit price",
             "Value",
             "Issued by",
@@ -206,6 +209,7 @@ def workbook_bytes(report) -> bytes:
                 row["sku"],
                 row["description"],
                 row["quantity"],
+                row["unit"],
                 float(row["unit_price"] or 0),
                 float(row["value"] or 0),
                 row["issued_by"],
@@ -214,11 +218,11 @@ def workbook_bytes(report) -> bytes:
             ]
             for row in report["rows"]
         ],
-        [12, 16, 26, 22, 22, 16, 18, 40, 10, 12, 14, 14, 14, 30],
+        [12, 16, 26, 22, 22, 16, 18, 40, 10, 8, 12, 14, 14, 14, 30],
     )
     detail.append([])
     detail.append(
-        ["Total", "", "", "", "", "", "", "", report["totals"]["quantity"], "",
+        ["Total", "", "", "", "", "", "", "", report["totals"]["quantity"], "", "",
          float(report["totals"]["value"])]
     )
 
@@ -227,16 +231,17 @@ def workbook_bytes(report) -> bytes:
         headers = [label_header]
         if with_description:
             headers.append("Description")
-        headers += ["Documents", "Lines", "Quantity", "Value"]
+        headers += ["Unit", "Documents", "Lines", "Quantity", "Value"]
         write_sheet(
             sheet,
             headers,
             [
                 ([entry["label"]] + ([entry["description"]] if with_description else []))
-                + [len(entry["documents"]), entry["lines"], entry["quantity"], float(entry["value"])]
+                + [entry.get("unit", ""), len(entry["documents"]), entry["lines"],
+                   entry["quantity"], float(entry["value"])]
                 for entry in report[key]
             ],
-            [26, 40, 12, 10, 12, 14] if with_description else [26, 12, 10, 12, 14],
+            [26, 40, 8, 12, 10, 12, 14] if with_description else [26, 8, 12, 10, 12, 14],
         )
 
     rollup("By day", "by_day", "Day")

@@ -42,7 +42,7 @@
                         <td>{% if document.site %}{{ document.site.username }}{% else %}{{ document.counterparty }}{% endif %}</td>
                         <td>
                             {% for line in document.lines.all %}
-                            <span class="sap-pill sap-pill--neutral">{{ line.sku }} × {{ line.quantity }}</span>
+                            <span class="sap-pill sap-pill--neutral">{{ line.sku }} × {{ line.quantity }}{% if line.unit %} {{ line.unit }}{% endif %}</span>
                             {% endfor %}
                         </td>
                         <td>{{ document.total_quantity }}</td>

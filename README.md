@@ -38,6 +38,7 @@ This is **not** a substitute for a professional third-party audit, and the app h
   - If records on the spreadsheet differ, the database is updated.
   - If records already in the database are not present on the spreadsheet, they are deleted from the database (this is optional and may be configured though a checkbox on the system admin page).
   - Excel spreadsheets may be uploaded either in the system default schema (i.e., what you get when you download the warehouse and shop inventories), or in a custom schema. If uploading a custom schema, a conversion function file may be added to translate your spreadsheet columns into the system schema (an example custom function is included).
+- **Unit of measure (وحدة القياس)**: every item carries its unit (قطعة، متر، كجم، لفة…) and so does every document line. The unit is shown on the warehouse and site stock tables, on the addition/issue forms, on the issues list and in the report (screen and Excel). A line that does not state a unit inherits the item's; an addition for a SKU the catalogue does not know yet teaches the new item its unit. The unit on a booked line is a snapshot, so changing the catalogue later never rewrites a historical document.
 - **Customise Pagination**: Change displayed rows per table through the system admin page.
 
 ### Search and Sort

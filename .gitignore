@@ -2,7 +2,6 @@ db.sqlite3
 output.csv
 accountstockdata.csv
 __pycache__/
-migrations/
 .DS_Store
 create_requirements_txt.sh
 DEV_NOTES.md

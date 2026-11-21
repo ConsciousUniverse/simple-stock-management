@@ -13,7 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
 class ItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = Item
-        fields = ["sku", "description", "retail_price", "quantity"]
+        fields = ["sku", "description", "retail_price", "quantity", "unit"]
 
     def validate_quantity(self, value):
         if not re.match(r"^\d+$", str(value)):

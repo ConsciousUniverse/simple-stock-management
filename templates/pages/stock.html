@@ -1,9 +1,9 @@
 {% extends "base_app.html" %}
 {% load i18n %}
 
-{% block title %}{% trans "Warehouse stock" %}{% endblock %}
-{% block crumb %}{% trans "Warehouse stock" %}{% endblock %}
-{% block heading %}{% trans "Warehouse stock" %}{% endblock %}
+{% block title %}{% trans "Items" %}{% endblock %}
+{% block crumb %}{% trans "Items" %}{% endblock %}
+{% block heading %}{% trans "Items" %}{% endblock %}
 {% block subheading %}{% trans "What the warehouse holds, and what each site already holds." %}{% endblock %}
 
 {% block actions %}
@@ -46,6 +46,7 @@
                         <th>{% trans "Item code" %}</th>
                         <th>{% trans "Description" %}</th>
                         <th>{% trans "Quantity" %}</th>
+                        <th>{% trans "Unit" %}</th>
                         <th>{% trans "Selling price" %}</th>
                         <th>{% trans "Barcode" %}</th>
                     </tr>
@@ -56,6 +57,7 @@
                         <td>{{ item.sku }}</td>
                         <td>{{ item.description }}</td>
                         <td>{{ item.quantity }}</td>
+                        <td>{{ item.unit|default:"—" }}</td>
                         <td>{{ item.retail_price }}</td>
                         <td>
                             <a class="sap-btn sap-btn--ghost sap-btn--sm" href="/api/items/{{ item.sku }}/barcode.svg">
@@ -65,7 +67,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="sap-empty">
+                        <td colspan="6" class="sap-empty">
                             <span class="sap-empty__title">{% trans "No items match this search." %}</span>
                         </td>
                     </tr>
@@ -89,6 +91,7 @@
                         <th>{% trans "Item code" %}</th>
                         <th>{% trans "Description" %}</th>
                         <th>{% trans "Quantity" %}</th>
+                        <th>{% trans "Unit" %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -98,10 +101,11 @@
                         <td>{{ row.item.sku }}</td>
                         <td>{{ row.item.description }}</td>
                         <td>{{ row.quantity }}</td>
+                        <td>{{ row.item.unit|default:"—" }}</td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="4" class="sap-empty">
+                        <td colspan="5" class="sap-empty">
                             <span class="sap-empty__title">{% trans "No stock has been issued to a site yet." %}</span>
                         </td>
                     </tr>

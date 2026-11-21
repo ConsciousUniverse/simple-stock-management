@@ -14,7 +14,7 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 
 from stock_manager import documents as service
-from stock_manager.models import Item, ShopItem, StockDocument
+from stock_manager.models import Item, ShopItem, StockDocument, StockDocumentLine
 
 pytestmark = pytest.mark.django_db
 
@@ -445,3 +445,112 @@ class TestDocumentPages:
 
         for url in ("/stock/", "/receipts/", "/issues/", "/issues/report/"):
             assert f'href="{url}"' in html, url
+
+
+class TestUnitOfMeasure:
+    """A quantity without a unit is not an answer: 5 what?"""
+
+    def test_an_addition_teaches_a_new_item_its_unit(self, manager):
+        document = service.create_document(
+            doc_type=StockDocument.PO_RECEIPT,
+            lines=[{"sku": "NEW-1", "quantity": 3, "description": "Cable", "unit": "متر"}],
+            counterparty="Elsewedy Electric",
+            created_by=manager,
+        )
+
+        item = Item.objects.get(sku="NEW-1")
+        assert item.unit == "متر"
+        assert document.lines.first().unit == "متر"
+
+    def test_a_line_takes_the_catalogue_unit_when_it_states_none(
+        self, manager, shop_user, make_item
+    ):
+        make_item(sku="SKU-1", quantity=10, unit="لفة")
+
+        document = service.create_document(
+            doc_type=StockDocument.SITE_ISSUE,
+            lines=[{"sku": "SKU-1", "quantity": 2}],
+            site=shop_user,
+            created_by=manager,
+        )
+
+        assert document.lines.first().unit == "لفة"
+
+    def test_the_line_keeps_the_unit_it_was_booked_with(
+        self, manager, shop_user, make_item
+    ):
+        make_item(sku="SKU-1", quantity=10, unit="قطعة")
+        document = service.create_document(
+            doc_type=StockDocument.SITE_ISSUE,
+            lines=[{"sku": "SKU-1", "quantity": 2, "unit": "كرتونة"}],
+            site=shop_user,
+            created_by=manager,
+        )
+
+        Item.objects.filter(sku="SKU-1").update(unit="كجم")
+        line = document.lines.first()
+        line.refresh_from_db()
+
+        assert line.unit == "كرتونة"
+
+    def test_the_web_form_posts_the_unit(
+        self, client, manager, shop_user, make_item
+    ):
+        make_item(sku="SKU-1", quantity=10, unit="قطعة")
+        client.force_login(manager)
+
+        client.post(
+            "/issues/",
+            {
+                "doc_type": StockDocument.SITE_ISSUE,
+                "site": shop_user.id,
+                "sku": "SKU-1",
+                "quantity": "2",
+                "unit": "كرتونة",
+            },
+        )
+
+        line = StockDocumentLine.objects.get()
+        assert line.unit == "كرتونة"
+
+    def test_the_api_accepts_a_unit_per_line(self, manager_client, make_item):
+        make_item(sku="SKU-1", quantity=10)
+
+        response = manager_client.post(
+            "/api/documents/",
+            {
+                "doc_type": StockDocument.PO_RECEIPT,
+                "counterparty": "Elsewedy Electric",
+                "lines": [{"sku": "SKU-1", "quantity": 4, "unit": "BOX"}],
+            },
+            format="json",
+        )
+
+        assert response.status_code == 201, response.content
+        assert StockDocumentLine.objects.get().unit == "BOX"
+
+    def test_the_stock_page_shows_the_unit(self, client, manager, make_item):
+        make_item(sku="SKU-1", unit="متر")
+        client.force_login(manager)
+        client.cookies["django_language"] = "ar"
+
+        html = client.get("/stock/").content.decode()
+
+        assert "متر" in html
+        assert "الوحدة" in html
+
+    def test_the_item_api_stores_the_unit(self, manager_client):
+        response = manager_client.post(
+            "/api/items/",
+            {
+                "sku": "SKU-9",
+                "description": "Tape",
+                "retail_price": "5.00",
+                "quantity": 1,
+                "unit": "لفة",
+            },
+            format="json",
+        )
+
+        assert response.status_code == 201, response.content
+        assert Item.objects.get(sku="SKU-9").unit == "لفة"

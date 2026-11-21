@@ -1,0 +1,174 @@
+{% extends "base_app.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Users" %}{% endblock %}
+{% block crumb %}{% trans "Users" %}{% endblock %}
+{% block heading %}{% trans "Users" %}{% endblock %}
+{% block subheading %}{% trans "Who may sign in, and what each person may do." %}{% endblock %}
+
+{% block content %}
+{% if editing %}
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% blocktrans with name=editing.get_username %}Edit {{ name }}{% endblocktrans %}</h2>
+        <div class="sap-card__header-actions">
+            <a class="sap-btn sap-btn--ghost sap-btn--sm" href="/users/">{% trans "Close" %}</a>
+        </div>
+    </div>
+    <div class="sap-card__body">
+        <form method="post" action="/users/" class="sap-form-grid" id="editUserForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update">
+            <input type="hidden" name="user_id" value="{{ editing.pk }}">
+
+            <label class="sap-field">
+                <span class="sap-label">{% trans "First name" %}</span>
+                <input class="sap-input" type="text" name="first_name" value="{{ editing.first_name }}">
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Last name" %}</span>
+                <input class="sap-input" type="text" name="last_name" value="{{ editing.last_name }}">
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Email" %}</span>
+                <input class="sap-input" type="email" name="email" value="{{ editing.email }}">
+            </label>
+
+            <fieldset class="sap-field sap-field--wide">
+                <legend class="sap-label">{% trans "Role" %}</legend>
+                <div class="sap-checklist">
+                    {% for group in groups %}
+                    <label class="sap-check">
+                        <input type="checkbox" name="groups" value="{{ group.name }}"
+                            {% if group.id in editing_group_ids %}checked{% endif %}>
+                        <span>{{ group.label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+
+            <label class="sap-check sap-field--wide">
+                <input type="checkbox" name="is_active" {% if editing.is_active %}checked{% endif %}>
+                <span>{% trans "The account may sign in" %}</span>
+            </label>
+
+            <div class="sap-form-actions">
+                <button class="sap-btn sap-btn--emphasized" type="submit">{% trans "Save the user" %}</button>
+            </div>
+        </form>
+
+        <form method="post" action="/users/" class="sap-form-grid sap-form-grid--tight" id="passwordForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="password">
+            <input type="hidden" name="user_id" value="{{ editing.pk }}">
+            <label class="sap-field">
+                <span class="sap-label">{% trans "New password" %}</span>
+                <input class="sap-input" type="password" name="password" autocomplete="new-password"
+                    minlength="{{ min_password_length }}" required>
+            </label>
+            <div class="sap-form-actions">
+                <button class="sap-btn sap-btn--ghost" type="submit">{% trans "Change the password" %}</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "New user" %}</h2>
+    </div>
+    <div class="sap-card__body">
+        <form method="post" action="/users/" class="sap-form-grid" id="createUserForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="create">
+            <label class="sap-field">
+                <span class="sap-label">{% trans "User name" %}</span>
+                <input class="sap-input" type="text" name="username" required autocomplete="off">
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Password" %}</span>
+                <input class="sap-input" type="password" name="password" autocomplete="new-password"
+                    minlength="{{ min_password_length }}" required>
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Email" %}</span>
+                <input class="sap-input" type="email" name="email">
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "First name" %}</span>
+                <input class="sap-input" type="text" name="first_name">
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Last name" %}</span>
+                <input class="sap-input" type="text" name="last_name">
+            </label>
+            <fieldset class="sap-field sap-field--wide">
+                <legend class="sap-label">{% trans "Role" %}</legend>
+                <div class="sap-checklist">
+                    {% for group in groups %}
+                    <label class="sap-check">
+                        <input type="checkbox" name="groups" value="{{ group.name }}">
+                        <span>{{ group.label }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+            </fieldset>
+            <div class="sap-form-actions">
+                <button class="sap-btn sap-btn--emphasized" type="submit">{% trans "Create the user" %}</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Accounts" %}</h2>
+        <div class="sap-card__header-actions">
+            <span class="sap-muted">{{ users|length }} {% trans "accounts" %}</span>
+        </div>
+    </div>
+    <div class="sap-card__body sap-card__body--flush">
+        <div class="sap-tablewrap">
+            <table class="sap-table" id="usersTable">
+                <thead>
+                    <tr>
+                        <th>{% trans "User name" %}</th>
+                        <th>{% trans "Name" %}</th>
+                        <th>{% trans "Role" %}</th>
+                        <th>{% trans "Last sign-in" %}</th>
+                        <th>{% trans "Status" %}</th>
+                        <th>{% trans "Actions" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in users %}
+                    <tr>
+                        <td>{{ row.get_username }}</td>
+                        <td>{{ row.get_full_name|default:"—" }}</td>
+                        <td>
+                            {% for name in row.role_names %}{{ name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
+                        </td>
+                        <td dir="ltr">{{ row.last_login|date:"Y-m-d H:i"|default:"—" }}</td>
+                        <td>
+                            {% if row.is_active %}
+                            <span class="sap-pill sap-pill--positive">{% trans "Active" %}</span>
+                            {% else %}
+                            <span class="sap-pill sap-pill--neutral">{% trans "Inactive" %}</span>
+                            {% endif %}
+                        </td>
+                        <td><a class="sap-btn sap-btn--ghost sap-btn--sm" href="/users/?edit={{ row.pk }}">{% trans "Edit" %}</a></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="sap-empty">
+                            <span class="sap-empty__title">{% trans "No accounts yet." %}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

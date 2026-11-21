@@ -56,25 +56,11 @@
             <div>
                 <div class="sap-sidenav__label">{% trans "Pages" %}</div>
                 <nav class="sap-sidenav__nav" aria-label="{% trans 'Pages' %}">
-                    <a class="sap-sidenav__item" href="/stock/">
-                        <svg class="sap-icon" aria-hidden="true"><use href="#i-warehouse"></use></svg>
-                        <span>{% trans "Warehouse stock" %}</span>
-                    </a>
-                    <a class="sap-sidenav__item" href="/receipts/">
-                        <svg class="sap-icon" aria-hidden="true"><use href="#i-download"></use></svg>
-                        <span>{% trans "Additions" %}</span>
-                    </a>
-                    <a class="sap-sidenav__item" href="/issues/">
-                        <svg class="sap-icon" aria-hidden="true"><use href="#i-upload"></use></svg>
-                        <span>{% trans "Issues" %}</span>
-                    </a>
-                    <a class="sap-sidenav__item" href="/issues/report/">
-                        <svg class="sap-icon" aria-hidden="true"><use href="#i-data"></use></svg>
-                        <span>{% trans "Issues report" %}</span>
-                    </a>
+                    {% include "partials/sidenav.html" %}
                 </nav>
-                <div class="sap-sidenav__label">{% trans "Inventory" %}</div>
-                <nav class="sap-sidenav__nav" aria-label="{% trans 'Sections' %}">
+                <div class="sap-sidenav__label">{% trans "Sections of this page" %}</div>
+                <nav class="sap-sidenav__nav sap-sidenav__nav--sections"
+                    aria-label="{% trans 'Sections of this page' %}">
                     <a class="sap-sidenav__item is-active" href="#overview" data-spy="overview">
                         <svg class="sap-icon" aria-hidden="true"><use href="#i-overview"></use></svg>
                         <span>{% trans "Overview" %}</span>
@@ -208,6 +194,23 @@
                             <div class="sap-field">
                                 <label class="sap-label" for="quantity">{% trans "Quantity" %}</label>
                                 <input type="number" min="0" id="quantity" class="sap-input" placeholder="0">
+                            </div>
+                            <div class="sap-field">
+                                <label class="sap-label" for="unit">{% trans "Unit" %}</label>
+                                <input type="text" id="unit" class="sap-input" list="unitOptions"
+                                    placeholder="{% trans 'e.g. piece, metre, kg' %}" autocomplete="off">
+                                <datalist id="unitOptions">
+                                    <option value="قطعة"></option>
+                                    <option value="متر"></option>
+                                    <option value="كجم"></option>
+                                    <option value="لفة"></option>
+                                    <option value="كرتونة"></option>
+                                    <option value="لتر"></option>
+                                    <option value="عبوة"></option>
+                                    <option value="PCS"></option>
+                                    <option value="MTR"></option>
+                                    <option value="KG"></option>
+                                </datalist>
                             </div>
                         </div>
                         <div class="sap-form-actions">
@@ -1052,11 +1055,12 @@
                                 const descriptionField = isManager ?
                                     `<input type="text" value="${escapeHtml(item.description)}" class="sap-input wh_editable-field" data-sku="${safeSku}" data-field="description">` :
                                     escapeHtml(item.description);
+                                const unitSuffix = item.unit ? `<span class="sap-muted"> · ${escapeHtml(item.unit)}</span>` : '';
                                 const transferQuantityField = `<input type="number" min="0" class="sap-input xferQntField wh_editable-field" ${window.editLock ? 'disabled' : ''} value="" placeholder="${tr('How many?')}" data-sku="${safeSku}" data-field="xfer_qnt">`;
                                 row = `
 <tr>
     <td class="sap-table__sku">${safeSku}</td>
-    <td>${descriptionField}</td>
+    <td>${descriptionField}${unitSuffix}</td>
     <td class="sap-table__num">${retailPriceField}</td>
     <td class="sap-table__num">${quantityField}</td>
     ${isShopUser ? `<td class="sap-table__num">${transferQuantityField}</td>` : ''}
@@ -1199,7 +1203,8 @@
                     sku: $('#sku').val(),
                     description: $('#description').val(),
                     retail_price: retailPrice,
-                    quantity: $('#quantity').val()
+                    quantity: $('#quantity').val(),
+                    unit: $('#unit').val()
                 };
                 $.ajax({
                     url: '/api/items/',
@@ -1209,7 +1214,7 @@
                     data: JSON.stringify(data),
                     success: () => {
                         fetchItems(1);
-                        $('#sku, #description, #retail_price, #quantity').val('');
+                        $('#sku, #description, #retail_price, #quantity, #unit').val('');
                         notify(tr('Item created successfully.'), 'success');
                     },
                     error: xhr => {

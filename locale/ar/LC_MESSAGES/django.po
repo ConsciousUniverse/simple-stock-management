@@ -10,17 +10,35 @@ msgstr ""
 msgid "(.xlsx — the sheet is the source of truth)"
 msgstr "(‎.xlsx — الملف هو مصدر البيانات)"
 
+msgid "A durable address, not a file on this server: the server's disk is wiped on every deploy."
+msgstr "عنوان دائم وليس ملفًّا على هذا الخادم: قرص الخادم يُمحى مع كل نشر."
+
 msgid "A purchase order from a supplier, a transfer in from another project, or goods returned from a site."
 msgstr "أمر شراء من مورد، أو تحويل وارد من مشروع آخر، أو ارتجاع بضاعة من الموقع."
 
 msgid "A voucher number is booked once: the same number cannot move stock twice."
 msgstr "رقم الإذن يُسجَّل مرة واحدة: لا يمكن لنفس الرقم أن يحرّك المخزون مرتين."
 
+msgid "A warehouse manager publishes the download address below."
+msgstr "مدير المخزن هو من ينشر عنوان التنزيل أدناه."
+
+msgid "API address"
+msgstr "عنوان الواجهة (API)"
+
 msgid "Account temporarily locked"
 msgstr "الحساب مقفل مؤقتًا"
 
+msgid "Accounts"
+msgstr "الحسابات"
+
+msgid "Action"
+msgstr "الإجراء"
+
 msgid "Actions"
 msgstr "إجراءات"
+
+msgid "Active"
+msgstr "نشط"
 
 msgid "Active item codes"
 msgstr "أكواد أصناف نشطة"
@@ -52,6 +70,9 @@ msgstr "إضافة إلى المخزن"
 msgid "Adjust your search or add a new item code."
 msgstr "عدّل البحث أو أضف كود صنف جديد."
 
+msgid "All areas"
+msgstr "كل المجالات"
+
 msgid "An error occurred."
 msgstr "حدث خطأ."
 
@@ -60,6 +81,12 @@ msgstr "حدث خطأ غير متوقع أثناء صرف المخزون."
 
 msgid "An unexpected error occurred while receiving the delivery."
 msgstr "حدث خطأ غير متوقع أثناء استلام التوريد."
+
+msgid "Android app"
+msgstr "تطبيق الأندرويد"
+
+msgid "App release published"
+msgstr "نشر إصدار للتطبيق"
 
 msgid "Apply"
 msgstr "تطبيق"
@@ -72,6 +99,12 @@ msgstr "معتمد"
 
 msgid "Approved by"
 msgstr "اعتمده"
+
+msgid "Area"
+msgstr "المجال"
+
+msgid "Audit log"
+msgstr "سجل التدقيق"
 
 msgid "Authorised users only. Accounts are created by the system administrator."
 msgstr "للمستخدمين المصرح لهم فقط. الحسابات تُنشأ بواسطة مسؤول النظام."
@@ -90,6 +123,9 @@ msgstr "الباركود"
 
 msgid "Barcode labels"
 msgstr "ملصقات الباركود"
+
+msgid "Barcode printing"
+msgstr "طباعة الباركود"
 
 msgid "Book the delivery against the purchase order number; the quantities are added to the warehouse."
 msgstr "سجّل التوريد على رقم أمر الشراء؛ تُضاف الكميات إلى المخزن."
@@ -118,8 +154,17 @@ msgstr "تغيير كلمة المرور"
 msgid "Change the dates or record an issue first."
 msgstr "غيّر التواريخ أو سجّل إذن صرف أولًا."
 
+msgid "Change the password"
+msgstr "تغيير كلمة السر"
+
 msgid "Choose a file"
 msgstr "اختر ملفًا"
+
+msgid "Choose the items"
+msgstr "اختر الأصناف"
+
+msgid "Choose the items, then print their labels."
+msgstr "اختر الأصناف ثم اطبع ملصقاتها."
 
 msgid "Choose the site"
 msgstr "اختر الموقع"
@@ -175,11 +220,23 @@ msgstr "تعذّر تحديث الصنف."
 msgid "Create item"
 msgstr "إنشاء صنف"
 
+msgid "Create the user"
+msgstr "إنشاء المستخدم"
+
 msgid "Create warehouse item"
 msgstr "إنشاء صنف بالمخزن"
 
+msgid "Current"
+msgstr "الحالي"
+
 msgid "Current password"
 msgstr "كلمة المرور الحالية"
+
+msgid "Current version"
+msgstr "الإصدار الحالي"
+
+msgid "Dashboard"
+msgstr "لوحة التحكم"
 
 msgid "Data import / export"
 msgstr "استيراد / تصدير البيانات"
@@ -214,6 +271,9 @@ msgstr "الوصف"
 msgid "Description (for a new item)"
 msgstr "الوصف (للصنف الجديد)"
 
+msgid "Details"
+msgstr "التفاصيل"
+
 msgid "Dismiss notification"
 msgstr "إغلاق التنبيه"
 
@@ -241,14 +301,32 @@ msgstr "تم حفظ الإذن %(number)s وهو في انتظار اعتماد 
 msgid "Document %(number)s was saved and the stock was moved."
 msgstr "تم حفظ الإذن %(number)s وتحرّك المخزون."
 
+msgid "Document approved"
+msgstr "اعتماد مستند"
+
+msgid "Document created"
+msgstr "إنشاء مستند"
+
 msgid "Document not found."
 msgstr "الإذن غير موجود."
+
+msgid "Document number, item code, wording"
+msgstr "رقم المستند أو كود الصنف أو نص"
+
+msgid "Document rejected"
+msgstr "رفض مستند"
 
 msgid "Document type"
 msgstr "نوع الإذن"
 
 msgid "Documents"
 msgstr "الأذون"
+
+msgid "Download"
+msgstr "تنزيل"
+
+msgid "Download address"
+msgstr "عنوان التنزيل"
 
 msgid "Download stock data"
 msgstr "تنزيل بيانات المخزون"
@@ -265,14 +343,32 @@ msgstr "تعديل"
 msgid "Edit item"
 msgstr "تعديل الصنف"
 
+msgid "Edit lock: %(state)s"
+msgstr "قفل التعديل: %(state)s"
+
+msgid "Email"
+msgstr "البريد الإلكتروني"
+
 msgid "Enter a quantity greater than zero."
 msgstr "أدخل كمية أكبر من صفر."
+
+msgid "Enter a user name."
+msgstr "أدخل اسم المستخدم."
 
 msgid "Enter more than 0!"
 msgstr "أدخل قيمة أكبر من صفر!"
 
 msgid "Enter the purchase order number."
 msgstr "أدخل رقم أمر الشراء."
+
+msgid "Enter the version."
+msgstr "أدخل الإصدار."
+
+msgid "Events"
+msgstr "الأحداث"
+
+msgid "Every recorded action: who did what, and when."
+msgstr "كل إجراء مسجل: من فعله ومتى."
 
 msgid "Everything that left the warehouse in the chosen period: what, to where, and who sent it."
 msgstr "كل ما خرج من المخزن في الفترة المختارة: ماذا، وإلى أين، ومن صرفه."
@@ -291,6 +387,12 @@ msgstr "تعذّر رفع بيانات المخزون."
 
 msgid "Fill in the required fields."
 msgstr "أكمل الحقول المطلوبة."
+
+msgid "Filter"
+msgstr "تصفية"
+
+msgid "First name"
+msgstr "الاسم الأول"
 
 msgid "From"
 msgstr "من"
@@ -312,6 +414,12 @@ msgstr "استيراد"
 
 msgid "Import from Excel"
 msgstr "استيراد من Excel"
+
+msgid "Inactive"
+msgstr "غير نشط"
+
+msgid "Install the app"
+msgstr "تنصيب التطبيق"
 
 msgid "Inventory"
 msgstr "المخزون"
@@ -352,11 +460,20 @@ msgstr "الصرف معطّل أثناء أعمال الصيانة على الم
 msgid "Item %(sku)s was not found."
 msgstr "الصنف %(sku)s غير موجود."
 
+msgid "Item changed"
+msgstr "تعديل صنف"
+
 msgid "Item code"
 msgstr "كود الصنف"
 
+msgid "Item created"
+msgstr "إضافة صنف"
+
 msgid "Item created successfully."
 msgstr "تم إنشاء الصنف بنجاح."
+
+msgid "Item deleted"
+msgstr "حذف صنف"
 
 msgid "Item deleted."
 msgstr "تم حذف الصنف."
@@ -381,6 +498,12 @@ msgstr "ملصق"
 
 msgid "Language"
 msgstr "اللغة"
+
+msgid "Last name"
+msgstr "الاسم الأخير"
+
+msgid "Last sign-in"
+msgstr "آخر دخول"
 
 msgid "Leave empty if the app is the only record"
 msgstr "اتركه فارغًا إذا كان التطبيق هو السجل الوحيد"
@@ -409,6 +532,9 @@ msgstr "تسجيل الخروج"
 msgid "Logout"
 msgstr "تسجيل الخروج"
 
+msgid "Mail receiver"
+msgstr "بريد الاستلام"
+
 msgid "Maintain item codes, descriptions, prices and quantities"
 msgstr "إدارة أكواد الأصناف والأوصاف والأسعار والكميات"
 
@@ -424,6 +550,9 @@ msgstr "نقل المخزون من المخزن إلى موقع الإنشاءا
 msgid "Move the catalogue in and out of the system"
 msgstr "إدخال وإخراج دليل الأصناف من النظام"
 
+msgid "Name"
+msgstr "الاسم"
+
 msgid "New addition"
 msgstr "إضافة جديدة"
 
@@ -436,11 +565,26 @@ msgstr "كلمة المرور الجديدة"
 msgid "New site requests will appear here."
 msgstr "طلبات المواقع الجديدة ستظهر هنا."
 
+msgid "New user"
+msgstr "مستخدم جديد"
+
+msgid "Next"
+msgstr "التالي"
+
+msgid "No accounts yet."
+msgstr "لا توجد حسابات بعد."
+
 msgid "No additions yet."
 msgstr "لا توجد إضافات بعد."
 
+msgid "No build has been published yet."
+msgstr "لم يُنشر أي إصدار بعد."
+
 msgid "No deliveries have been received yet."
 msgstr "لم يتم استلام أي توريدات بعد."
+
+msgid "No events match this filter."
+msgstr "لا توجد أحداث تطابق هذا التصفي."
 
 msgid "No issues yet."
 msgstr "لا توجد أذون صرف بعد."
@@ -450,6 +594,9 @@ msgstr "لا توجد أصناف مطابقة لهذا البحث."
 
 msgid "No records"
 msgstr "لا توجد سجلات"
+
+msgid "No release notes."
+msgstr "لا توجد ملاحظات للإصدار."
 
 msgid "No site stock yet"
 msgstr "لا يوجد مخزون بالمواقع بعد"
@@ -477,6 +624,18 @@ msgstr "اعتماد الأذون متاح لأمين المخزن فقط."
 
 msgid "Only a warehouse manager can issue stock to a site."
 msgstr "أمين المخزن فقط يمكنه الصرف لموقع."
+
+msgid "Only a warehouse manager can open this page."
+msgstr "مدير المخزن وحده هو من يفتح هذه الصفحة."
+
+msgid "Only a warehouse manager can publish a build."
+msgstr "مدير المخزن وحده هو من ينشر إصدارًا."
+
+msgid "Open"
+msgstr "فتح"
+
+msgid "Open the download link on the phone and install the file (allow installing apps from this source if the phone asks)."
+msgstr "افتح رابط التنزيل على الهاتف ونصّب الملف (واسمح بتثبيت التطبيقات من هذا المصدر إذا طلب الهاتف)."
 
 msgid "Operational"
 msgstr "يعمل"
@@ -517,6 +676,9 @@ msgstr "برجاء التأكيد"
 msgid "Please select a file to upload."
 msgstr "اختر ملفًا للرفع."
 
+msgid "Previous"
+msgstr "السابق"
+
 msgid "Print"
 msgstr "طباعة"
 
@@ -525,6 +687,18 @@ msgstr "اطبع ملصق Code 128 لكل صنف. الباركود يحمل كو
 
 msgid "Print labels"
 msgstr "طباعة الملصقات"
+
+msgid "Publish"
+msgstr "نشر"
+
+msgid "Publish a build"
+msgstr "نشر إصدار"
+
+msgid "Published"
+msgstr "تاريخ النشر"
+
+msgid "Published builds"
+msgstr "الإصدارات المنشورة"
 
 msgid "Purchase order / reference"
 msgstr "أمر الشراء / المرجع"
@@ -586,6 +760,9 @@ msgstr "مرفوض"
 msgid "Rejected / returned to supplier"
 msgstr "مرفوض / مرتجع للمورد"
 
+msgid "Release notes"
+msgstr "ملاحظات الإصدار"
+
 msgid "Remove"
 msgstr "حذف"
 
@@ -610,6 +787,9 @@ msgstr "سعر البيع يجب أن يكون رقمًا صالحًا بحد أ
 msgid "Return from site to warehouse"
 msgstr "ارتجاع من الموقع إلى المخزن"
 
+msgid "Role"
+msgstr "الدور"
+
 msgid "Save"
 msgstr "حفظ"
 
@@ -618,6 +798,9 @@ msgstr "حفظ الإضافة"
 
 msgid "Save the issue"
 msgstr "حفظ الصرف"
+
+msgid "Save the user"
+msgstr "حفظ المستخدم"
 
 msgid "Saved."
 msgstr "تم الحفظ."
@@ -643,6 +826,9 @@ msgstr "ابحث بكود الصنف أو الموقع..."
 msgid "Sections"
 msgstr "الأقسام"
 
+msgid "Sections of this page"
+msgstr "أقسام هذه الصفحة"
+
 msgid "Select a site"
 msgstr "اختر موقعًا"
 
@@ -664,6 +850,15 @@ msgstr "سعر البيع"
 msgid "Send transfer request"
 msgstr "إرسال طلب النقل"
 
+msgid "Server address"
+msgstr "عنوان الخادم"
+
+msgid "Settings"
+msgstr "الإعدادات"
+
+msgid "Settings changed"
+msgstr "تغيير الإعدادات"
+
 msgid "Shop transfers are paused"
 msgstr "نقل المخزون للمواقع متوقف"
 
@@ -679,14 +874,29 @@ msgstr "يُعرض حتى 300 صنف"
 msgid "Sign in"
 msgstr "تسجيل الدخول"
 
+msgid "Sign in with the same user name and password you use here."
+msgstr "سجّل الدخول بنفس اسم المستخدم وكلمة السر التي تستخدمها هنا."
+
 msgid "Sign in with your username and password"
 msgstr "سجّل الدخول باسم المستخدم وكلمة المرور"
+
+msgid "Sign-in"
+msgstr "تسجيل الدخول"
 
 msgid "Sign-in is paused for this username."
 msgstr "تسجيل الدخول موقوف مؤقتًا لهذا المستخدم."
 
+msgid "Sign-in refused"
+msgstr "رفض تسجيل الدخول"
+
+msgid "Signed in"
+msgstr "تسجيل دخول"
+
 msgid "Signed in as"
 msgstr "مسجَّل الدخول باسم"
+
+msgid "Signed out"
+msgstr "تسجيل خروج"
 
 msgid "Site"
 msgstr "الموقع"
@@ -729,6 +939,15 @@ msgstr "مخزون المواقع"
 
 msgid "Something went wrong."
 msgstr "حدث خطأ ما."
+
+msgid "Spreadsheet exported"
+msgstr "تصدير جدول"
+
+msgid "Spreadsheet imported"
+msgstr "استيراد جدول"
+
+msgid "Spreadsheets"
+msgstr "الجداول"
 
 msgid "Status"
 msgstr "الحالة"
@@ -778,6 +997,33 @@ msgstr "اسم المورد أو المشروع"
 msgid "Suppliers · Sites · Inventory"
 msgstr "الموردون · المواقع · المخزون"
 
+msgid "That user does not exist."
+msgstr "هذا المستخدم غير موجود."
+
+msgid "That user name is already taken."
+msgstr "اسم المستخدم مستخدم بالفعل."
+
+msgid "That version is already published."
+msgstr "هذا الإصدار منشور بالفعل."
+
+msgid "The account may sign in"
+msgstr "الحساب مسموح له بتسجيل الدخول"
+
+msgid "The app reads the server address from the field below; it is already set for this deployment."
+msgstr "يقرأ التطبيق عنوان الخادم من الحقل أدناه، وهو مضبوط لهذا النشر بالفعل."
+
+msgid "The app uses this address to reach the warehouse data."
+msgstr "يستخدم التطبيق هذا العنوان للوصول إلى بيانات المخزن."
+
+msgid "The build to install on the phone, and how it connects to this server."
+msgstr "الإصدار الذي يُنصَّب على الهاتف، وكيف يتصل بهذا الخادم."
+
+msgid "The build was published."
+msgstr "تم نشر الإصدار."
+
+msgid "The download address must start with https:// or with /."
+msgstr "يجب أن يبدأ عنوان التنزيل بـ https:// أو بـ /."
+
 msgid "The file must match the exported layout."
 msgstr "يجب أن يطابق الملف تنسيق التصدير."
 
@@ -796,6 +1042,12 @@ msgstr "الحد هو {{ failure_limit }} محاولة فاشلة. يُستعا�
 msgid "The password could not be changed."
 msgstr "لم يتم تغيير كلمة المرور."
 
+msgid "The password must be at least %(n)s characters."
+msgstr "يجب أن تكون كلمة السر %(n)s أحرف على الأقل."
+
+msgid "The password was changed."
+msgstr "تم تغيير كلمة السر."
+
 msgid "The received quantity must be a whole number."
 msgstr "الكمية المستلمة يجب أن تكون رقمًا صحيحًا."
 
@@ -810,6 +1062,12 @@ msgstr "سيخرج المخزون من المخزن إلى الموقع."
 
 msgid "The system is configured to delete all warehouse and site data that is not included in this upload."
 msgstr "النظام مُهيَّأ لحذف كل بيانات المخزن والمواقع غير المدرجة في هذا الملف."
+
+msgid "The user was created."
+msgstr "تم إنشاء المستخدم."
+
+msgid "The user was saved."
+msgstr "تم حفظ المستخدم."
 
 msgid "The warehouse is in maintenance mode. Stock movements are disabled."
 msgstr "المخزن في وضع الصيانة. حركة المخزون معطّلة."
@@ -832,6 +1090,9 @@ msgstr "إجمالي القيمة"
 msgid "Transfer cancelled."
 msgstr "تم إلغاء طلب النقل."
 
+msgid "Transfer dispatched"
+msgstr "تنفيذ تحويل"
+
 msgid "Transfer dispatched."
 msgstr "تم صرف طلب النقل."
 
@@ -847,11 +1108,20 @@ msgstr "كمية النقل"
 msgid "Transfer request sent to the warehouse."
 msgstr "تم إرسال طلب النقل إلى المخزن."
 
+msgid "Transfer requested"
+msgstr "طلب تحويل"
+
+msgid "Transfers"
+msgstr "التحويلات"
+
 msgid "Transfers are open"
 msgstr "النقل متاح"
 
 msgid "Type"
 msgstr "النوع"
+
+msgid "Unit"
+msgstr "الوحدة"
 
 msgid "Unknown action."
 msgstr "إجراء غير معروف."
@@ -871,11 +1141,32 @@ msgstr "رفع بيانات المخزون"
 msgid "Use your new password the next time you sign in."
 msgstr "استخدم كلمة المرور الجديدة في المرة القادمة."
 
+msgid "User"
+msgstr "المستخدم"
+
+msgid "User changed"
+msgstr "تعديل مستخدم"
+
+msgid "User created"
+msgstr "إنشاء مستخدم"
+
+msgid "User deactivated"
+msgstr "إيقاف مستخدم"
+
+msgid "User name"
+msgstr "اسم المستخدم"
+
 msgid "Username"
 msgstr "اسم المستخدم"
 
+msgid "Users"
+msgstr "المستخدمون"
+
 msgid "Value"
 msgstr "القيمة"
+
+msgid "Version"
+msgstr "الإصدار"
 
 msgid "Wait for the lock to expire, or ask the system administrator to reset it."
 msgstr "انتظر انتهاء القفل أو اطلب من مسؤول النظام إعادة ضبطه."
@@ -916,11 +1207,20 @@ msgstr "تعذّر تسجيل الدخول."
 msgid "What the warehouse holds, and what each site already holds."
 msgstr "ما يحتفظ به المخزن، وما يحتفظ به كل موقع."
 
+msgid "When"
+msgstr "التاريخ والوقت"
+
+msgid "Who may sign in, and what each person may do."
+msgstr "من يستطيع تسجيل الدخول، وماذا يستطيع كل شخص فعله."
+
 msgid "Your entry is saved for a warehouse manager to approve; the stock moves after approval."
 msgstr "يُحفظ إدخالك ليعتمده أمين المخزن؛ ولا يتحرك المخزون إلا بعد الاعتماد."
 
 msgid "Your password has been updated successfully."
 msgstr "تم تحديث كلمة المرور بنجاح."
+
+msgid "accounts"
+msgstr "حساب"
 
 msgid "all"
 msgstr "الكل"
@@ -931,11 +1231,23 @@ msgstr "مثال: NSCOM-1001"
 msgid "e.g. PO-2026-00123"
 msgstr "مثال: PO-2026-00123"
 
+msgid "e.g. piece, metre, kg"
+msgstr "مثال: قطعة، متر، كجم"
+
+msgid "events"
+msgstr "حدث"
+
 msgid "items"
 msgstr "صنف"
 
 msgid "of"
 msgstr "من"
+
+msgid "off"
+msgstr "مُعطَّل"
+
+msgid "on"
+msgstr "مُفعَّل"
 
 msgid "pending transfer"
 msgstr "طلب نقل معلّق"

@@ -6,9 +6,11 @@ inclusive on both ends and is matched on the day the stock actually moved.
 """
 
 from datetime import date, datetime, timedelta
+from io import BytesIO
 
 import pytest
 from django.utils import timezone
+from openpyxl import load_workbook
 
 from stock_manager import documents as service
 from stock_manager import issue_report
@@ -196,6 +198,34 @@ class TestReportPage:
         html = client.get("/issues/report/?from=2020-01-01&to=2020-01-02").content.decode()
 
         assert "Nothing was issued in this period." in html
+
+
+class TestUnitOfMeasure:
+    def test_every_row_states_the_unit_it_was_issued_in(
+        self, manager, shop_user, make_item
+    ):
+        make_item(sku="SKU-1", retail_price="10.00", quantity=100, unit="متر")
+        book_issue(manager, shop_user, "SKU-1", 4)
+        today = timezone.localdate()
+
+        report = issue_report.build_report(today - timedelta(days=6), today)
+
+        assert report["rows"][0]["unit"] == "متر"
+        assert report["by_item"][0]["unit"] == "متر"
+
+    def test_the_workbook_has_a_unit_column(self, manager, shop_user, make_item):
+        make_item(sku="SKU-1", retail_price="10.00", quantity=100, unit="لفة")
+        book_issue(manager, shop_user, "SKU-1", 2)
+        today = timezone.localdate()
+
+        report = issue_report.build_report(today - timedelta(days=6), today)
+        workbook = load_workbook(BytesIO(issue_report.workbook_bytes(report)))
+        detail = workbook["Issues"]
+
+        headers = [cell.value for cell in detail[1]]
+        assert "Unit" in headers
+        row = [cell.value for cell in detail[2]]
+        assert row[headers.index("Unit")] == "لفة"
 
 
 class TestArabicPresentation:

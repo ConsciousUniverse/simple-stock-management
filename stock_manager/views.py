@@ -8,6 +8,8 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .models import (
     Admin,
+    AppRelease,
+    AuditEvent,
     GoodsReceipt,
     GoodsReceiptLine,
     Item,
@@ -16,6 +18,7 @@ from .models import (
     StockDocumentLine,
     TransferItem,
 )
+from . import audit
 from . import documents as stock_documents
 from . import issue_report
 from .barcodes import BarcodeError, render_barcode_svg
@@ -94,6 +97,13 @@ class ItemViewSet(viewsets.ModelViewSet):
                     serializer = ItemSerializer(item, data=request.data, partial=True)
                     if serializer.is_valid():
                         serializer.save(is_active=True)
+                        audit.record(
+                            user=request.user,
+                            action=AuditEvent.ITEM_CREATED,
+                            entity="item",
+                            entity_id=sku,
+                            description=f"{sku} · {serializer.instance.description}",
+                        )
                         return Response(serializer.data, status=status.HTTP_200_OK)
                     else:
                         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -101,7 +111,17 @@ class ItemViewSet(viewsets.ModelViewSet):
                     return Response({"detail": "Item with this SKU already exists."}, status=status.HTTP_400_BAD_REQUEST)
             except Item.DoesNotExist:
                 pass
-        return super().create(request, *args, **kwargs)
+        response = super().create(request, *args, **kwargs)
+        if response.status_code in (200, 201):
+            item = response.data
+            audit.record(
+                user=request.user,
+                action=AuditEvent.ITEM_CREATED,
+                entity="item",
+                entity_id=item.get("sku"),
+                description=f"{item.get('sku')} · {item.get('description')}",
+            )
+        return response
 
     def update(self, request, *args, **kwargs):
         if not request.user.groups.filter(name="managers").exists():
@@ -124,7 +144,15 @@ class ItemViewSet(viewsets.ModelViewSet):
             )
         serializer = ItemSerializer(item, data=request.data, partial=True)
         if serializer.is_valid():
+            changed = sorted(serializer.validated_data.keys())
             serializer.save()
+            audit.record(
+                user=request.user,
+                action=AuditEvent.ITEM_UPDATED,
+                entity="item",
+                entity_id=item.sku,
+                description=f"{item.sku} · " + ", ".join(changed),
+            )
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -139,6 +167,14 @@ class ItemViewSet(viewsets.ModelViewSet):
             item = Item.objects.get(sku=sku)
             item.is_active = False
             item.save()
+            # A soft delete: the row stays for the documents that reference it.
+            audit.record(
+                user=request.user,
+                action=AuditEvent.ITEM_DELETED,
+                entity="item",
+                entity_id=sku,
+                description=f"{sku} · {item.description}",
+            )
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Item.DoesNotExist:
             return Response({"error": "Item not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -243,6 +279,15 @@ def set_edit_lock_status(request):
     admin, created = Admin.objects.get_or_create(id=1)
     admin.edit_lock = edit_lock_status
     admin.save()
+    audit.record(
+        user=request.user,
+        action=AuditEvent.SETTINGS_CHANGED,
+        entity="settings",
+        entity_id="edit_lock",
+        # Read by people, so say what changed in words rather than a field dump.
+        description=_("Edit lock: %(state)s")
+        % {"state": _("on") if admin.edit_lock else _("off")},
+    )
     return Response(
         {"edit_lock": admin.edit_lock},
         status=status.HTTP_200_OK,
@@ -468,6 +513,12 @@ def submit_transfer_request(request):
             {"detail": "An unexpected error occurred while submitting the transfer request."},
             status=status.HTTP_400_BAD_REQUEST,
         )
+    audit.record(
+        user=request.user,
+        action=AuditEvent.TRANSFER_SENT,
+        entity="transfer",
+        description=request.user.get_username(),
+    )
     return Response(
         {"detail": "Transfer successfully submitted."}, status=status.HTTP_200_OK
     )
@@ -542,6 +593,12 @@ def complete_transfer(request):
             {"detail": "An unexpected error occurred while processing the transfer action."},
             status=status.HTTP_400_BAD_REQUEST,
         )
+    audit.record(
+        user=request.user,
+        action=AuditEvent.TRANSFER_COMPLETED,
+        entity="transfer",
+        description=request.user.get_username(),
+    )
     return Response(
         {"detail": "Transfer action successful."}, status=status.HTTP_200_OK
     )
@@ -551,10 +608,13 @@ def complete_transfer(request):
 @permission_classes([IsAuthenticated])
 def app_config(request):
     config = Admin.objects.first()
+    release = AppRelease.latest()
     return Response({
         "records_per_page": config.records_per_page if config else 25,
         "allow_upload_deletions": config.allow_upload_deletions if config else False,
-        # Add other config values here if needed
+        # The newest published build, so the app can offer its own update.
+        "latest_app_version": release.version if release else None,
+        "app_download_url": release.download_url if release else None,
     })
 
 
@@ -572,6 +632,12 @@ def export_data_excel(request):
         return Response(
             {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
         )
+    audit.record(
+        user=request.user,
+        action=AuditEvent.DATA_EXPORTED,
+        entity="spreadsheet",
+        description=request.user.get_username(),
+    )
     return SpreadsheetTools(request).generate_excel_response()
 
 
@@ -592,7 +658,15 @@ def import_data_excel(request):
         return Response(
             {"detail": "Uploads are disabled in the app configuration."}, status=400
         )
-    return SpreadsheetTools(request).handle_excel_upload()
+    response = SpreadsheetTools(request).handle_excel_upload()
+    if getattr(response, "status_code", 500) < 400:
+        audit.record(
+            user=request.user,
+            action=AuditEvent.DATA_IMPORTED,
+            entity="spreadsheet",
+            description=request.user.get_username(),
+        )
+    return response
 
 
 # ---------------------------------------------------------------------------
@@ -684,6 +758,7 @@ def receive_from_supplier(request):
                     sku=sku,
                     description=description or item.description,
                     quantity=quantity,
+                    unit=item.unit,
                 )
                 booked.append(
                     {
@@ -896,11 +971,13 @@ def _form_lines(request):
     skus = request.POST.getlist("sku")
     quantities = request.POST.getlist("quantity")
     descriptions = request.POST.getlist("description")
+    units = request.POST.getlist("unit")
     return [
         {
             "sku": sku,
             "quantity": quantity,
             "description": descriptions[index] if index < len(descriptions) else "",
+            "unit": units[index] if index < len(units) else "",
         }
         for index, (sku, quantity) in enumerate(zip(skus, quantities))
         if str(sku).strip()
@@ -983,6 +1060,7 @@ def receipts_page(request):
         "pages/receipts.html",
         {
             "sites": _site_accounts(),
+            "unit_options": stock_documents.COMMON_UNITS,
             "types": [
                 (value, _(label))
                 for value, label in StockDocument.TYPE_CHOICES
@@ -1023,6 +1101,7 @@ def issues_page(request):
         "pages/issues.html",
         {
             "sites": _site_accounts(),
+            "unit_options": stock_documents.COMMON_UNITS,
             "types": [
                 (value, _(label))
                 for value, label in StockDocument.TYPE_CHOICES

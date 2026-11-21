@@ -58,6 +58,8 @@
                 <input class="sap-input" type="text" name="description"
                     placeholder="{% trans 'Description (for a new item)' %}"
                     aria-label="{% trans 'Description' %}">
+                <input class="sap-input sap-input--unit" type="text" name="unit" list="unitOptions"
+                    placeholder="{% trans 'Unit' %}" aria-label="{% trans 'Unit' %}" autocomplete="off">
                 <input class="sap-input sap-input--qty" type="number" name="quantity" min="1" step="1"
                     placeholder="{% trans 'Qty' %}" aria-label="{% trans 'Quantity' %}">
                 <button type="button" class="sap-btn sap-btn--icon sap-btn--ghost remove-line"
@@ -67,6 +69,11 @@
             </div>
             {% endfor %}
         </div>
+        <datalist id="unitOptions">
+            {% for unit in unit_options %}
+            <option value="{{ unit }}"></option>
+            {% endfor %}
+        </datalist>
         <div class="sap-form-actions">
             <button type="button" class="sap-btn sap-btn--ghost" id="addLine">
                 <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-plus"></use></svg>
