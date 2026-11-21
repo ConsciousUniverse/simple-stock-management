@@ -1,0 +1,60 @@
+# Render Blueprint: one click creates the web service (and the database, when
+# the account can provision one) with the commands this project needs.
+#
+# Deploy: Render Dashboard -> New -> Blueprint -> pick this repository.
+services:
+  - type: web
+    name: ssm-warehouse
+    runtime: python
+    plan: free
+    region: frankfurt
+    branch: main
+    autoDeploy: true
+    healthCheckPath: /healthz
+    buildCommand: >-
+      pip install -r requirements.txt &&
+      python manage.py collectstatic --noinput &&
+      python manage.py migrate --run-syncdb --noinput &&
+      python manage.py bootstrap_admin
+    startCommand: >-
+      gunicorn ssm.wsgi:application --bind 0.0.0.0:$PORT
+      --workers 2 --timeout 60 --access-logfile - --error-logfile -
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.15
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: ALLOW_PW_CHANGE
+        value: "True"
+      - key: AXES_FAILURE_LIMIT
+        value: "3"
+      - key: AXES_COOLOFF_TIME
+        value: "1"
+      - key: MAIL_SERVICE_BACKEND
+        value: django.core.mail.backends.console.EmailBackend
+      - key: MAIL_DEFAULT_FROM
+        value: no-reply@ssm.local
+      - key: MAIL_SERVER_EMAIL
+        value: no-reply@ssm.local
+      - key: LOG_FILE
+        value: /tmp/ssm.log
+      # First administrator; set the password in the dashboard prompt.
+      - key: DJANGO_SUPERUSER_USERNAME
+        value: admin
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+      # Managed Postgres. Remove this block to run on SQLite instead: the app
+      # falls back to DB_NAME when DATABASE_URL is absent, but SQLite on Render
+      # lives on an ephemeral disk and is reset by every deploy.
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ssm-db
+          property: connectionString
+
+databases:
+  - name: ssm-db
+    plan: free
+    region: frankfurt
+    postgresMajorVersion: "16"
