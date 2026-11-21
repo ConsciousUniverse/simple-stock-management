@@ -143,3 +143,43 @@ class TestLockoutPage:
         assert response.status_code == 429
         assert "Account temporarily locked" in html
         assert STYLESHEET in html
+
+
+class TestCompanyLogo:
+    """The branding is a customer-supplied wide logo, not a square mark.
+
+    A square box (``width: 2rem; height: 2rem``) shrinks a 3.5:1 logo into an
+    unreadable thumbnail, so the sizing rule is pinned here as well as the asset
+    references: a regression in either silently un-brands every page.
+    """
+
+    def test_assets_are_shipped(self):
+        for name in ("company-logo.png", "favicon.png"):
+            assert finders.find(f"img/{name}"), name
+
+    def test_login_page_uses_the_company_logo_and_favicon(self, client):
+        html = client.get(LOGIN_URL).content.decode()
+
+        assert "img/company-logo.png" in html
+        assert "img/favicon.png" in html
+        assert "logo-mark.png" not in html
+
+    def test_dashboard_uses_the_company_logo_and_favicon(
+        self, client, shop_user, app_config
+    ):
+        client.force_login(shop_user)
+        html = client.get("/").content.decode()
+
+        assert "img/company-logo.png" in html
+        assert "img/favicon.png" in html
+
+    def test_shellbar_logo_is_sized_by_height(self):
+        css = (settings.BASE_DIR / "stock_manager/static/css/ssm-sap.css").read_text()
+        rule = re.search(
+            r"\.sap-shellbar__logo img\s*\{(?P<body>[^}]*)\}", css
+        ).group("body")
+
+        # A height + auto width keeps the aspect ratio; a fixed width AND height
+        # would box the wide logo again.
+        assert "height:" in rule
+        assert "width: auto" in rule

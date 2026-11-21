@@ -219,15 +219,19 @@ img {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    height: 2.15rem;
+    padding: 0 0.45rem;
+    /* The company logo artwork sits on a white plate, so give it a matching
+       plate instead of boxing a wide logo into a square. */
+    background-color: #ffffff;
     border-radius: var(--sap-radius-sm);
     flex: 0 0 auto;
 }
 
 .sap-shellbar__logo img {
-    width: 100%;
-    height: 100%;
+    height: 1.55rem;
+    width: auto;
+    max-width: 10rem;
     object-fit: contain;
     display: block;
 }
@@ -1542,8 +1546,7 @@ body.sap-login {
 }
 
 .sap-login__topbar .sap-shellbar__logo {
-    width: 1.75rem;
-    height: 1.75rem;
+    height: 1.9rem;
 }
 
 .sap-login__topbar-title {
@@ -1587,13 +1590,15 @@ body.sap-login {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 5rem;
-    height: 5rem;
+    width: min(15rem, 80%);
+    padding: 0.6rem 0.9rem;
+    background-color: #ffffff;
+    border-radius: var(--sap-radius-md);
 }
 
 .sap-login__logo img {
     width: 100%;
-    height: 100%;
+    height: auto;
     object-fit: contain;
     display: block;
 }
@@ -1688,6 +1693,10 @@ body.sap-login {
 @media (max-width: 860px) {
     .sap-shellbar__menu-btn {
         display: inline-flex;
+    }
+
+    .sap-shellbar__logo img {
+        max-width: 6.5rem;
     }
 
     .sap-shellbar__status,
