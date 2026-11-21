@@ -14,6 +14,12 @@ from .views import (
     export_data_excel,
     import_data_excel,
     app_config,  # Add this import
+    receive_from_supplier,
+    list_receipts,
+    list_sites,
+    item_barcode,
+    print_labels,
+    issue_to_site,
 )
 from django.conf.urls.static import static
 from django.conf import settings
@@ -30,10 +36,15 @@ class PathRouter(DefaultRouter):
 router = PathRouter()
 router.register(r"items", ItemViewSet)
 router.register(r"shop_items", ShopItemViewSet)
+# "site" is the Orascom term for the same stock owner; keep both names working.
+router.register(r"site_items", ShopItemViewSet, basename="site-items")
 router.register(r"transfer_items", TransferItemViewSet)
 
 urlpatterns = [
     path("", index, name="index"),
+    # Must precede the router include: its lookup regex is `.+`, which would
+    # otherwise match `api/items/<sku>/barcode.svg` as an item detail.
+    path("api/items/<str:sku>/barcode.svg", item_barcode, name="item_barcode"),
     path("api/", include(router.urls)),
     path("auth/user/", get_user, name="get_user"),  # Custom user endpoint
     path("api/transfer/", transfer_item, name="transfer_item"),
@@ -52,6 +63,12 @@ urlpatterns = [
     path("api/export_data/", export_data_excel, name="export_data_excel"),
     path("api/import_data/", import_data_excel, name="import_data_excel"),
     path("api/app_config/", app_config, name="app_config"),  # Register the endpoint
+    # Goods receipts (stock in against a supplier PO) and item labels.
+    path("api/receiving/", receive_from_supplier, name="receive_from_supplier"),
+    path("api/receipts/", list_receipts, name="list_receipts"),
+    path("api/sites/", list_sites, name="list_sites"),
+    path("labels/", print_labels, name="print_labels"),
+    path("api/issue/", issue_to_site, name="issue_to_site"),
 ]
 
 if settings.DEBUG:

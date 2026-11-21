@@ -1,12 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
+{% load i18n %}{% get_current_language as CURRENT_LANGUAGE %}<!DOCTYPE html>
+<html lang="{{ CURRENT_LANGUAGE }}" dir="{% if CURRENT_LANGUAGE == 'ar' %}rtl{% else %}ltr{% endif %}">
 
 <head>
     {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#354a5f">
-    <title>Simpler Stock Management</title>
+    <title>{% trans "Warehouse management" %}</title>
     <link rel="icon" href="{% static 'img/favicon.png' %}">
     <link rel="stylesheet" href="{% static 'css/ssm-sap.css' %}">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -19,7 +19,7 @@
     <!-- ================= Shell bar ================= -->
     <header class="sap-shellbar">
         <div class="sap-shellbar__left">
-            <button type="button" class="sap-shellbar__menu-btn" id="navToggle" aria-label="Toggle navigation"
+            <button type="button" class="sap-shellbar__menu-btn" id="navToggle" aria-label="{% trans 'Menu' %}"
                 aria-controls="sideNav" aria-expanded="false">
                 <svg class="sap-icon" aria-hidden="true"><use href="#i-overview"></use></svg>
             </button>
@@ -28,24 +28,25 @@
                     <img src="{% static 'img/company-logo.png' %}" alt="Nscom Construction">
                 </span>
                 <span class="sap-shellbar__titles">
-                    <span class="sap-shellbar__product">Simpler Stock Management</span>
-                    <span class="sap-shellbar__subtitle">Warehouse &amp; Shop Inventory</span>
+                    <span class="sap-shellbar__product">{% trans "Warehouse management" %}</span>
+                    <span class="sap-shellbar__subtitle">{% trans "Suppliers · Sites · Inventory" %}</span>
                 </span>
             </a>
         </div>
         <div class="sap-shellbar__right">
+            {% include "partials/language_switch.html" %}
             <span class="sap-shellbar__status" id="systemStatus">
                 <span class="sap-dot" id="statusDot"></span>
-                <span id="statusText">Operational</span>
+                <span id="statusText">{% trans "Operational" %}</span>
             </span>
-            <div class="sap-user" title="Signed-in user">
+            <div class="sap-user" title="{% trans 'Signed in as' %}">
                 <span class="sap-user__avatar" id="userAvatar">?</span>
                 <span class="sap-user__meta">
-                    <span class="sap-user__name" id="userStatus">Not signed in</span>
+                    <span class="sap-user__name" id="userStatus">{% trans "Not signed in" %}</span>
                     <span class="sap-user__role" id="userRole"></span>
                 </span>
             </div>
-            <a id="authLink" class="sap-btn sap-btn--transparent sap-shellbar__btn">Log On</a>
+            <a id="authLink" class="sap-btn sap-btn--transparent sap-shellbar__btn">{% trans "Log On" %}</a>
         </div>
     </header>
 
@@ -53,38 +54,46 @@
         <!-- ================= Side navigation ================= -->
         <aside class="sap-sidenav" id="sideNav">
             <div>
-                <div class="sap-sidenav__label">Inventory</div>
-                <nav class="sap-sidenav__nav" aria-label="Sections">
+                <div class="sap-sidenav__label">{% trans "Inventory" %}</div>
+                <nav class="sap-sidenav__nav" aria-label="{% trans 'Sections' %}">
                     <a class="sap-sidenav__item is-active" href="#overview" data-spy="overview">
                         <svg class="sap-icon" aria-hidden="true"><use href="#i-overview"></use></svg>
-                        <span>Overview</span>
+                        <span>{% trans "Overview" %}</span>
                     </a>
                     <a class="sap-sidenav__item" href="#warehouse" data-spy="warehouse">
                         <svg class="sap-icon" aria-hidden="true"><use href="#i-warehouse"></use></svg>
-                        <span>Warehouse Stock</span>
+                        <span>{% trans "Warehouse stock" %}</span>
                     </a>
                     <a class="sap-sidenav__item" href="#shop" data-spy="shop" id="navShop">
                         <svg class="sap-icon" aria-hidden="true"><use href="#i-shop"></use></svg>
-                        <span>Shop Stock</span>
+                        <span>{% trans "Sites stock" %}</span>
                     </a>
                     <a class="sap-sidenav__item" href="#transfersPendingSection" data-spy="transfersPendingSection">
                         <svg class="sap-icon" aria-hidden="true"><use href="#i-transfer"></use></svg>
-                        <span>Transfers Pending</span>
+                        <span>{% trans "Site requests" %}</span>
                     </a>
                     <a class="sap-sidenav__item d-none" href="#addItemSection" data-spy="addItemSection"
                         id="navCreateItem">
                         <svg class="sap-icon" aria-hidden="true"><use href="#i-plus"></use></svg>
-                        <span>Create Item</span>
+                        <span>{% trans "Create item" %}</span>
+                    </a>
+                    <a class="sap-sidenav__item" href="#receiving" data-spy="receiving">
+                        <svg class="sap-icon" aria-hidden="true"><use href="#i-download"></use></svg>
+                        <span>{% trans "Receiving (PO)" %}</span>
+                    </a>
+                    <a class="sap-sidenav__item" href="#labels" data-spy="labels">
+                        <svg class="sap-icon" aria-hidden="true"><use href="#i-package"></use></svg>
+                        <span>{% trans "Barcode labels" %}</span>
                     </a>
                     <a class="sap-sidenav__item" href="#dlStockSection" data-spy="dlStockSection">
                         <svg class="sap-icon" aria-hidden="true"><use href="#i-data"></use></svg>
-                        <span>Data Import / Export</span>
+                        <span>{% trans "Data import / export" %}</span>
                     </a>
                 </nav>
             </div>
             <div class="sap-sidenav__footer">
-                <a id="change_pw_link" href="{% url 'password_change' %}">Change my password</a>
-                <span>v5.3.0-beta</span>
+                <a id="change_pw_link" href="{% url 'password_change' %}">{% trans "Change my password" %}</a>
+                <span>v6.0.0</span>
             </div>
         </aside>
 
@@ -95,57 +104,57 @@
                 <div class="sap-page-header" id="overview">
                     <div class="sap-page-header__text">
                         <div class="sap-breadcrumb">
-                            <span>Home</span>
+                            <span>{% trans "Home" %}</span>
                             <span class="sap-breadcrumb__sep">/</span>
-                            <span>Inventory</span>
+                            <span>{% trans "Inventory" %}</span>
                         </div>
-                        <h1 class="sap-title">Stock Overview</h1>
+                        <h1 class="sap-title">{% trans "Stock overview" %}</h1>
                         <p class="sap-subtitle">
-                            Warehouse and shop inventory at a glance
+                            {% trans "Warehouse and site inventory at a glance" %}
                             <span id="lastUpdated"></span>
                         </p>
                     </div>
                     <div class="sap-page-header__actions">
                         <button id="refreshInventory" class="sap-btn sap-btn--ghost" type="button">
                             <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-refresh"></use></svg>
-                            Refresh Inventory
+                            {% trans "Refresh" %}
                         </button>
                     </div>
                 </div>
 
                 <!-- KPI tiles -->
-                <section class="sap-tiles" aria-label="Key figures">
+                <section class="sap-tiles" aria-label="{% trans 'Key figures' %}">
                     <article class="sap-tile">
                         <div class="sap-tile__label">
                             <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-warehouse"></use></svg>
-                            Warehouse items
+                            {% trans "Warehouse items" %}
                         </div>
                         <div class="sap-tile__value" id="kpiWarehouse">&ndash;</div>
-                        <div class="sap-tile__foot">Active SKUs in stock</div>
+                        <div class="sap-tile__foot">{% trans "Active item codes" %}</div>
                     </article>
                     <article class="sap-tile" id="tileShop">
                         <div class="sap-tile__label">
                             <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-shop"></use></svg>
-                            Shop stock lines
+                            {% trans "Site stock lines" %}
                         </div>
                         <div class="sap-tile__value" id="kpiShop">&ndash;</div>
-                        <div class="sap-tile__foot">Items recorded for your shop</div>
+                        <div class="sap-tile__foot">{% trans "Items recorded for your site" %}</div>
                     </article>
                     <article class="sap-tile sap-tile--critical">
                         <div class="sap-tile__label">
                             <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-transfer"></use></svg>
-                            Pending transfers
+                            {% trans "Pending issues" %}
                         </div>
                         <div class="sap-tile__value" id="kpiTransfers">&ndash;</div>
-                        <div class="sap-tile__foot">Lines awaiting dispatch</div>
+                        <div class="sap-tile__foot">{% trans "Awaiting dispatch" %}</div>
                     </article>
                     <article class="sap-tile sap-tile--positive" id="tileStatus">
                         <div class="sap-tile__label">
                             <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-lock"></use></svg>
-                            Warehouse status
+                            {% trans "Warehouse status" %}
                         </div>
-                        <div class="sap-tile__value sap-tile__value--text" id="kpiStatus">Operational</div>
-                        <div class="sap-tile__foot" id="kpiStatusFoot">Transfers are open</div>
+                        <div class="sap-tile__value sap-tile__value--text" id="kpiStatus">{% trans "Operational" %}</div>
+                        <div class="sap-tile__foot" id="kpiStatusFoot">{% trans "Stock movements are open" %}</div>
                     </article>
                 </section>
 
@@ -155,37 +164,37 @@
                         <div class="sap-card__heading">
                             <h2 class="sap-card__title">
                                 <svg class="sap-icon" aria-hidden="true"><use href="#i-plus"></use></svg>
-                                Create Warehouse Item
+                                {% trans "Create warehouse item" %}
                             </h2>
-                            <p class="sap-card__subtitle">Add a new SKU to the warehouse catalogue</p>
+                            <p class="sap-card__subtitle">{% trans "Add a new item code to the warehouse catalogue" %}</p>
                         </div>
                     </div>
                     <div class="sap-card__body" id="addItemSectionInner">
                         <div class="sap-form-grid">
                             <div class="sap-field">
-                                <label class="sap-label" for="sku">SKU</label>
-                                <input type="text" id="sku" class="sap-input" placeholder="e.g. SKU-1001"
+                                <label class="sap-label" for="sku">{% trans "Item code" %}</label>
+                                <input type="text" id="sku" class="sap-input" placeholder="{% trans 'e.g. NSCOM-1001' %}"
                                     autocomplete="off">
                             </div>
                             <div class="sap-field">
-                                <label class="sap-label" for="description">Description</label>
-                                <input type="text" id="description" class="sap-input" placeholder="Item description"
+                                <label class="sap-label" for="description">{% trans "Description" %}</label>
+                                <input type="text" id="description" class="sap-input" placeholder="{% trans 'Description' %}"
                                     autocomplete="off">
                             </div>
                             <div class="sap-field">
-                                <label class="sap-label" for="retail_price">Retail Price</label>
+                                <label class="sap-label" for="retail_price">{% trans "Retail price" %}</label>
                                 <input type="number" step="0.01" min="0.00" id="retail_price" class="sap-input"
                                     placeholder="0.00">
                             </div>
                             <div class="sap-field">
-                                <label class="sap-label" for="quantity">Quantity</label>
+                                <label class="sap-label" for="quantity">{% trans "Quantity" %}</label>
                                 <input type="number" min="0" id="quantity" class="sap-input" placeholder="0">
                             </div>
                         </div>
                         <div class="sap-form-actions">
                             <button id="addItem" class="sap-btn sap-btn--emphasized" type="button">
                                 <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-plus"></use></svg>
-                                Add Item
+                                {% trans "Add item" %}
                             </button>
                         </div>
                     </div>
@@ -197,22 +206,22 @@
                         <div class="sap-card__heading">
                             <h2 class="sap-card__title">
                                 <svg class="sap-icon" aria-hidden="true"><use href="#i-warehouse"></use></svg>
-                                Warehouse Stock
+                                {% trans "Warehouse stock" %}
                             </h2>
                             <p class="sap-card__subtitle">
-                                Maintain SKUs, descriptions, retail prices and quantities
+                                {% trans "Maintain item codes, descriptions, prices and quantities" %}
                             </p>
                         </div>
                         <div class="sap-card__header-actions">
                             <label id="updateModeSwitch" class="sap-switch d-none"
-                                title="Pause shop transfers while the warehouse is maintained">
+                                title="{% trans 'Pause site transfers while the warehouse is maintained' %}">
                                 <input type="checkbox" id="updateModeToggle">
                                 <span class="sap-switch__track"><span class="sap-switch__thumb"></span></span>
-                                <span class="sap-switch__label">Maintenance mode</span>
+                                <span class="sap-switch__label">{% trans "Maintenance mode" %}</span>
                             </label>
                             <button id="refreshWarehouse" class="sap-btn sap-btn--ghost d-none" type="button">
                                 <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-refresh"></use></svg>
-                                Refresh Warehouse
+                                {% trans "Refresh" %}
                             </button>
                         </div>
                     </div>
@@ -220,7 +229,7 @@
                         <div class="sap-search">
                             <svg class="sap-icon" aria-hidden="true"><use href="#i-search"></use></svg>
                             <input type="text" id="searchBox1" class="sap-input sap-input--search"
-                                placeholder="Search warehouse items by SKU or description&hellip;"
+                                placeholder="{% trans 'Search items by code or description...' %}"
                                 onkeyup="search(1, this.value)">
                         </div>
                         <div class="sap-toolbar__meta">
@@ -229,34 +238,34 @@
                     </div>
                     <div class="sap-msgstrip sap-msgstrip--warning maintenanceMode d-none" role="alert">
                         <svg class="sap-icon" aria-hidden="true"><use href="#i-alert"></use></svg>
-                        <span><span class="sap-msgstrip__title">Warehouse maintenance is in progress.</span>
-                            Shop transfer requests are paused until the manager reopens the warehouse.</span>
+                        <span><span class="sap-msgstrip__title">{% trans "Warehouse maintenance is in progress." %}</span>
+                            {% trans "Site transfer requests are paused until the manager reopens the warehouse." %}</span>
                     </div>
                     <div class="sap-tablewrap">
                         <table class="sap-table whTable">
                             <thead>
                                 <tr>
-                                    <th onclick="sortTable(1, 'sku')" data-sort-col="sku" aria-sort="none">SKU<span
+                                    <th onclick="sortTable(1, 'sku')" data-sort-col="sku" aria-sort="none">{% trans "Item code" %}<span
                                             class="sap-sort" aria-hidden="true">&#8597;</span></th>
                                     <th onclick="sortTable(1, 'description')" data-sort-col="description"
-                                        aria-sort="none">Description<span class="sap-sort"
+                                        aria-sort="none">{% trans "Description" %}<span class="sap-sort"
                                             aria-hidden="true">&#8597;</span></th>
                                     <th onclick="sortTable(1, 'retail_price')" data-sort-col="retail_price" class="sap-table__num"
-                                        aria-sort="none">Retail Price<span class="sap-sort"
+                                        aria-sort="none">{% trans "Retail price" %}<span class="sap-sort"
                                             aria-hidden="true">&#8597;</span></th>
                                     <th onclick="sortTable(1, 'quantity')" data-sort-col="quantity" class="sap-table__num"
                                         aria-sort="none">
-                                        Warehouse Qnt<span class="sap-sort" aria-hidden="true">&#8597;</span></th>
-                                    <th id="whXferQnt">Transfer Qnt</th>
-                                    <th id="whActions">Actions</th>
+                                        {% trans "Warehouse qty" %}<span class="sap-sort" aria-hidden="true">&#8597;</span></th>
+                                    <th id="whXferQnt">{% trans "Transfer qty" %}</th>
+                                    <th id="whActions">{% trans "Actions" %}</th>
                                 </tr>
                             </thead>
                             <tbody id="itemTable1"></tbody>
                         </table>
                         <div class="sap-empty d-none" id="empty1">
                             <svg class="sap-icon" aria-hidden="true"><use href="#i-package"></use></svg>
-                            <div class="sap-empty__title">No warehouse items found</div>
-                            <div class="sap-empty__text">Adjust your search or add a new SKU.</div>
+                            <div class="sap-empty__title">{% trans "No warehouse items found" %}</div>
+                            <div class="sap-empty__text">{% trans "Adjust your search or add a new item code." %}</div>
                         </div>
                     </div>
                     <div id="paginationControls1" class="sap-pagination"></div>
@@ -268,16 +277,16 @@
                         <div class="sap-card__heading">
                             <h2 class="sap-card__title">
                                 <svg class="sap-icon" aria-hidden="true"><use href="#i-shop"></use></svg>
-                                Shop Stock
+                                {% trans "Sites stock" %}
                             </h2>
-                            <p class="sap-card__subtitle">Stock currently held by your shop</p>
+                            <p class="sap-card__subtitle">{% trans "Stock currently held by your site" %}</p>
                         </div>
                     </div>
                     <div class="sap-toolbar">
                         <div class="sap-search">
                             <svg class="sap-icon" aria-hidden="true"><use href="#i-search"></use></svg>
                             <input type="text" id="searchBox2" class="sap-input sap-input--search"
-                                placeholder="Search shop items by SKU or description&hellip;"
+                                placeholder="{% trans 'Search site items by code or description...' %}"
                                 onkeyup="search(2, this.value)">
                         </div>
                         <div class="sap-toolbar__meta">
@@ -289,26 +298,26 @@
                             <thead>
                                 <tr>
                                     <th onclick="sortTable(2, 'item__sku')" data-sort-col="item__sku"
-                                        aria-sort="none">SKU<span class="sap-sort" aria-hidden="true">&#8597;</span>
+                                        aria-sort="none">{% trans "Item code" %}<span class="sap-sort" aria-hidden="true">&#8597;</span>
                                     </th>
                                     <th onclick="sortTable(2, 'item__description')" data-sort-col="item__description"
-                                        aria-sort="none">Description<span class="sap-sort"
+                                        aria-sort="none">{% trans "Description" %}<span class="sap-sort"
                                             aria-hidden="true">&#8597;</span></th>
                                     <th onclick="sortTable(2, 'item__retail_price')"
                                         data-sort-col="item__retail_price" class="sap-table__num"
-                                        aria-sort="none">Retail Price<span
+                                        aria-sort="none">{% trans "Retail price" %}<span
                                             class="sap-sort" aria-hidden="true">&#8597;</span></th>
                                     <th onclick="sortTable(2, 'quantity')" data-sort-col="quantity" class="sap-table__num"
                                         aria-sort="none">
-                                        Item Qnt<span class="sap-sort" aria-hidden="true">&#8597;</span></th>
+                                        {% trans "Item qty" %}<span class="sap-sort" aria-hidden="true">&#8597;</span></th>
                                 </tr>
                             </thead>
                             <tbody id="itemTable2"></tbody>
                         </table>
                         <div class="sap-empty d-none" id="empty2">
                             <svg class="sap-icon" aria-hidden="true"><use href="#i-shop"></use></svg>
-                            <div class="sap-empty__title">No shop stock yet</div>
-                            <div class="sap-empty__text">Request items from the warehouse to build your shop stock.
+                            <div class="sap-empty__title">{% trans "No site stock yet" %}</div>
+                            <div class="sap-empty__text">{% trans "Request items from the warehouse to build your site stock." %}
                             </div>
                         </div>
                     </div>
@@ -321,21 +330,21 @@
                         <div class="sap-card__heading">
                             <h2 class="sap-card__title">
                                 <svg class="sap-icon" aria-hidden="true"><use href="#i-transfer"></use></svg>
-                                Transfers Pending
+                                {% trans "Site requests" %}
                             </h2>
                             <p class="sap-card__subtitle">
-                                Requested stock movements between the warehouse and the shops
+                                {% trans "Requested stock movements between the warehouse and the sites" %}
                             </p>
                         </div>
                         <div class="sap-card__header-actions">
                             <button id="refreshTransfersPending" class="sap-btn sap-btn--ghost" type="button">
                                 <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-refresh"></use></svg>
-                                Refresh Status
+                                {% trans "Refresh" %}
                             </button>
                             <button id="submitTransferRequest" class="sap-btn sap-btn--emphasized d-none"
                                 type="button">
                                 <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-transfer"></use></svg>
-                                Send Transfer Request
+                                {% trans "Send transfer request" %}
                             </button>
                         </div>
                     </div>
@@ -343,7 +352,7 @@
                         <div class="sap-search">
                             <svg class="sap-icon" aria-hidden="true"><use href="#i-search"></use></svg>
                             <input type="text" id="searchBox3" class="sap-input sap-input--search"
-                                placeholder="Search pending transfers&hellip;" onkeyup="search(3, this.value)">
+                                placeholder="{% trans 'Search requests...' %}" onkeyup="search(3, this.value)">
                         </div>
                         <div class="sap-toolbar__meta">
                             <span id="count3"></span>
@@ -353,30 +362,134 @@
                         <table class="sap-table xfersPendingTable">
                             <thead>
                                 <tr>
-                                    <th onclick="sortTable(3, 'shop_user__username')"
-                                        data-sort-col="shop_user__username" aria-sort="none">Shop User<span
+                                    <th id="thSite" onclick="sortTable(3, 'shop_user__username')"
+                                        data-sort-col="shop_user__username" aria-sort="none">{% trans "Site" %}<span
                                             class="sap-sort" aria-hidden="true">&#8597;</span></th>
                                     <th onclick="sortTable(3, 'item__sku')" data-sort-col="item__sku"
-                                        aria-sort="none">SKU<span class="sap-sort" aria-hidden="true">&#8597;</span>
+                                        aria-sort="none">{% trans "Item code" %}<span class="sap-sort" aria-hidden="true">&#8597;</span>
                                     </th>
                                     <th onclick="sortTable(3, 'item__description')" data-sort-col="item__description"
-                                        aria-sort="none">Description<span class="sap-sort"
+                                        aria-sort="none">{% trans "Description" %}<span class="sap-sort"
                                             aria-hidden="true">&#8597;</span></th>
                                     <th onclick="sortTable(3, 'quantity')" data-sort-col="quantity" class="sap-table__num"
                                         aria-sort="none">
-                                        Quantity<span class="sap-sort" aria-hidden="true">&#8597;</span></th>
-                                    <th>Actions</th>
+                                        {% trans "Quantity" %}<span class="sap-sort" aria-hidden="true">&#8597;</span></th>
+                                    <th>{% trans "Actions" %}</th>
                                 </tr>
                             </thead>
                             <tbody id="itemTable3"></tbody>
                         </table>
                         <div class="sap-empty d-none" id="empty3">
                             <svg class="sap-icon" aria-hidden="true"><use href="#i-transfer"></use></svg>
-                            <div class="sap-empty__title">Nothing pending</div>
-                            <div class="sap-empty__text">There are no stock transfers awaiting action.</div>
+                            <div class="sap-empty__title">{% trans "Nothing awaiting dispatch" %}</div>
+                            <div class="sap-empty__text">{% trans "New site requests will appear here." %}</div>
                         </div>
                     </div>
                     <div id="paginationControls3" class="sap-pagination"></div>
+                </section>
+
+                <!-- Receive from supplier (PO) -->
+                <section class="sap-card" id="receiving">
+                    <div class="sap-card__header">
+                        <div class="sap-card__heading">
+                            <h2 class="sap-card__title">
+                                <svg class="sap-icon" aria-hidden="true"><use href="#i-download"></use></svg>
+                                {% trans "Receive from supplier (PO)" %}
+                            </h2>
+                            <p class="sap-card__subtitle">
+                                {% trans "Book the delivery against the purchase order number; the quantities are added to the warehouse." %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="sap-card__body">
+                        <div class="sap-form-grid">
+                            <div class="sap-field">
+                                <label class="sap-label" for="poNumber">{% trans "Purchase order number" %}</label>
+                                <input type="text" id="poNumber" class="sap-input" autocomplete="off"
+                                    placeholder="{% trans 'e.g. PO-2026-00123' %}">
+                            </div>
+                            <div class="sap-field">
+                                <label class="sap-label" for="poSupplier">{% trans "Supplier" %}</label>
+                                <input type="text" id="poSupplier" class="sap-input" autocomplete="off"
+                                    placeholder="{% trans 'Supplier name' %}">
+                            </div>
+                            <div class="sap-field">
+                                <label class="sap-label" for="poNotes">{% trans "Notes" %}</label>
+                                <input type="text" id="poNotes" class="sap-input" autocomplete="off"
+                                    placeholder="{% trans 'Optional' %}">
+                            </div>
+                        </div>
+                        <div class="sap-lines" id="receiptLines"></div>
+                        <div class="sap-form-actions">
+                            <button id="addReceiptLine" class="sap-btn sap-btn--ghost" type="button">
+                                <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-plus"></use></svg>
+                                {% trans "Add line" %}
+                            </button>
+                            <button id="receiveBtn" class="sap-btn sap-btn--emphasized" type="button">
+                                <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-check"></use></svg>
+                                {% trans "Receive" %}
+                            </button>
+                        </div>
+                        <h3 class="sap-subheading">{% trans "Recent receipts" %}</h3>
+                        <div class="sap-tablewrap">
+                            <table class="sap-table">
+                                <thead>
+                                    <tr>
+                                        <th>{% trans "PO number" %}</th>
+                                        <th>{% trans "Supplier" %}</th>
+                                        <th>{% trans "Date" %}</th>
+                                        <th>{% trans "Items" %}</th>
+                                        <th class="sap-table__num">{% trans "Quantity" %}</th>
+                                        <th>{% trans "Received by" %}</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="receiptsBody"></tbody>
+                            </table>
+                        </div>
+                        <div class="sap-empty" id="receiptsEmpty">
+                            <div class="sap-empty__title">{% trans "No deliveries have been received yet." %}</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Barcode labels -->
+                <section class="sap-card" id="labels">
+                    <div class="sap-card__header">
+                        <div class="sap-card__heading">
+                            <h2 class="sap-card__title">
+                                <svg class="sap-icon" aria-hidden="true"><use href="#i-package"></use></svg>
+                                {% trans "Barcode labels" %}
+                            </h2>
+                            <p class="sap-card__subtitle">
+                                {% trans "Print a Code 128 label per item. The barcode carries the item code used in the company system." %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="sap-card__body">
+                        <p class="sap-label">{% trans "Select the items to label" %}</p>
+                        <div class="sap-form-actions">
+                            <button id="selectAllLabels" class="sap-btn sap-btn--ghost" type="button">
+                                {% trans "Select all" %}
+                            </button>
+                            <button id="clearLabels" class="sap-btn sap-btn--ghost" type="button">
+                                {% trans "Clear" %}
+                            </button>
+                            <span class="sap-muted" id="labelSelectedCount"></span>
+                        </div>
+                        <div class="sap-checklist" id="labelList"></div>
+                        <div class="sap-form-grid">
+                            <div class="sap-field">
+                                <label class="sap-label" for="labelCopies">{% trans "Copies per item" %}</label>
+                                <input type="number" id="labelCopies" class="sap-input" min="1" max="60" value="1">
+                            </div>
+                        </div>
+                        <div class="sap-form-actions">
+                            <button id="printLabelsBtn" class="sap-btn sap-btn--emphasized" type="button">
+                                <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-package"></use></svg>
+                                {% trans "Print labels" %}
+                            </button>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- Data import / export -->
@@ -385,31 +498,30 @@
                         <div class="sap-card__heading">
                             <h2 class="sap-card__title">
                                 <svg class="sap-icon" aria-hidden="true"><use href="#i-data"></use></svg>
-                                Data Import / Export
+                                {% trans "Data import / export" %}
                             </h2>
                             <p class="sap-card__subtitle">
-                                Exchange warehouse and shop stock as an Excel workbook
+                                {% trans "Exchange warehouse and site stock as an Excel workbook" %}
                             </p>
                         </div>
                     </div>
                     <div class="sap-card__body">
                         <div class="sap-form-grid">
                             <div class="sap-field">
-                                <span class="sap-label">Export</span>
-                                <span class="sap-subtitle">Download the current warehouse and shop stock.</span>
+                                <span class="sap-label">{% trans "Export" %}</span>
+                                <span class="sap-subtitle">{% trans "Download the current warehouse and site stock." %}</span>
                                 <div class="sap-form-actions">
                                     <button id="downloadStockData" class="sap-btn sap-btn--ghost d-none" type="button">
                                         <svg class="sap-icon sap-icon--sm" aria-hidden="true">
                                             <use href="#i-download"></use>
                                         </svg>
-                                        Download Stock Data
+                                        {% trans "Download stock data" %}
                                     </button>
                                 </div>
                             </div>
                             <div class="sap-field" id="importPanel">
                                 <label class="sap-label" for="uploadStockData">
-                                    Import <span class="sap-label__hint">(.xlsx &mdash; the sheet is the source of
-                                        truth)</span>
+                                    {% trans "Import" %} <span class="sap-label__hint">{% trans "(.xlsx — the sheet is the source of truth)" %}</span>
                                 </label>
                                 <input type="file" id="uploadStockData" class="sap-input d-none" accept=".xlsx">
                                 <div class="sap-form-actions">
@@ -418,7 +530,7 @@
                                         <svg class="sap-icon sap-icon--sm" aria-hidden="true">
                                             <use href="#i-upload"></use>
                                         </svg>
-                                        Upload Stock Data
+                                        {% trans "Upload stock data" %}
                                     </button>
                                 </div>
                             </div>
@@ -427,12 +539,12 @@
                 </section>
 
                 <footer class="sap-footer">
-                    <span>Simpler Stock Management v5.3.0-beta</span>
+                    <span>{% trans "Warehouse management" %} v6.0.0</span>
                     <span>
                         &copy;2025
                         <a href="https://github.com/consciousuniverse" target="_blank"
                             rel="noopener noreferrer">Dan Bright</a>
-                        &middot; License GPLv3
+                        &middot; {% trans "License GPLv3" %}
                     </span>
                 </footer>
             </div>
@@ -440,6 +552,8 @@
     </div>
 
     <div class="sap-toast-stack" id="toastStack" aria-live="polite" aria-atomic="false"></div>
+
+    {{ js_messages|json_script:"i18n-js" }}
 
     <script>
         (() => {
@@ -451,6 +565,10 @@
 
             // Global variable to hold the edit lock status.
             window.editLock = false;
+
+            // Translations for the runtime messages, keyed by the English text.
+            const I18N = JSON.parse(document.getElementById('i18n-js').textContent);
+            const tr = (text) => I18N[text] || text;
 
             // Global variable for records per page (default fallback).
             window.recordsPerPage = 25;
@@ -565,7 +683,7 @@
                     if (Array.isArray(first) && first.length) return String(first[0]);
                     if (typeof first === 'string') return first;
                 }
-                return fallback || 'An error occurred.';
+                return fallback || tr('An error occurred.');
             };
 
             /* ==============================================================
@@ -604,7 +722,7 @@
                 const close = document.createElement('button');
                 close.type = 'button';
                 close.className = 'sap-toast__close';
-                close.setAttribute('aria-label', 'Dismiss notification');
+                close.setAttribute('aria-label', tr('Dismiss notification'));
                 close.textContent = '\u2715';
 
                 const dismiss = () => {
@@ -644,7 +762,7 @@
 </div>`;
 
                 backdrop.querySelector('.sap-dialog__title').textContent =
-                    opts.title || 'Please confirm';
+                    opts.title || tr('Please confirm');
                 backdrop.querySelector('.sap-dialog__body').textContent = opts.message || '';
 
                 const cancelBtn = backdrop.querySelector('[data-dialog-cancel]');
@@ -750,16 +868,16 @@
                 const foot = document.getElementById('kpiStatusFoot');
 
                 if (dot) dot.classList.toggle('sap-dot--critical', !!isLocked);
-                if (statusText) statusText.textContent = isLocked ? 'Maintenance' : 'Operational';
+                if (statusText) statusText.textContent = isLocked ? tr('Maintenance mode') : tr('Operational');
                 if (tile) {
                     tile.classList.toggle('sap-tile--positive', !isLocked);
                     tile.classList.toggle('sap-tile--critical', !!isLocked);
                 }
-                if (value) value.textContent = isLocked ? 'Maintenance' : 'Operational';
+                if (value) value.textContent = isLocked ? tr('Maintenance mode') : tr('Operational');
                 if (foot) {
                     foot.textContent = isLocked ?
-                        'Shop transfers are paused' :
-                        'Transfers are open';
+                        tr('Shop transfers are paused') :
+                        tr('Transfers are open');
                 }
             };
 
@@ -828,7 +946,7 @@
             const markUpdated = () => {
                 const el = document.getElementById('lastUpdated');
                 if (el) {
-                    el.textContent = ' \u00b7 Updated ' + new Date().toLocaleTimeString();
+                    el.textContent = ' \u00b7 ' + tr('Updated') + ' ' + new Date().toLocaleTimeString();
                 }
             };
 
@@ -915,7 +1033,7 @@
                                 const descriptionField = isManager ?
                                     `<input type="text" value="${escapeHtml(item.description)}" class="sap-input wh_editable-field" data-sku="${safeSku}" data-field="description">` :
                                     escapeHtml(item.description);
-                                const transferQuantityField = `<input type="number" min="0" class="sap-input xferQntField wh_editable-field" ${window.editLock ? 'disabled' : ''} value="" placeholder="How many?" data-sku="${safeSku}" data-field="xfer_qnt">`;
+                                const transferQuantityField = `<input type="number" min="0" class="sap-input xferQntField wh_editable-field" ${window.editLock ? 'disabled' : ''} value="" placeholder="${tr('How many?')}" data-sku="${safeSku}" data-field="xfer_qnt">`;
                                 row = `
 <tr>
     <td class="sap-table__sku">${safeSku}</td>
@@ -954,7 +1072,7 @@
                             $tableBody.append(row);
                             if (tableNum === 1 && isManager) {
                                 $tableBody.find('tr:last .actions').append(`
-<button class="sap-btn sap-btn--sm sap-btn--negative delete-item-btn" type="button" data-sku="${escapeHtml(item.sku)}">Delete</button>
+<button class="sap-btn sap-btn--sm sap-btn--negative delete-item-btn" type="button" data-sku="${escapeHtml(item.sku)}">${tr('Delete')}</button>
 `);
                             }
                         });
@@ -963,11 +1081,11 @@
                         $(meta.empty).toggleClass('d-none', data.results.length > 0);
                         const total = typeof data.count === 'number' ? data.count : data.results.length;
                         $(meta.count).text(
-                            total === 1 ? `1 ${meta.label}` : `${total} ${meta.labelPlural}`
+                            total === 1 ? `1 ${tr(meta.label)}` : `${total} ${tr(meta.labelPlural)}`
                         );
                         const kpi = document.getElementById(meta.kpi);
                         if (kpi && typeof data.count === 'number') {
-                            kpi.textContent = data.count.toLocaleString();
+                            kpi.textContent = Number(data.count).toLocaleString('en-US');
                         }
 
                         renderSortIndicators(tableNum);
@@ -997,8 +1115,8 @@
                 const lastRow = total === 0 ? 0 : firstRow + data.results.length - 1;
 
                 const $info = $('<span class="sap-pagination__info"></span>').text(
-                    total === 0 ? 'No records' :
-                        `Showing ${firstRow}\u2013${lastRow} of ${total}`
+                    total === 0 ? tr('No records') :
+                        `${tr('Showing')} \u2066${firstRow}\u2013${lastRow}\u2069 ${tr('of')} ${total}`
                 );
 
                 const $controls = $('<div class="sap-pagination__controls"></div>');
@@ -1055,7 +1173,7 @@
             const addItem = () => {
                 const retailPrice = $('#retail_price').val();
                 if (!/^\d+(\.\d{1,2})?$/.test(retailPrice)) {
-                    notify('Retail price must be a valid number with up to 2 decimal places.', 'warning');
+                    notify(tr('Retail price must be a valid number with up to 2 decimal places.'), 'warning');
                     return;
                 }
                 const data = {
@@ -1073,10 +1191,10 @@
                     success: () => {
                         fetchItems(1);
                         $('#sku, #description, #retail_price, #quantity').val('');
-                        notify('Item created successfully.', 'success');
+                        notify(tr('Item created successfully.'), 'success');
                     },
                     error: xhr => {
-                        notify(errorDetail(xhr, 'Could not create the item.'), 'error');
+                        notify(errorDetail(xhr, tr('Could not create the item.')), 'error');
                     }
                 });
             };
@@ -1085,7 +1203,7 @@
             const updateItem = (tableNum, sku, fieldName, value) => {
                 if (tableNum == 1) {
                     if (fieldName == 'retail_price' && !/^\d+(\.\d{1,2})?$/.test(value)) {
-                        notify('Retail price must be a valid number with up to 2 decimal places.', 'warning');
+                        notify(tr('Retail price must be a valid number with up to 2 decimal places.'), 'warning');
                         return;
                     }
                     const data = {
@@ -1100,7 +1218,7 @@
                         data: JSON.stringify(data),
                         success: () => fetchItems(1),
                         error: xhr => {
-                            notify(errorDetail(xhr, 'Could not update the item.'), 'error');
+                            notify(errorDetail(xhr, tr('Could not update the item.')), 'error');
                         }
                     });
                 }
@@ -1109,9 +1227,9 @@
             // Delete an item using AJAX DELETE.
             const deleteItem = async (sku, tableNum) => {
                 const confirmed = await confirmDialog({
-                    title: 'Delete item?',
+                    title: tr('Delete item?'),
                     message: `Remove "${sku}" from the active warehouse catalogue?\n\nExisting transfer records are unaffected.`,
-                    confirmLabel: 'Delete',
+                    confirmLabel: tr('Delete'),
                     cancelLabel: 'Cancel',
                     destructive: true
                 });
@@ -1126,10 +1244,10 @@
                     headers: { 'X-CSRFToken': getCSRFToken() },
                     success: () => {
                         fetchItems(tableNum);
-                        notify('Item deleted.', 'success');
+                        notify(tr('Item deleted.'), 'success');
                     },
                     error: xhr => {
-                        notify(errorDetail(xhr, 'Could not delete the item.'), 'error');
+                        notify(errorDetail(xhr, tr('Could not delete the item.')), 'error');
                     }
                 });
             };
@@ -1146,7 +1264,7 @@
                         fetchItems(3);
                     },
                     error: xhr => {
-                        notify(errorDetail(xhr, 'Could not add the transfer.'), 'error');
+                        notify(errorDetail(xhr, tr('Could not add the transfer.')), 'error');
                         fetchItems(1);
                     }
                 });
@@ -1162,9 +1280,9 @@
                     data: JSON.stringify({}),
                     success: () => {
                         fetchItems(3);
-                        notify('Transfer request sent to the warehouse.', 'success');
+                        notify(tr('Transfer request sent to the warehouse.'), 'success');
                     },
-                    error: xhr => notify(errorDetail(xhr, 'Could not send the transfer request.'), 'error')
+                    error: xhr => notify(errorDetail(xhr, tr('Could not send the transfer request.')), 'error')
                 });
             };
 
@@ -1179,9 +1297,9 @@
                     data: JSON.stringify({ sku, shop_user_id, quantity, cancel }),
                     success: () => {
                         [1, 3].forEach(tn => fetchItems(tn));
-                        notify(cancel ? 'Transfer cancelled.' : 'Transfer dispatched.', 'success');
+                        notify(cancel ? tr('Transfer cancelled.') : tr('Transfer dispatched.'), 'success');
                     },
-                    error: xhr => notify(errorDetail(xhr, 'Could not complete the transfer.'), 'error')
+                    error: xhr => notify(errorDetail(xhr, tr('Could not complete the transfer.')), 'error')
                 });
                 deleteXferVals(shop_user_id, sku);
             };
@@ -1197,7 +1315,7 @@
                 const fileInput = document.getElementById('uploadStockData');
                 const file = fileInput.files[0];
                 if (!file) {
-                    notify('Please select a file to upload.', 'warning');
+                    notify(tr('Please select a file to upload.'), 'warning');
                     return;
                 }
 
@@ -1205,8 +1323,8 @@
                 if (window.allowUploadDeletions) {
                     const confirmed = await confirmDialog({
                         title: 'Destructive upload',
-                        message: 'The system is configured to delete all warehouse and shop data that is not included in this upload.\n\nThis action cannot be undone. Continue?',
-                        confirmLabel: 'Upload anyway',
+                        message: tr('The system is configured to delete all warehouse and site data that is not included in this upload.') + ' ' + tr('This action cannot be undone. Continue?'),
+                        confirmLabel: tr('Upload anyway'),
                         cancelLabel: 'Cancel',
                         destructive: true
                     });
@@ -1226,7 +1344,7 @@
                     contentType: false,
                     headers: { 'X-CSRFToken': getCSRFToken() },
                     success: (data) => {
-                        let msg = 'Stock data uploaded successfully.';
+                        let msg = tr('Stock data uploaded successfully.');
                         if (data && data.detail) msg = data.detail;
                         if (data && Array.isArray(data.skipped_skus) && data.skipped_skus.length) {
                             msg += '\n\nThe following SKUs had invalid retail_price values and were skipped:\n' + data.skipped_skus.join(', ');
@@ -1235,7 +1353,7 @@
                         [1, 2].forEach(tn => fetchItems(tn));
                     },
                     error: xhr => {
-                        notify(errorDetail(xhr, 'Failed to upload stock data.'), 'error');
+                        notify(errorDetail(xhr, tr('Failed to upload stock data.')), 'error');
                     }
                 });
             };
@@ -1267,8 +1385,8 @@
 
             const roleLabel = (groups) => {
                 const list = groups || [];
-                if (list.includes('managers')) return 'Warehouse Manager';
-                if (list.includes('shop_users')) return 'Shop User';
+                if (list.includes('managers')) return tr('Warehouse manager');
+                if (list.includes('shop_users')) return tr('Site user');
                 return 'User';
             };
 
@@ -1289,7 +1407,7 @@
                     $(".shop-stock").show();
                     $("#importPanel").addClass("d-none");
                     if (isShopUser) {
-                        $("th:contains('Shop User')").hide();
+                        $("#thSite").hide();
                         $("#itemTable3 tr").each(function () {
                             $(this).find("td:first").hide();
                         });
@@ -1317,12 +1435,12 @@
                         if (data.username) {
                             window.loggedInUsername = data.username;
                             window.userGroups = data.groups || [];
-                            $("#userStatus").text('Hello ' + data.username);
+                            $("#userStatus").text(tr('Hello') + ' ' + data.username);
                             $("#userAvatar").text(initialsOf(data.username));
                             $("#userRole").text(roleLabel(window.userGroups));
                             tailor_dashboard();
                             [1, 2, 3].forEach((tn) => fetchItems(tn));
-                            $("#authLink").text("Logout")
+                            $("#authLink").text(tr('Logout'))
                                 .attr("href", "#")
                                 .off("click")
                                 .on("click", event => {
@@ -1339,14 +1457,14 @@
                             $("#userStatus").text("Not signed in");
                             $("#userAvatar").text("?");
                             $("#userRole").text("");
-                            $("#authLink").attr("href", "/accounts/login/").text("Log On");
+                            $("#authLink").attr("href", "/accounts/login/").text(tr('Log On'));
                         }
                     },
                     error: (xhr, status, error) => {
                         console.error("Auth check failed:", xhr.responseText);
                         $("#userStatus").text("Not signed in");
                         $("#userRole").text("");
-                        $("#authLink").attr("href", "/accounts/login/").text("Log On");
+                        $("#authLink").attr("href", "/accounts/login/").text(tr('Log On'));
                     }
                 });
             };
@@ -1425,7 +1543,7 @@
                 var newValue = $(this).val();
                 if (fieldName == 'xfer_qnt') {
                     if (Number.isInteger(parseInt(newValue), 10)) {
-                        newValue > 0 ? transferItem(sku, newValue) : console.log('Enter more than 0!');
+                        newValue > 0 ? transferItem(sku, newValue) : console.log(tr('Enter more than 0!'));
                     }
                 } else {
                     updateItem(1, sku, fieldName, newValue);
@@ -1453,6 +1571,147 @@
                 setXferVals(shopUserID, sku, $(this).val());
             });
 
+
+            /* ==============================================================
+               Goods receipts (stock in against a supplier purchase order)
+               ============================================================== */
+            const addReceiptLine = (prefill) => {
+                const row = document.createElement('div');
+                row.className = 'sap-line';
+                row.innerHTML = `
+                    <input class="sap-input" data-line="sku" type="text" autocomplete="off"
+                        placeholder="${tr('Company item code')}">
+                    <input class="sap-input" data-line="description" type="text" autocomplete="off"
+                        placeholder="${tr('Description')}">
+                    <input class="sap-input sap-input--qty" data-line="quantity" type="number" min="1" value="1">
+                    <button type="button" class="sap-btn sap-btn--ghost sap-btn--sm sap-btn--danger"
+                        data-remove-line aria-label="${tr('Remove')}">&times;</button>`;
+                $('#receiptLines').append(row);
+                if (prefill) {
+                    row.querySelector('[data-line="sku"]').value = prefill.sku || '';
+                }
+                row.querySelector('[data-remove-line]').addEventListener('click', () => {
+                    row.remove();
+                    if (!$('#receiptLines .sap-line').length) addReceiptLine();
+                });
+                return row;
+            };
+
+            const readReceiptLines = () => {
+                const lines = [];
+                $('#receiptLines .sap-line').each((_, row) => {
+                    const sku = row.querySelector('[data-line="sku"]').value.trim();
+                    if (!sku) return;
+                    lines.push({
+                        sku: sku,
+                        description: row.querySelector('[data-line="description"]').value.trim(),
+                        quantity: parseInt(row.querySelector('[data-line="quantity"]').value, 10)
+                    });
+                });
+                return lines;
+            };
+
+            const receiveDelivery = () => {
+                const poNumber = $('#poNumber').val().trim();
+                const lines = readReceiptLines();
+                if (!poNumber) {
+                    notify(tr('Enter the purchase order number.'), 'warning');
+                    $('#poNumber').focus();
+                    return;
+                }
+                if (!lines.length || lines.some(line => !(line.quantity > 0))) {
+                    notify(tr('Enter a quantity greater than zero.'), 'warning');
+                    return;
+                }
+                $.ajax({
+                    url: '/api/receiving/',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        po_number: poNumber,
+                        supplier: $('#poSupplier').val().trim(),
+                        notes: $('#poNotes').val().trim(),
+                        lines: lines
+                    }),
+                    headers: { 'X-CSRFToken': getCSRFToken() }
+                }).done(() => {
+                    notify(tr('Delivery received.'), 'success');
+                    $('#poNumber').val('');
+                    $('#poNotes').val('');
+                    $('#receiptLines').empty();
+                    addReceiptLine();
+                    fetchItems(1);
+                    loadReceipts();
+                }).fail(xhr => {
+                    notify(errorDetail(xhr, tr('An unexpected error occurred while receiving the delivery.')), 'error');
+                });
+            };
+
+            const loadReceipts = () => {
+                $.get('/api/receipts/?limit=20', payload => {
+                    const $body = $('#receiptsBody').empty();
+                    (payload.results || []).forEach(receipt => {
+                        const items = (receipt.lines || [])
+                            .map(line => `${line.sku} \u00d7${line.quantity}`).join(', ');
+                        const when = receipt.received_at ? String(receipt.received_at).slice(0, 10) : '';
+                        $body.append(`
+<tr>
+    <td><code>${escapeHtml(receipt.po_number)}</code></td>
+    <td>${escapeHtml(receipt.supplier)}</td>
+    <td>${escapeHtml(when)}</td>
+    <td>${escapeHtml(items)}</td>
+    <td class="sap-table__num">${escapeHtml(receipt.total_quantity)}</td>
+    <td>${escapeHtml(receipt.received_by)}</td>
+</tr>`);
+                    });
+                    $('#receiptsEmpty').toggleClass('d-none', (payload.results || []).length > 0);
+                });
+            };
+
+            /* ==============================================================
+               Barcode labels
+               ============================================================== */
+            const renderLabelList = (items) => {
+                const $host = $('#labelList');
+                if (!$host.length) return;
+                if (!items.length) {
+                    $host.html(`<p class="sap-muted">${tr('Add an item to the warehouse first.')}</p>`);
+                    updateLabelCount();
+                    return;
+                }
+                const checked = new Set($host.find('input:checked').map((_, box) => box.value).get());
+                $host.html(items.map(item => `
+<label class="sap-check">
+    <input type="checkbox" value="${escapeHtml(item.sku)}"${checked.has(item.sku) ? ' checked' : ''}>
+    <span><code>${escapeHtml(item.sku)}</code> ${escapeHtml(item.description)}</span>
+</label>`).join(''));
+                $host.find('input').on('change', updateLabelCount);
+                updateLabelCount();
+            };
+
+            const selectedSkus = () =>
+                $('#labelList input:checked').map((_, box) => box.value).get();
+
+            const updateLabelCount = () => {
+                const count = selectedSkus().length;
+                $('#labelSelectedCount').text(count ? `${count} ${tr('selected')}` : '');
+            };
+
+            const printLabels = () => {
+                const skus = selectedSkus();
+                if (!skus.length) {
+                    notify(tr('Select an item first.'), 'warning');
+                    return;
+                }
+                const copies = Math.min(Math.max(parseInt($('#labelCopies').val(), 10) || 1, 1), 60);
+                window.open(`/labels/?skus=${encodeURIComponent(skus.join(','))}&copies=${copies}`,
+                    '_blank', 'noopener');
+            };
+
+            const loadLabelCatalogue = () => {
+                $.get('/api/items/?page_size=100', payload => renderLabelList(payload.results || []));
+            };
+
             $(document).ready(() => {
                 initNavigation();
                 fetchAppConfig().always(() => {
@@ -1466,6 +1725,20 @@
                     $('#refreshWarehouse').click(() => fetchItems(1));
                     $('#downloadStockData').click(() => downloadStockData());
                     $('#uploadStockDataButton').click(uploadStockData);
+                    $('#addReceiptLine').click(() => addReceiptLine());
+                    $('#receiveBtn').click(receiveDelivery);
+                    $('#selectAllLabels').click(() => {
+                        $('#labelList input').prop('checked', true);
+                        updateLabelCount();
+                    });
+                    $('#clearLabels').click(() => {
+                        $('#labelList input').prop('checked', false);
+                        updateLabelCount();
+                    });
+                    $('#printLabelsBtn').click(printLabels);
+                    addReceiptLine();
+                    loadReceipts();
+                    loadLabelCatalogue();
                 });
             });
         })();

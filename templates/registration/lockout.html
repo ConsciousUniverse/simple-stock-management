@@ -1,15 +1,15 @@
 {% extends "registration/base_auth.html" %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %}Account temporarily locked{% endblock %}
+{% block title %}{% trans "Account temporarily locked" %}{% endblock %}
 
 {% block card %}
 <div class="sap-login__brand">
     <span class="sap-login__logo">
         <img src="{% static 'img/company-logo.png' %}" alt="Nscom Construction">
     </span>
-    <h1 class="sap-login__title">Account temporarily locked</h1>
-    <p class="sap-login__subtitle">Too many unsuccessful sign-in attempts</p>
+    <h1 class="sap-login__title">{% trans "Account temporarily locked" %}</h1>
+    <p class="sap-login__subtitle">{% trans "Too many unsuccessful sign-in attempts" %}</p>
 </div>
 
 <div class="sap-msgstrip sap-msgstrip--error" role="alert">
@@ -17,14 +17,13 @@
         <use href="#i-lock"></use>
     </svg>
     <div>
-        <span class="sap-msgstrip__title">Sign-in is paused for this username.</span>
+        <span class="sap-msgstrip__title">{% trans "Sign-in is paused for this username." %}</span>
         {% if failure_limit %}
-        <p>The limit is {{ failure_limit }} failed attempts. Access is restored automatically once the
-            cool-off period ends.</p>
+        <p>{% blocktrans %}The limit is {{ failure_limit }} failed attempts. Access is restored automatically once the cool-off period ends.{% endblocktrans %}</p>
         {% endif %}
-        <p>Wait for the lock to expire, or ask the system administrator to reset it.</p>
+        <p>{% trans "Wait for the lock to expire, or ask the system administrator to reset it." %}</p>
     </div>
 </div>
 
-<a class="sap-btn sap-btn--emphasized sap-btn--block" href="/accounts/login/">Back to sign in</a>
+<a class="sap-btn sap-btn--emphasized sap-btn--block" href="/accounts/login/">{% trans "Back to sign in" %}</a>
 {% endblock %}

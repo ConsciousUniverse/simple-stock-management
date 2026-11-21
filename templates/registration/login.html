@@ -1,15 +1,15 @@
 {% extends "registration/base_auth.html" %}
-{% load static %}
+{% load static i18n %}
 
-{% block title %}Log On{% endblock %}
+{% block title %}{% trans "Log On" %}{% endblock %}
 
 {% block card %}
 <div class="sap-login__brand">
     <span class="sap-login__logo">
         <img src="{% static 'img/company-logo.png' %}" alt="Nscom Construction">
     </span>
-    <h1 class="sap-login__title">Log On</h1>
-    <p class="sap-login__subtitle">Sign in with your username and password</p>
+    <h1 class="sap-login__title">{% trans "Log On" %}</h1>
+    <p class="sap-login__subtitle">{% trans "Sign in with your username and password" %}</p>
 </div>
 
 {% if form.non_field_errors %}
@@ -18,7 +18,7 @@
         <use href="#i-alert"></use>
     </svg>
     <div>
-        <span class="sap-msgstrip__title">We could not sign you in.</span>
+        <span class="sap-msgstrip__title">{% trans "We could not sign you in." %}</span>
         <ul class="sap-errorlist">
             {% for error in form.non_field_errors %}
             <li>{{ error }}</li>
@@ -33,7 +33,7 @@
     <input type="hidden" name="next" value="{{ next }}">
 
     <div class="sap-field{% if form.username.errors %} sap-field--error{% endif %}">
-        <label class="sap-label" for="id_username">Username</label>
+        <label class="sap-label" for="id_username">{% trans "Username" %}</label>
         <input type="text" name="username" id="id_username" class="sap-input" value="{{ form.username.value|default:'' }}"
             autocomplete="username" autocapitalize="none" spellcheck="false" autofocus required>
         {% for error in form.username.errors %}
@@ -42,23 +42,23 @@
     </div>
 
     <div class="sap-field{% if form.password.errors %} sap-field--error{% endif %}">
-        <label class="sap-label" for="id_password">Password</label>
+        <label class="sap-label" for="id_password">{% trans "Password" %}</label>
         <div class="sap-input-group">
             <input type="password" name="password" id="id_password" class="sap-input"
                 autocomplete="current-password" required>
             <button type="button" class="sap-input-group__btn" id="togglePassword" aria-pressed="false"
-                aria-controls="id_password">Show</button>
+                aria-controls="id_password">{% trans "Show" %}</button>
         </div>
         {% for error in form.password.errors %}
         <span class="sap-field__error">{{ error }}</span>
         {% endfor %}
     </div>
 
-    <button type="submit" class="sap-btn sap-btn--emphasized sap-btn--block">Log On</button>
+    <button type="submit" class="sap-btn sap-btn--emphasized sap-btn--block">{% trans "Log On" %}</button>
 </form>
 
 <p class="sap-login__hint">
-    Authorised users only. Accounts are created by the system administrator.
+    {% trans "Authorised users only. Accounts are created by the system administrator." %}
 </p>
 
 <script>
@@ -70,7 +70,7 @@
         toggle.addEventListener('click', () => {
             const showing = field.type === 'text';
             field.type = showing ? 'password' : 'text';
-            toggle.textContent = showing ? 'Show' : 'Hide';
+            toggle.textContent = showing ? "{% trans 'Show' %}" : "{% trans 'Hide' %}";
             toggle.setAttribute('aria-pressed', showing ? 'false' : 'true');
             field.focus();
         });

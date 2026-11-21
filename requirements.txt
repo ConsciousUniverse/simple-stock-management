@@ -14,3 +14,5 @@ whitenoise==6.12.0
 dj-database-url==3.1.2
 # Postgres driver for the managed database (psycopg 3, binary wheels).
 psycopg[binary]==3.3.9
+# Code 128 barcodes for item labels (pure Python, SVG writer).
+python-barcode==0.15.1

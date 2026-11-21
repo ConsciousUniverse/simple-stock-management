@@ -121,3 +121,55 @@ class TransferItem(models.Model):
 
     def __str__(self):
         return f"{self.shop_user.username} - {self.item.sku}"
+
+
+class GoodsReceipt(models.Model):
+    """Stock received from a supplier against a purchase order (PO) number.
+
+    A purchase order can arrive in several shipments, so the PO number is not
+    unique here: every delivery is its own receipt row.
+    """
+
+    po_number = models.CharField(max_length=60)
+    supplier = models.CharField(max_length=200, blank=True, default="")
+    notes = models.TextField(blank=True, default="")
+    received_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="receipts"
+    )
+    received_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-received_at", "-id")
+        verbose_name = "Goods receipt (PO)"
+        verbose_name_plural = "Goods receipts (PO)"
+        indexes = [models.Index(fields=["po_number"])]
+
+    def __str__(self):
+        return f"{self.po_number} ({self.received_at:%Y-%m-%d})"
+
+    @property
+    def total_quantity(self):
+        return sum(line.quantity for line in self.lines.all())
+
+
+class GoodsReceiptLine(models.Model):
+    receipt = models.ForeignKey(
+        GoodsReceipt, on_delete=models.CASCADE, related_name="lines"
+    )
+    item = models.ForeignKey(
+        Item,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="receipt_lines",
+    )
+    sku = models.CharField(max_length=100)
+    description = models.CharField(max_length=250, blank=True, default="")
+    quantity = models.IntegerField(validators=[MinValueValidator(1)])
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("id",)
+
+    def __str__(self):
+        return f"{self.sku} x{self.quantity}"

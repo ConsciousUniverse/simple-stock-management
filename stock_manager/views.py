@@ -1,9 +1,20 @@
 import logging
+from django.conf import settings
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import Item, ShopItem, TransferItem, Admin
+from .models import (
+    Admin,
+    GoodsReceipt,
+    GoodsReceiptLine,
+    Item,
+    ShopItem,
+    TransferItem,
+)
+from .barcodes import BarcodeError, render_barcode_svg
+from .ui_strings import js_messages, js_strings
 from .serializers import ItemSerializer, ShopItemSerializer, TransferItemSerializer
 from .pagination import CustomPagination
 from django.contrib.auth.models import User  # For accessing the User model
@@ -14,7 +25,11 @@ from rest_framework.decorators import api_view, permission_classes
 from django.db.models.functions import Lower, Cast
 from rest_framework import status
 from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.http import require_POST
 from django.db import transaction
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.utils.translation import gettext as _
+from decimal import Decimal
 from django.db.models import IntegerField, Q, F
 from email_service.email import SendEmail
 from .utils import SpreadsheetTools
@@ -235,11 +250,53 @@ def get_edit_lock_status(request):
     return Response({"edit_lock": Admin.is_edit_locked()})
 
 
+def _site_accounts():
+    """The construction sites stock can be issued to (they are user accounts)."""
+    return list(
+        User.objects.filter(groups__name="shop_users", is_active=True)
+        .order_by("username")
+        .values("id", "username")
+    )
+
+
+@require_POST
+def switch_language(request):
+    """Store the chosen interface language and return to the same page.
+
+    Django's own ``set_language`` view re-resolves ``next`` through the URL
+    patterns, which sends the dashboard to the API root here, so the redirect
+    target is used verbatim (after the usual host check).
+    """
+    language = request.POST.get("language", "")
+    next_url = request.POST.get("next") or "/"
+    if not url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        next_url = "/"
+    response = HttpResponseRedirect(next_url)
+    if language in dict(settings.LANGUAGES):
+        response.set_cookie(
+            settings.LANGUAGE_COOKIE_NAME,
+            language,
+            max_age=settings.LANGUAGE_COOKIE_AGE,
+            samesite="Lax",
+        )
+    return response
+
+
 # Main Page View
 @ensure_csrf_cookie
 @login_required
 def index(request):
-    return render(request, "index.html")
+    return render(
+        request,
+        "index.html",
+        {
+            "js_i18n": js_strings(),
+            "js_messages": js_messages(),
+            "sites": _site_accounts(),
+        },
+    )
 
 
 @api_view(["GET"])
@@ -531,3 +588,284 @@ def import_data_excel(request):
             {"detail": "Uploads are disabled in the app configuration."}, status=400
         )
     return SpreadsheetTools(request).handle_excel_upload()
+
+
+# ---------------------------------------------------------------------------
+# Goods receipts (stock in, against a supplier purchase order) and item labels
+# ---------------------------------------------------------------------------
+
+
+def _parse_receipt_lines(raw_lines):
+    """Normalise the submitted receipt lines into ``[(sku, quantity, description)]``.
+
+    A repeated SKU in one delivery is summed, so the same item cannot be booked
+    twice from a double click.
+    """
+    merged = {}
+    for raw in raw_lines:
+        if not isinstance(raw, dict):
+            raise ValueError(_("Each receipt line must be an item and a quantity."))
+        sku = str(raw.get("sku") or "").strip()
+        if not sku:
+            continue
+        try:
+            quantity = int(str(raw.get("quantity")))
+        except (TypeError, ValueError):
+            raise ValueError(_("The received quantity must be a whole number."))
+        if quantity <= 0:
+            raise ValueError(_("The received quantity must be greater than zero."))
+        description = str(raw.get("description") or "").strip()
+        if sku in merged:
+            merged[sku] = (merged[sku][0] + quantity, merged[sku][1] or description)
+        else:
+            merged[sku] = (quantity, description)
+    if not merged:
+        raise ValueError(_("Add at least one item to receive."))
+    return [(sku, qty, desc) for sku, (qty, desc) in merged.items()]
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def receive_from_supplier(request):
+    """Book a supplier delivery: stock in against a PO number."""
+    if Admin.is_edit_locked():
+        return Response(
+            {"detail": _("Receiving is disabled while the warehouse is being maintained.")},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    po_number = str(request.data.get("po_number") or "").strip()
+    if not po_number:
+        return Response(
+            {"detail": _("Enter the purchase order number.")},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        lines = _parse_receipt_lines(request.data.get("lines") or [])
+    except ValueError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+    supplier = str(request.data.get("supplier") or "").strip()
+    notes = str(request.data.get("notes") or "").strip()
+
+    try:
+        with transaction.atomic():
+            receipt = GoodsReceipt.objects.create(
+                po_number=po_number,
+                supplier=supplier,
+                notes=notes,
+                received_by=request.user if request.user.is_authenticated else None,
+            )
+            booked = []
+            for sku, quantity, description in lines:
+                item, created = Item.objects.get_or_create(
+                    sku=sku,
+                    defaults={
+                        "description": description or sku,
+                        "retail_price": Decimal("0.00"),
+                        "quantity": 0,
+                    },
+                )
+                if created and not description:
+                    item.description = sku
+                Item.objects.filter(pk=item.pk).update(
+                    quantity=F("quantity") + quantity
+                )
+                item.refresh_from_db()
+                GoodsReceiptLine.objects.create(
+                    receipt=receipt,
+                    item=item,
+                    sku=sku,
+                    description=description or item.description,
+                    quantity=quantity,
+                )
+                booked.append(
+                    {
+                        "sku": sku,
+                        "description": description or item.description,
+                        "quantity": quantity,
+                        "warehouse_quantity": item.quantity,
+                        "created_item": created,
+                    }
+                )
+    except Exception:
+        logger.error("Unexpected error while receiving a delivery.", exc_info=True)
+        return Response(
+            {"detail": _("An unexpected error occurred while receiving the delivery.")},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    return Response(
+        {
+            "id": receipt.id,
+            "po_number": receipt.po_number,
+            "supplier": receipt.supplier,
+            "received_at": receipt.received_at,
+            "received_by": request.user.username,
+            "lines": booked,
+            "total_quantity": sum(line["quantity"] for line in booked),
+        },
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_receipts(request):
+    """Recent goods receipts, newest first, with their lines."""
+    try:
+        limit = min(max(int(request.query_params.get("limit", 25)), 1), 200)
+    except (TypeError, ValueError):
+        limit = 25
+
+    queryset = GoodsReceipt.objects.prefetch_related("lines").all()
+    po_number = (request.query_params.get("po") or "").strip()
+    if po_number:
+        queryset = queryset.filter(po_number__icontains=po_number)
+
+    rows = []
+    for receipt in queryset[:limit]:
+        rows.append(
+            {
+                "id": receipt.id,
+                "po_number": receipt.po_number,
+                "supplier": receipt.supplier,
+                "received_at": receipt.received_at,
+                "received_by": receipt.received_by.username
+                if receipt.received_by
+                else "",
+                "notes": receipt.notes,
+                "total_quantity": receipt.total_quantity,
+                "lines": [
+                    {
+                        "sku": line.sku,
+                        "description": line.description,
+                        "quantity": line.quantity,
+                    }
+                    for line in receipt.lines.all()
+                ],
+            }
+        )
+    return Response({"results": rows, "count": len(rows)})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def list_sites(request):
+    """The construction sites stock can be issued to (they are user accounts)."""
+    return Response({"results": _site_accounts()})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def item_barcode(request, sku):
+    """The Code 128 barcode for one item, as a standalone SVG document."""
+    try:
+        svg = render_barcode_svg(sku)
+    except BarcodeError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    response = HttpResponse(svg, content_type="image/svg+xml")
+    response["Cache-Control"] = "private, max-age=86400"
+    return response
+
+
+@login_required
+def print_labels(request):
+    """Printable label sheet: one barcode per item, ``copies`` labels each."""
+    raw = request.GET.get("skus") or request.GET.get("sku") or ""
+    skus = [value.strip() for value in raw.split(",") if value.strip()]
+    try:
+        copies = min(max(int(request.GET.get("copies", 1)), 1), 60)
+    except (TypeError, ValueError):
+        copies = 1
+
+    items, errors = [], []
+    if skus:
+        found = {item.sku: item for item in Item.objects.filter(sku__in=skus)}
+        for sku in skus:
+            item = found.get(sku)
+            if item is None:
+                errors.append(_("Item %(sku)s was not found.") % {"sku": sku})
+                continue
+            try:
+                svg = render_barcode_svg(item.sku)
+            except BarcodeError as exc:
+                errors.append(f"{sku}: {exc}")
+                continue
+            items.append({"item": item, "svg": svg})
+
+    return render(
+        request,
+        "labels.html",
+        {"items": items, "copies": copies, "copies_range": range(copies), "errors": errors},
+    )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def issue_to_site(request):
+    """Move stock from the warehouse to a construction site in one step."""
+    if Admin.is_edit_locked():
+        return Response(
+            {"detail": _("Issuing stock is disabled while the warehouse is being maintained.")},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    if not request.user.groups.filter(name="managers").exists():
+        return Response(
+            {"detail": _("Only a warehouse manager can issue stock to a site.")},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    sku = str(request.data.get("sku") or "").strip()
+    site_id = request.data.get("site_id")
+    try:
+        quantity = int(str(request.data.get("quantity")))
+    except (TypeError, ValueError):
+        return Response(
+            {"detail": _("The issued quantity must be a whole number.")},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if quantity <= 0:
+        return Response(
+            {"detail": _("The issued quantity must be greater than zero.")},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        item = Item.objects.get(sku=sku)
+    except Item.DoesNotExist:
+        return Response({"detail": _("Item not found.")}, status=status.HTTP_404_NOT_FOUND)
+
+    site = User.objects.filter(id=site_id, groups__name="shop_users").first()
+    if site is None:
+        return Response(
+            {"detail": _("Site not found.")}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        transfer_to_shop(
+            item=item,
+            shop_user=site.id,
+            transfer_quantity=quantity,
+            complete=True,
+            manager=True,
+        )
+    except (ValueError, LookupError) as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception:
+        logger.error("Unexpected error while issuing to a site.", exc_info=True)
+        return Response(
+            {"detail": _("An unexpected error occurred while issuing the stock.")},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    item.refresh_from_db()
+    return Response(
+        {
+            "detail": _("Stock issued to the site."),
+            "sku": item.sku,
+            "site": site.username,
+            "warehouse_quantity": item.quantity,
+        }
+    )

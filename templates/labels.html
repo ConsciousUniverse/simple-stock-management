@@ -1,0 +1,117 @@
+{% load static i18n %}{% get_current_language as CURRENT_LANGUAGE %}<!DOCTYPE html>
+<html lang="{{ CURRENT_LANGUAGE }}" dir="{% if CURRENT_LANGUAGE == 'ar' %}rtl{% else %}ltr{% endif %}">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% trans "Barcode labels" %}</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 1rem;
+            font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+            background: #f4f6f8;
+            color: #1d2d3e;
+        }
+
+        .labels-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .labels-toolbar h1 {
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .labels-toolbar button {
+            padding: 0.5rem 1rem;
+            border: 0;
+            border-radius: 0.4rem;
+            background: #0a6ed1;
+            color: #fff;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .label-sheet {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .label {
+            width: 58mm;
+            padding: 2mm;
+            border: 1px dashed #b8c4cf;
+            border-radius: 2mm;
+            background: #fff;
+            text-align: center;
+            page-break-inside: avoid;
+        }
+
+        .label__code {
+            font-family: "Courier New", monospace;
+            font-size: 10pt;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+
+        .label svg {
+            width: 100%;
+            height: auto;
+            max-height: 18mm;
+        }
+
+        .label__desc {
+            font-size: 8pt;
+            line-height: 1.25;
+            margin-top: 1mm;
+            max-height: 9mm;
+            overflow: hidden;
+        }
+
+        .labels-error {
+            color: #bb0000;
+            font-size: 0.9rem;
+        }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .labels-toolbar { display: none; }
+            .label { border: 0; }
+            .label-sheet { gap: 2mm; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="labels-toolbar">
+        <h1>{% trans "Barcode labels" %}</h1>
+        <button type="button" onclick="window.print()">{% trans "Print" %}</button>
+        <span>{{ items|length }} {% trans "items" %}</span>
+    </div>
+
+    {% for error in errors %}
+    <p class="labels-error">{{ error }}</p>
+    {% endfor %}
+
+    <div class="label-sheet">
+        {% for entry in items %}{% for _ in copies_range %}
+        <div class="label">
+            <div class="label__code">{{ entry.item.sku }}</div>
+            {{ entry.svg|safe }}
+            <div class="label__desc">{{ entry.item.description }}</div>
+        </div>
+        {% endfor %}{% endfor %}
+    </div>
+
+    {% if not items %}
+    <p class="labels-error">{% trans "Select at least one item to label." %}</p>
+    {% endif %}
+</body>
+
+</html>

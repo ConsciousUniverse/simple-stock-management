@@ -1,0 +1,692 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Warehouse management\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5);\n"
+
+msgid "(.xlsx — the sheet is the source of truth)"
+msgstr "(‎.xlsx — الملف هو مصدر البيانات)"
+
+msgid "Account temporarily locked"
+msgstr "الحساب مقفل مؤقتًا"
+
+msgid "Actions"
+msgstr "إجراءات"
+
+msgid "Active item codes"
+msgstr "أكواد أصناف نشطة"
+
+msgid "Add a new item code to the warehouse catalogue"
+msgstr "إضافة كود صنف جديد إلى دليل المخزن"
+
+msgid "Add an item to the warehouse first."
+msgstr "أضف صنفًا إلى المخزن أولًا."
+
+msgid "Add at least one item to receive."
+msgstr "أضف صنفًا واحدًا على الأقل للاستلام."
+
+msgid "Add item"
+msgstr "إضافة صنف"
+
+msgid "Add line"
+msgstr "إضافة سطر"
+
+msgid "Adjust your search or add a new item code."
+msgstr "عدّل البحث أو أضف كود صنف جديد."
+
+msgid "An error occurred."
+msgstr "حدث خطأ."
+
+msgid "An unexpected error occurred while issuing the stock."
+msgstr "حدث خطأ غير متوقع أثناء صرف المخزون."
+
+msgid "An unexpected error occurred while receiving the delivery."
+msgstr "حدث خطأ غير متوقع أثناء استلام التوريد."
+
+msgid "Apply"
+msgstr "تطبيق"
+
+msgid "Authorised users only. Accounts are created by the system administrator."
+msgstr "للمستخدمين المصرح لهم فقط. الحسابات تُنشأ بواسطة مسؤول النظام."
+
+msgid "Awaiting dispatch"
+msgstr "في انتظار الصرف"
+
+msgid "Back to dashboard"
+msgstr "العودة إلى لوحة التحكم"
+
+msgid "Back to sign in"
+msgstr "العودة لتسجيل الدخول"
+
+msgid "Barcode labels"
+msgstr "ملصقات الباركود"
+
+msgid "Book the delivery against the purchase order number; the quantities are added to the warehouse."
+msgstr "سجّل التوريد على رقم أمر الشراء؛ تُضاف الكميات إلى المخزن."
+
+msgid "Cancel"
+msgstr "إلغاء"
+
+msgid "Cancel the request"
+msgstr "إلغاء الطلب"
+
+msgid "Change my password"
+msgstr "تغيير كلمة المرور"
+
+msgid "Change password"
+msgstr "تغيير كلمة المرور"
+
+msgid "Choose a file"
+msgstr "اختر ملفًا"
+
+msgid "Clear"
+msgstr "مسح"
+
+msgid "Close"
+msgstr "إغلاق"
+
+msgid "Company item code"
+msgstr "كود الصنف في نظام الشركة"
+
+msgid "Confirm"
+msgstr "تأكيد"
+
+msgid "Confirm new password"
+msgstr "تأكيد كلمة المرور الجديدة"
+
+msgid "Construction sites"
+msgstr "مواقع الإنشاءات"
+
+msgid "Copies per item"
+msgstr "عدد النسخ لكل صنف"
+
+msgid "Could not add the transfer."
+msgstr "تعذّرت إضافة طلب النقل."
+
+msgid "Could not complete the transfer."
+msgstr "تعذّر تنفيذ طلب النقل."
+
+msgid "Could not create the item."
+msgstr "تعذّر إنشاء الصنف."
+
+msgid "Could not delete the item."
+msgstr "تعذّر حذف الصنف."
+
+msgid "Could not send the transfer request."
+msgstr "تعذّر إرسال طلب النقل."
+
+msgid "Could not update the item."
+msgstr "تعذّر تحديث الصنف."
+
+msgid "Create item"
+msgstr "إنشاء صنف"
+
+msgid "Create warehouse item"
+msgstr "إنشاء صنف بالمخزن"
+
+msgid "Current password"
+msgstr "كلمة المرور الحالية"
+
+msgid "Data import / export"
+msgstr "استيراد / تصدير البيانات"
+
+msgid "Date"
+msgstr "التاريخ"
+
+msgid "Delete"
+msgstr "حذف"
+
+msgid "Delete item"
+msgstr "حذف الصنف"
+
+msgid "Delete item?"
+msgstr "حذف الصنف؟"
+
+msgid "Deleted."
+msgstr "تم الحذف."
+
+msgid "Delivery received."
+msgstr "تم استلام التوريد."
+
+msgid "Description"
+msgstr "الوصف"
+
+msgid "Dismiss notification"
+msgstr "إغلاق التنبيه"
+
+msgid "Dispatch"
+msgstr "صرف"
+
+msgid "Dispatch the request"
+msgstr "صرف الطلب"
+
+msgid "Dispatched"
+msgstr "تم الصرف"
+
+msgid "Download stock data"
+msgstr "تنزيل بيانات المخزون"
+
+msgid "Download the current warehouse and site stock."
+msgstr "نزّل بيانات المخزن والمواقع الحالية."
+
+msgid "Each receipt line must be an item and a quantity."
+msgstr "كل سطر استلام يجب أن يحتوي على صنف وكمية."
+
+msgid "Edit"
+msgstr "تعديل"
+
+msgid "Edit item"
+msgstr "تعديل الصنف"
+
+msgid "Enter a quantity greater than zero."
+msgstr "أدخل كمية أكبر من صفر."
+
+msgid "Enter more than 0!"
+msgstr "أدخل قيمة أكبر من صفر!"
+
+msgid "Enter the purchase order number."
+msgstr "أدخل رقم أمر الشراء."
+
+msgid "Exchange warehouse and site stock as an Excel workbook"
+msgstr "تبادل بيانات المخزن والمواقع في ملف Excel"
+
+msgid "Export"
+msgstr "تصدير"
+
+msgid "Export to Excel"
+msgstr "تصدير إلى Excel"
+
+msgid "Failed to upload stock data."
+msgstr "تعذّر رفع بيانات المخزون."
+
+msgid "Fill in the required fields."
+msgstr "أكمل الحقول المطلوبة."
+
+msgid "Hello"
+msgstr "أهلًا"
+
+msgid "Hide"
+msgstr "إخفاء"
+
+msgid "Home"
+msgstr "الرئيسية"
+
+msgid "How many?"
+msgstr "كم الكمية؟"
+
+msgid "Import"
+msgstr "استيراد"
+
+msgid "Import from Excel"
+msgstr "استيراد من Excel"
+
+msgid "Inventory"
+msgstr "المخزون"
+
+msgid "Issue"
+msgstr "صرف"
+
+msgid "Issue stock to a site and it appears here."
+msgstr "اصرف مخزونًا لموقع وسيظهر هنا."
+
+msgid "Issue to site"
+msgstr "صرف لموقع"
+
+msgid "Issuing stock is disabled while the warehouse is being maintained."
+msgstr "الصرف معطّل أثناء أعمال الصيانة على المخزن."
+
+msgid "Item %(sku)s was not found."
+msgstr "الصنف %(sku)s غير موجود."
+
+msgid "Item code"
+msgstr "كود الصنف"
+
+msgid "Item created successfully."
+msgstr "تم إنشاء الصنف بنجاح."
+
+msgid "Item deleted."
+msgstr "تم حذف الصنف."
+
+msgid "Item not found."
+msgstr "الصنف غير موجود."
+
+msgid "Item qty"
+msgstr "كمية الموقع"
+
+msgid "Items"
+msgstr "الأصناف"
+
+msgid "Items recorded for your site"
+msgstr "أصناف مسجَّلة لموقعك"
+
+msgid "Key figures"
+msgstr "المؤشرات الرئيسية"
+
+msgid "Language"
+msgstr "اللغة"
+
+msgid "License GPLv3"
+msgstr "رخصة GPLv3"
+
+msgid "Line added."
+msgstr "تمت إضافة السطر."
+
+msgid "Loading..."
+msgstr "جارٍ التحميل..."
+
+msgid "Log On"
+msgstr "تسجيل الدخول"
+
+msgid "Log out"
+msgstr "تسجيل الخروج"
+
+msgid "Logout"
+msgstr "تسجيل الخروج"
+
+msgid "Maintain item codes, descriptions, prices and quantities"
+msgstr "إدارة أكواد الأصناف والأوصاف والأسعار والكميات"
+
+msgid "Maintenance mode"
+msgstr "وضع الصيانة"
+
+msgid "Menu"
+msgstr "القائمة"
+
+msgid "Move stock from the warehouse to a construction site"
+msgstr "نقل المخزون من المخزن إلى موقع الإنشاءات"
+
+msgid "Move the catalogue in and out of the system"
+msgstr "إدخال وإخراج دليل الأصناف من النظام"
+
+msgid "New password"
+msgstr "كلمة المرور الجديدة"
+
+msgid "New site requests will appear here."
+msgstr "طلبات المواقع الجديدة ستظهر هنا."
+
+msgid "No deliveries have been received yet."
+msgstr "لم يتم استلام أي توريدات بعد."
+
+msgid "No records"
+msgstr "لا توجد سجلات"
+
+msgid "No site stock yet"
+msgstr "لا يوجد مخزون بالمواقع بعد"
+
+msgid "No warehouse items found"
+msgstr "لا توجد أصناف بالمخزن"
+
+msgid "Not signed in"
+msgstr "غير مسجَّل الدخول"
+
+msgid "Notes"
+msgstr "ملاحظات"
+
+msgid "Nothing awaiting dispatch"
+msgstr "لا يوجد ما ينتظر الصرف"
+
+msgid "Only a warehouse manager can issue stock to a site."
+msgstr "أمين المخزن فقط يمكنه الصرف لموقع."
+
+msgid "Operational"
+msgstr "يعمل"
+
+msgid "Optional"
+msgstr "اختياري"
+
+msgid "Overview"
+msgstr "نظرة عامة"
+
+msgid "PO number"
+msgstr "رقم أمر الشراء"
+
+msgid "Password"
+msgstr "كلمة المرور"
+
+msgid "Password changed"
+msgstr "تم تغيير كلمة المرور"
+
+msgid "Pause site transfers while the warehouse is maintained"
+msgstr "إيقاف نقل المخزون للمواقع أثناء صيانة المخزن"
+
+msgid "Pending"
+msgstr "قيد الانتظار"
+
+msgid "Pending issues"
+msgstr "طلبات صرف معلّقة"
+
+msgid "Please confirm"
+msgstr "برجاء التأكيد"
+
+msgid "Please select a file to upload."
+msgstr "اختر ملفًا للرفع."
+
+msgid "Print"
+msgstr "طباعة"
+
+msgid "Print a Code 128 label per item. The barcode carries the item code used in the company system."
+msgstr "اطبع ملصق Code 128 لكل صنف. الباركود يحمل كود الصنف المستخدم في نظام الشركة."
+
+msgid "Print labels"
+msgstr "طباعة الملصقات"
+
+msgid "Purchase order number"
+msgstr "رقم أمر الشراء"
+
+msgid "Quantity"
+msgstr "الكمية"
+
+msgid "Receipts (30 days)"
+msgstr "توريدات (30 يومًا)"
+
+msgid "Receive"
+msgstr "استلام"
+
+msgid "Receive from supplier (PO)"
+msgstr "استلام من المورد (أمر شراء)"
+
+msgid "Received by"
+msgstr "استلمه"
+
+msgid "Receiving (PO)"
+msgstr "الاستلام (أمر شراء)"
+
+msgid "Receiving is disabled while the warehouse is being maintained."
+msgstr "الاستلام معطّل أثناء أعمال الصيانة على المخزن."
+
+msgid "Recent receipts"
+msgstr "أحدث التوريدات"
+
+msgid "Refresh"
+msgstr "تحديث"
+
+msgid "Remove"
+msgstr "حذف"
+
+msgid "Request items from the warehouse to build your site stock."
+msgstr "اطلب أصنافًا من المخزن لبناء مخزون موقعك."
+
+msgid "Requested stock movements between the warehouse and the sites"
+msgstr "حركات المخزون المطلوبة بين المخزن والمواقع"
+
+msgid "Requests submitted from a site account"
+msgstr "طلبات مقدَّمة من حساب موقع"
+
+msgid "Retail price"
+msgstr "سعر البيع"
+
+msgid "Retail price must be a valid number with up to 2 decimal places."
+msgstr "سعر البيع يجب أن يكون رقمًا صالحًا بحد أقصى منزلتين عشريتين."
+
+msgid "Save"
+msgstr "حفظ"
+
+msgid "Saved."
+msgstr "تم الحفظ."
+
+msgid "Search items by code or description..."
+msgstr "ابحث بالكود أو الوصف..."
+
+msgid "Search requests..."
+msgstr "ابحث في الطلبات..."
+
+msgid "Search site items by code or description..."
+msgstr "ابحث في مخزون الموقع بالكود أو الوصف..."
+
+msgid "Search sites by item code or site..."
+msgstr "ابحث بكود الصنف أو الموقع..."
+
+msgid "Sections"
+msgstr "الأقسام"
+
+msgid "Select a site"
+msgstr "اختر موقعًا"
+
+msgid "Select all"
+msgstr "تحديد الكل"
+
+msgid "Select an item first."
+msgstr "اختر صنفًا أولًا."
+
+msgid "Select at least one item to label."
+msgstr "اختر صنفًا واحدًا على الأقل للطباعة."
+
+msgid "Select the items to label"
+msgstr "اختر الأصناف المطلوب طباعة ملصقاتها"
+
+msgid "Send transfer request"
+msgstr "إرسال طلب النقل"
+
+msgid "Shop transfers are paused"
+msgstr "نقل المخزون للمواقع متوقف"
+
+msgid "Show"
+msgstr "إظهار"
+
+msgid "Showing"
+msgstr "عرض"
+
+msgid "Sign in"
+msgstr "تسجيل الدخول"
+
+msgid "Sign in with your username and password"
+msgstr "سجّل الدخول باسم المستخدم وكلمة المرور"
+
+msgid "Sign-in is paused for this username."
+msgstr "تسجيل الدخول موقوف مؤقتًا لهذا المستخدم."
+
+msgid "Signed in as"
+msgstr "مسجَّل الدخول باسم"
+
+msgid "Site"
+msgstr "الموقع"
+
+msgid "Site not found."
+msgstr "الموقع غير موجود."
+
+msgid "Site qty"
+msgstr "كمية الموقع"
+
+msgid "Site requests"
+msgstr "طلبات المواقع"
+
+msgid "Site requests awaiting dispatch"
+msgstr "طلبات المواقع في انتظار الصرف"
+
+msgid "Site stock lines"
+msgstr "سطور مخزون المواقع"
+
+msgid "Site transfer requests are paused until the manager reopens the warehouse."
+msgstr "طلبات نقل المخزون للمواقع متوقفة حتى يعيد المدير فتح المخزن."
+
+msgid "Site user"
+msgstr "مستخدم موقع"
+
+msgid "Sites"
+msgstr "المواقع"
+
+msgid "Sites stock"
+msgstr "مخزون المواقع"
+
+msgid "Something went wrong."
+msgstr "حدث خطأ ما."
+
+msgid "Status"
+msgstr "الحالة"
+
+msgid "Stock currently held by your site"
+msgstr "المخزون الموجود حاليًا في موقعك"
+
+msgid "Stock data uploaded successfully."
+msgstr "تم رفع بيانات المخزون بنجاح."
+
+msgid "Stock issued to each construction site"
+msgstr "المخزون المصروف لكل موقع إنشاءات"
+
+msgid "Stock issued to the site."
+msgstr "تم صرف المخزون للموقع."
+
+msgid "Stock movements are open"
+msgstr "حركة المخزون متاحة"
+
+msgid "Stock overview"
+msgstr "نظرة عامة على المخزون"
+
+msgid "Supplier"
+msgstr "المورد"
+
+msgid "Supplier deliveries"
+msgstr "توريدات الموردين"
+
+msgid "Supplier name"
+msgstr "اسم المورد"
+
+msgid "Suppliers · Sites · Inventory"
+msgstr "الموردون · المواقع · المخزون"
+
+msgid "The file must match the exported layout."
+msgstr "يجب أن يطابق الملف تنسيق التصدير."
+
+msgid "The issued quantity must be a whole number."
+msgstr "الكمية المصروفة يجب أن تكون رقمًا صحيحًا."
+
+msgid "The issued quantity must be greater than zero."
+msgstr "الكمية المصروفة يجب أن تكون أكبر من صفر."
+
+msgid "The item and its stock history will be removed."
+msgstr "سيتم حذف الصنف وسجل مخزونه."
+
+msgid "The limit is {{ failure_limit }} failed attempts. Access is restored automatically once the cool-off period ends."
+msgstr "الحد هو {{ failure_limit }} محاولة فاشلة. يُستعاد الوصول تلقائيًا بعد انتهاء فترة الانتظار."
+
+msgid "The password could not be changed."
+msgstr "لم يتم تغيير كلمة المرور."
+
+msgid "The received quantity must be a whole number."
+msgstr "الكمية المستلمة يجب أن تكون رقمًا صحيحًا."
+
+msgid "The received quantity must be greater than zero."
+msgstr "الكمية المستلمة يجب أن تكون أكبر من صفر."
+
+msgid "The request is withdrawn; no stock moves."
+msgstr "سيتم سحب الطلب؛ لن تُنقل أي كمية."
+
+msgid "The stock leaves the warehouse and moves to the site."
+msgstr "سيخرج المخزون من المخزن إلى الموقع."
+
+msgid "The system is configured to delete all warehouse and site data that is not included in this upload."
+msgstr "النظام مُهيَّأ لحذف كل بيانات المخزن والمواقع غير المدرجة في هذا الملف."
+
+msgid "The warehouse is in maintenance mode. Stock movements are disabled."
+msgstr "المخزن في وضع الصيانة. حركة المخزون معطّلة."
+
+msgid "This action cannot be undone. Continue?"
+msgstr "لا يمكن التراجع عن هذا الإجراء. هل تريد المتابعة؟"
+
+msgid "Too many unsuccessful sign-in attempts"
+msgstr "محاولات دخول فاشلة متكررة"
+
+msgid "Transfer cancelled."
+msgstr "تم إلغاء طلب النقل."
+
+msgid "Transfer dispatched."
+msgstr "تم صرف طلب النقل."
+
+msgid "Transfer qty"
+msgstr "كمية النقل"
+
+msgid "Transfer request sent to the warehouse."
+msgstr "تم إرسال طلب النقل إلى المخزن."
+
+msgid "Transfers are open"
+msgstr "النقل متاح"
+
+msgid "Update the description, price and warehouse quantity."
+msgstr "حدّث الوصف والسعر وكمية المخزن."
+
+msgid "Updated"
+msgstr "آخر تحديث"
+
+msgid "Upload anyway"
+msgstr "ارفع على أي حال"
+
+msgid "Upload stock data"
+msgstr "رفع بيانات المخزون"
+
+msgid "Use your new password the next time you sign in."
+msgstr "استخدم كلمة المرور الجديدة في المرة القادمة."
+
+msgid "Username"
+msgstr "اسم المستخدم"
+
+msgid "Wait for the lock to expire, or ask the system administrator to reset it."
+msgstr "انتظر انتهاء القفل أو اطلب من مسؤول النظام إعادة ضبطه."
+
+msgid "Warehouse and site inventory at a glance"
+msgstr "مخزون المخزن والمواقع في نظرة واحدة"
+
+msgid "Warehouse items"
+msgstr "أصناف المخزن"
+
+msgid "Warehouse maintenance is in progress."
+msgstr "صيانة المخزن جارية."
+
+msgid "Warehouse management"
+msgstr "إدارة المخازن"
+
+msgid "Warehouse manager"
+msgstr "مدير المخزن"
+
+msgid "Warehouse qty"
+msgstr "كمية المخزن"
+
+msgid "Warehouse status"
+msgstr "حالة المخزن"
+
+msgid "Warehouse stock"
+msgstr "مخزون المخزن"
+
+msgid "We could not sign you in."
+msgstr "تعذّر تسجيل الدخول."
+
+msgid "Your password has been updated successfully."
+msgstr "تم تحديث كلمة المرور بنجاح."
+
+msgid "all"
+msgstr "الكل"
+
+msgid "e.g. NSCOM-1001"
+msgstr "مثال: NSCOM-1001"
+
+msgid "e.g. PO-2026-00123"
+msgstr "مثال: PO-2026-00123"
+
+msgid "items"
+msgstr "صنف"
+
+msgid "of"
+msgstr "من"
+
+msgid "pending transfer"
+msgstr "طلب نقل معلّق"
+
+msgid "pending transfers"
+msgstr "طلبات نقل معلّقة"
+
+msgid "selected"
+msgstr "محدد"
+
+msgid "site stock line"
+msgstr "سطر مخزون موقع"
+
+msgid "site stock lines"
+msgstr "سطور مخزون المواقع"
+
+msgid "warehouse item"
+msgstr "صنف بالمخزن"
+
+msgid "warehouse items"
+msgstr "أصناف بالمخزن"

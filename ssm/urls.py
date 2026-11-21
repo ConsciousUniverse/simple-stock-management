@@ -5,8 +5,11 @@ from django.conf import settings
 from django.views.generic import RedirectView
 
 from ssm.health import healthz
+from stock_manager.views import switch_language
 
 urlpatterns = [
+    # Language switch (POST {"language": "ar", "next": "/"}).
+    path("i18n/set-language/", switch_language, name="set_language"),
     # Public liveness probe (platform health check); never requires a session.
     path("healthz", healthz, name="healthz"),
 ]

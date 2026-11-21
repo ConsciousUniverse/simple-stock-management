@@ -1,0 +1,15 @@
+{% load i18n %}{% get_current_language as CURRENT_LANGUAGE %}{% get_available_languages as LANGUAGES %}
+<form class="sap-lang" method="post" action="{% url 'set_language' %}" aria-label="{% trans 'Language' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <label class="sap-lang__label" for="languageSelect">
+        <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-info"></use></svg>
+    </label>
+    <select class="sap-lang__select" id="languageSelect" name="language"
+        onchange="this.form.submit()">
+        {% for code, label in LANGUAGES %}
+        <option value="{{ code }}"{% if code == CURRENT_LANGUAGE %} selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+    <noscript><button class="sap-btn sap-btn--ghost sap-btn--sm" type="submit">{% trans "Apply" %}</button></noscript>
+</form>

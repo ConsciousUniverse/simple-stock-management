@@ -1,11 +1,11 @@
-{% load static %}<!DOCTYPE html>
-<html lang="en">
+{% load static i18n %}{% get_current_language as CURRENT_LANGUAGE %}<!DOCTYPE html>
+<html lang="{{ CURRENT_LANGUAGE }}" dir="{% if CURRENT_LANGUAGE == 'ar' %}rtl{% else %}ltr{% endif %}">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#354a5f">
-    <title>{% block title %}Sign in{% endblock %} &middot; Simpler Stock Management</title>
+    <title>{% block title %}{% trans "Sign in" %}{% endblock %} &middot; {% trans "Warehouse management" %}</title>
     <link rel="icon" href="{% static 'img/favicon.png' %}">
     <link rel="stylesheet" href="{% static 'css/ssm-sap.css' %}">
 </head>
@@ -16,8 +16,9 @@
         <span class="sap-shellbar__logo">
             <img src="{% static 'img/company-logo.png' %}" alt="Nscom Construction">
         </span>
-        <span class="sap-login__topbar-title">Simpler Stock Management</span>
-        <span class="sap-login__topbar-sub">Warehouse &amp; Shop Inventory</span>
+        <span class="sap-login__topbar-title">{% trans "Warehouse management" %}</span>
+        {% include "partials/language_switch.html" %}
+        <span class="sap-login__topbar-sub">{% trans "Suppliers · Sites · Inventory" %}</span>
     </header>
 
     <main class="sap-login__main">
@@ -27,7 +28,7 @@
     </main>
 
     <footer class="sap-login__footer">
-        Simpler Stock Management v5.3.0-beta &middot; &copy;2025
+        {% trans "Warehouse management" %} v6.0.0 &middot; &copy;2025
         <a href="https://github.com/consciousuniverse" target="_blank" rel="noopener noreferrer">Dan Bright</a>
         &middot; License GPLv3
     </footer>
