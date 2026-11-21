@@ -4,25 +4,37 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
+    """Records the unit of measure in the model state.
+
+    The column itself is created by 0001's adoption step, which adds every
+    column of the current models to any table that lacks it. Keeping the state
+    change here is what makes the field part of the model state without a second
+    "duplicate column" failure on a database that already has it.
+    """
 
     dependencies = [
         ('stock_manager', '0001_initial'),
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='goodsreceiptline',
-            name='unit',
-            field=models.CharField(blank=True, default='', max_length=20),
-        ),
-        migrations.AddField(
-            model_name='item',
-            name='unit',
-            field=models.CharField(blank=True, default='', max_length=20),
-        ),
-        migrations.AddField(
-            model_name='stockdocumentline',
-            name='unit',
-            field=models.CharField(blank=True, default='', max_length=20),
+        migrations.SeparateDatabaseAndState(
+            database_operations=[],
+            state_operations=[
+                migrations.AddField(
+                    model_name='goodsreceiptline',
+                    name='unit',
+                    field=models.CharField(blank=True, default='', max_length=20),
+                ),
+                migrations.AddField(
+                    model_name='item',
+                    name='unit',
+                    field=models.CharField(blank=True, default='', max_length=20),
+                ),
+                migrations.AddField(
+                    model_name='stockdocumentline',
+                    name='unit',
+                    field=models.CharField(blank=True, default='', max_length=20),
+                ),
+            ],
         ),
     ]

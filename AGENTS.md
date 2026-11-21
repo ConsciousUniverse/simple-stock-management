@@ -96,3 +96,42 @@ the partial — never a copy per shell.
   via `AuditedPasswordChangeView`), and a setting change written as
   «Edit lock: on/off» rather than `edit_lock=False`.
 - `python -m pytest -q` — 473 pass, 3 skip.
+
+## A deploy onto a database older than the migrations (the "already exists" build)
+
+The first deploy of this branch died in the build:
+
+```
+django.db.utils.ProgrammingError: relation "stock_manager_admin" already exists
+```
+
+- **`--fake-initial` only looks at the top level of a migration.** It fakes an
+  initial migration when every `CreateModel` table **and** every `AddField`
+  column already exists; anything else (`AddIndex`, `AlterUniqueTogether`) is
+  ignored. The live database was built by `--run-syncdb` at several points in the
+  project's life, so one table or column added later was missing — the check
+  returned False, Django fell back to creating everything, and the first table it
+  tried was already there.
+- **Do not chase the flag.** The fix is for the migrations to *adopt* the schema:
+  `stock_manager/migrations/_adopt.py` → `ensure_models()` creates a table only
+  when it is absent and adds only the columns a table lacks. Each migration wraps
+  its state operations in `SeparateDatabaseAndState(state_operations=[…],
+  database_operations=[RunPython(adopt…)])`, so the recorded state stays exact
+  and the database work is idempotent. That is why the build now works with or
+  without `--fake-initial` — worth knowing, because the Render dashboard may hold
+  its own copy of the build command.
+- **0002 is state-only on purpose**: its `unit` columns are created by 0001's
+  adoption step, so a real `AddField` would fail with "duplicate column" on a
+  database that already has them.
+- **`python manage.py makemigrations --check --dry-run` must still say
+  "No changes detected"** after such a change — the state is what the models
+  describe, only the DDL is conditional.
+- **Reproduce it locally instead of guessing**: build a database from the code
+  that predates the migrations (`git worktree add /tmp/old 88ff826`, then
+  `migrate --run-syncdb`), drop one table and one column, and run the current
+  `migrate`. Before the fix this prints the production error; after it, the table
+  and column come back and the audit tables are created.
+- **Guard**: `tests/test_migrations_adopt_existing_db.py` (4 tests) drives
+  `manage.py migrate` in a subprocess against a real SQLite file. Two of them
+  fail against the previous migrations, so they guard the behaviour rather than
+  the code path.

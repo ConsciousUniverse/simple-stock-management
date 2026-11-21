@@ -11,14 +11,16 @@ services:
     branch: main
     autoDeploy: true
     healthCheckPath: /healthz
-    # --fake-initial: the live tables already exist, created by --run-syncdb
-    # before this app had migrations, so the initial migration is recorded as
-    # applied instead of trying to CREATE tables that are already there. Later
-    # migrations still run, which is how a new column reaches the database.
+    # The app's migrations adopt the schema instead of assuming it is empty:
+    # 0001 creates only the tables and columns the live database is missing, so
+    # the deploy works on a database built by --run-syncdb before the app kept
+    # migrations. --fake-initial is not used: it only notices a missing *table*
+    # and, on a schema that drifted by a column, tries to CREATE everything and
+    # dies on the first table that already exists.
     buildCommand: >-
       pip install -r requirements.txt &&
       python manage.py collectstatic --noinput &&
-      python manage.py migrate --run-syncdb --fake-initial --noinput &&
+      python manage.py migrate --run-syncdb --noinput &&
       python manage.py bootstrap_admin
     startCommand: >-
       gunicorn ssm.wsgi:application --bind 0.0.0.0:$PORT

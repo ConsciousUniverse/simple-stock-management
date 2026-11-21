@@ -6,6 +6,30 @@ from django.conf import settings
 from django.db import migrations, models
 
 
+from ._adopt import ensure_models
+
+#: The models the database already had before this app kept migrations.
+LEGACY_MODELS = (
+    "Admin",
+    "Item",
+    "ShopItem",
+    "TransferItem",
+    "GoodsReceipt",
+    "GoodsReceiptLine",
+    "StockDocument",
+    "StockDocumentLine",
+)
+
+
+def adopt_existing_schema(apps, schema_editor):
+    """Create whatever the live database is missing, then record the state.
+
+    The database predates migrations, so its tables are already there: the state
+    below describes them and this step only fills the gaps.
+    """
+    ensure_models(schema_editor, LEGACY_MODELS)
+
+
 class Migration(migrations.Migration):
 
     initial = True
@@ -15,141 +39,148 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.CreateModel(
-            name='Admin',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('edit_lock', models.BooleanField(default=False)),
-                ('allow_uploads', models.BooleanField(default=False)),
-                ('allow_upload_deletions', models.BooleanField(default=False)),
-                ('allow_email_notifications', models.BooleanField(default=False)),
-                ('records_per_page', models.IntegerField(default=25, validators=[django.core.validators.MinValueValidator(1)])),
+        migrations.SeparateDatabaseAndState(
+            state_operations=[
+                migrations.CreateModel(
+                    name='Admin',
+                    fields=[
+                        ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                        ('edit_lock', models.BooleanField(default=False)),
+                        ('allow_uploads', models.BooleanField(default=False)),
+                        ('allow_upload_deletions', models.BooleanField(default=False)),
+                        ('allow_email_notifications', models.BooleanField(default=False)),
+                        ('records_per_page', models.IntegerField(default=25, validators=[django.core.validators.MinValueValidator(1)])),
+                    ],
+                    options={
+                        'verbose_name': 'App Configuration',
+                        'verbose_name_plural': 'App Configuration',
+                    },
+                ),
+                migrations.CreateModel(
+                    name='Item',
+                    fields=[
+                        ('sku', models.CharField(max_length=100, primary_key=True, serialize=False, unique=True)),
+                        ('description', models.CharField(max_length=250)),
+                        ('retail_price', models.DecimalField(decimal_places=2, max_digits=10)),
+                        ('quantity', models.IntegerField(validators=[django.core.validators.MinValueValidator(0)])),
+                        ('last_updated', models.DateTimeField(auto_now=True)),
+                        ('is_active', models.BooleanField(default=True)),
+                    ],
+                ),
+                migrations.CreateModel(
+                    name='GoodsReceipt',
+                    fields=[
+                        ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                        ('po_number', models.CharField(max_length=60)),
+                        ('supplier', models.CharField(blank=True, default='', max_length=200)),
+                        ('notes', models.TextField(blank=True, default='')),
+                        ('received_at', models.DateTimeField(auto_now_add=True)),
+                        ('received_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='receipts', to=settings.AUTH_USER_MODEL)),
+                    ],
+                    options={
+                        'verbose_name': 'Goods receipt (PO)',
+                        'verbose_name_plural': 'Goods receipts (PO)',
+                        'ordering': ('-received_at', '-id'),
+                    },
+                ),
+                migrations.CreateModel(
+                    name='GoodsReceiptLine',
+                    fields=[
+                        ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                        ('sku', models.CharField(max_length=100)),
+                        ('description', models.CharField(blank=True, default='', max_length=250)),
+                        ('quantity', models.IntegerField(validators=[django.core.validators.MinValueValidator(1)])),
+                        ('created_at', models.DateTimeField(auto_now_add=True)),
+                        ('receipt', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='lines', to='stock_manager.goodsreceipt')),
+                        ('item', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='receipt_lines', to='stock_manager.item')),
+                    ],
+                    options={
+                        'ordering': ('id',),
+                    },
+                ),
+                migrations.CreateModel(
+                    name='ShopItem',
+                    fields=[
+                        ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                        ('quantity', models.IntegerField(default=0)),
+                        ('last_updated', models.DateTimeField(auto_now=True)),
+                        ('item', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='stock_manager.item')),
+                        ('shop_user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                    ],
+                ),
+                migrations.CreateModel(
+                    name='StockDocument',
+                    fields=[
+                        ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                        ('number', models.CharField(max_length=40, unique=True)),
+                        ('direction', models.CharField(choices=[('in', 'Addition'), ('out', 'Issue')], max_length=3)),
+                        ('doc_type', models.CharField(choices=[('po_receipt', 'Purchase order receipt'), ('project_transfer_in', 'Transfer in from another project'), ('site_return', 'Return from site to warehouse'), ('site_issue', 'Issue to site'), ('project_transfer_out', 'Transfer out to another project'), ('supplier_return', 'Rejected / returned to supplier')], max_length=32)),
+                        ('status', models.CharField(choices=[('pending', 'Pending approval'), ('approved', 'Approved'), ('rejected', 'Rejected')], default='pending', max_length=16)),
+                        ('source', models.CharField(choices=[('web', 'Web'), ('mobile', 'Mobile app'), ('import', 'Import')], default='web', max_length=8)),
+                        ('counterparty', models.CharField(blank=True, default='', max_length=200)),
+                        ('reference', models.CharField(blank=True, default='', max_length=60)),
+                        ('external_ref', models.CharField(blank=True, max_length=80, null=True, unique=True)),
+                        ('notes', models.TextField(blank=True, default='')),
+                        ('created_at', models.DateTimeField(auto_now_add=True)),
+                        ('decided_at', models.DateTimeField(blank=True, null=True)),
+                        ('decision_note', models.TextField(blank=True, default='')),
+                        ('applied_at', models.DateTimeField(blank=True, null=True)),
+                        ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_stock_documents', to=settings.AUTH_USER_MODEL)),
+                        ('decided_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='decided_stock_documents', to=settings.AUTH_USER_MODEL)),
+                        ('site', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='stock_documents', to=settings.AUTH_USER_MODEL)),
+                    ],
+                    options={
+                        'verbose_name': 'Stock document',
+                        'verbose_name_plural': 'Stock documents',
+                        'ordering': ('-created_at', '-id'),
+                    },
+                ),
+                migrations.CreateModel(
+                    name='StockDocumentLine',
+                    fields=[
+                        ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                        ('sku', models.CharField(max_length=100)),
+                        ('description', models.CharField(blank=True, default='', max_length=250)),
+                        ('quantity', models.IntegerField(validators=[django.core.validators.MinValueValidator(1)])),
+                        ('created_at', models.DateTimeField(auto_now_add=True)),
+                        ('document', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='lines', to='stock_manager.stockdocument')),
+                        ('item', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='stock_manager.item')),
+                    ],
+                    options={
+                        'ordering': ('id',),
+                    },
+                ),
+                migrations.CreateModel(
+                    name='TransferItem',
+                    fields=[
+                        ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                        ('quantity', models.IntegerField(default=0)),
+                        ('ordered', models.BooleanField(default=False)),
+                        ('last_updated', models.DateTimeField(auto_now=True)),
+                        ('created_at', models.DateTimeField(auto_now_add=True)),
+                        ('item', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='stock_manager.item')),
+                        ('shop_user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                    ],
+                ),
+                migrations.AddIndex(
+                    model_name='goodsreceipt',
+                    index=models.Index(fields=['po_number'], name='stock_manag_po_numb_f2c604_idx'),
+                ),
+                migrations.AlterUniqueTogether(
+                    name='shopitem',
+                    unique_together={('shop_user', 'item')},
+                ),
+                migrations.AddIndex(
+                    model_name='stockdocument',
+                    index=models.Index(fields=['doc_type', 'status'], name='stock_manag_doc_typ_1f5560_idx'),
+                ),
+                migrations.AddIndex(
+                    model_name='stockdocument',
+                    index=models.Index(fields=['created_at'], name='stock_manag_created_88116d_idx'),
+                ),
             ],
-            options={
-                'verbose_name': 'App Configuration',
-                'verbose_name_plural': 'App Configuration',
-            },
-        ),
-        migrations.CreateModel(
-            name='Item',
-            fields=[
-                ('sku', models.CharField(max_length=100, primary_key=True, serialize=False, unique=True)),
-                ('description', models.CharField(max_length=250)),
-                ('retail_price', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('quantity', models.IntegerField(validators=[django.core.validators.MinValueValidator(0)])),
-                ('last_updated', models.DateTimeField(auto_now=True)),
-                ('is_active', models.BooleanField(default=True)),
+            database_operations=[
+                migrations.RunPython(adopt_existing_schema, migrations.RunPython.noop)
             ],
-        ),
-        migrations.CreateModel(
-            name='GoodsReceipt',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('po_number', models.CharField(max_length=60)),
-                ('supplier', models.CharField(blank=True, default='', max_length=200)),
-                ('notes', models.TextField(blank=True, default='')),
-                ('received_at', models.DateTimeField(auto_now_add=True)),
-                ('received_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='receipts', to=settings.AUTH_USER_MODEL)),
-            ],
-            options={
-                'verbose_name': 'Goods receipt (PO)',
-                'verbose_name_plural': 'Goods receipts (PO)',
-                'ordering': ('-received_at', '-id'),
-            },
-        ),
-        migrations.CreateModel(
-            name='GoodsReceiptLine',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('sku', models.CharField(max_length=100)),
-                ('description', models.CharField(blank=True, default='', max_length=250)),
-                ('quantity', models.IntegerField(validators=[django.core.validators.MinValueValidator(1)])),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('receipt', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='lines', to='stock_manager.goodsreceipt')),
-                ('item', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='receipt_lines', to='stock_manager.item')),
-            ],
-            options={
-                'ordering': ('id',),
-            },
-        ),
-        migrations.CreateModel(
-            name='ShopItem',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('quantity', models.IntegerField(default=0)),
-                ('last_updated', models.DateTimeField(auto_now=True)),
-                ('item', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='stock_manager.item')),
-                ('shop_user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='StockDocument',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('number', models.CharField(max_length=40, unique=True)),
-                ('direction', models.CharField(choices=[('in', 'Addition'), ('out', 'Issue')], max_length=3)),
-                ('doc_type', models.CharField(choices=[('po_receipt', 'Purchase order receipt'), ('project_transfer_in', 'Transfer in from another project'), ('site_return', 'Return from site to warehouse'), ('site_issue', 'Issue to site'), ('project_transfer_out', 'Transfer out to another project'), ('supplier_return', 'Rejected / returned to supplier')], max_length=32)),
-                ('status', models.CharField(choices=[('pending', 'Pending approval'), ('approved', 'Approved'), ('rejected', 'Rejected')], default='pending', max_length=16)),
-                ('source', models.CharField(choices=[('web', 'Web'), ('mobile', 'Mobile app'), ('import', 'Import')], default='web', max_length=8)),
-                ('counterparty', models.CharField(blank=True, default='', max_length=200)),
-                ('reference', models.CharField(blank=True, default='', max_length=60)),
-                ('external_ref', models.CharField(blank=True, max_length=80, null=True, unique=True)),
-                ('notes', models.TextField(blank=True, default='')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('decided_at', models.DateTimeField(blank=True, null=True)),
-                ('decision_note', models.TextField(blank=True, default='')),
-                ('applied_at', models.DateTimeField(blank=True, null=True)),
-                ('created_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_stock_documents', to=settings.AUTH_USER_MODEL)),
-                ('decided_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='decided_stock_documents', to=settings.AUTH_USER_MODEL)),
-                ('site', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='stock_documents', to=settings.AUTH_USER_MODEL)),
-            ],
-            options={
-                'verbose_name': 'Stock document',
-                'verbose_name_plural': 'Stock documents',
-                'ordering': ('-created_at', '-id'),
-            },
-        ),
-        migrations.CreateModel(
-            name='StockDocumentLine',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('sku', models.CharField(max_length=100)),
-                ('description', models.CharField(blank=True, default='', max_length=250)),
-                ('quantity', models.IntegerField(validators=[django.core.validators.MinValueValidator(1)])),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('document', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='lines', to='stock_manager.stockdocument')),
-                ('item', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to='stock_manager.item')),
-            ],
-            options={
-                'ordering': ('id',),
-            },
-        ),
-        migrations.CreateModel(
-            name='TransferItem',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('quantity', models.IntegerField(default=0)),
-                ('ordered', models.BooleanField(default=False)),
-                ('last_updated', models.DateTimeField(auto_now=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('item', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='stock_manager.item')),
-                ('shop_user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
-            ],
-        ),
-        migrations.AddIndex(
-            model_name='goodsreceipt',
-            index=models.Index(fields=['po_number'], name='stock_manag_po_numb_f2c604_idx'),
-        ),
-        migrations.AlterUniqueTogether(
-            name='shopitem',
-            unique_together={('shop_user', 'item')},
-        ),
-        migrations.AddIndex(
-            model_name='stockdocument',
-            index=models.Index(fields=['doc_type', 'status'], name='stock_manag_doc_typ_1f5560_idx'),
-        ),
-        migrations.AddIndex(
-            model_name='stockdocument',
-            index=models.Index(fields=['created_at'], name='stock_manag_created_88116d_idx'),
         ),
     ]
