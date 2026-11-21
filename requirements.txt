@@ -12,3 +12,5 @@ pytz==2026.6
 gunicorn==27.0.1
 whitenoise==6.12.0
 dj-database-url==3.1.2
+# Postgres driver for the managed database (psycopg 3, binary wheels).
+psycopg[binary]==3.3.9

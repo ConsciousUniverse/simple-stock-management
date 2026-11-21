@@ -79,6 +79,17 @@ class TestSettingsWiring:
     def test_sqlite_remains_the_local_default(self):
         assert base_settings.DATABASES["default"]["ENGINE"].endswith("sqlite3")
 
+    def test_postgres_driver_is_installed_and_pinned(self):
+        """DATABASE_URL is useless without a driver: catch it before a deploy."""
+        import importlib.util
+
+        assert importlib.util.find_spec("psycopg") or importlib.util.find_spec(
+            "psycopg2"
+        ), "no Postgres driver installed (pip install 'psycopg[binary]')"
+
+        requirements = (BASE_DIR / "requirements.txt").read_text()
+        assert "psycopg" in requirements
+
 
 class TestBuildInputs:
     def test_requirements_are_pinned_and_shipped(self):
