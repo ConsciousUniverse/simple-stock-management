@@ -1,0 +1,125 @@
+{% load static i18n %}{% get_current_language as CURRENT_LANGUAGE %}<!DOCTYPE html>
+<html lang="{{ CURRENT_LANGUAGE }}" dir="{% if CURRENT_LANGUAGE == 'ar' %}rtl{% else %}ltr{% endif %}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#354a5f">
+    <title>{% block title %}{% trans "Warehouse management" %}{% endblock %} · {% trans "Warehouse management" %}</title>
+    <link rel="icon" href="{% static 'img/favicon.png' %}">
+    <link rel="stylesheet" href="{% static 'css/ssm-sap.css' %}">
+</head>
+
+<body class="sap-body">
+    {% include "partials/icons.html" %}
+
+    <header class="sap-shellbar">
+        <div class="sap-shellbar__left">
+            <button type="button" class="sap-shellbar__menu-btn" id="navToggle" aria-label="{% trans 'Menu' %}"
+                aria-controls="sideNav" aria-expanded="false">
+                <svg class="sap-icon" aria-hidden="true"><use href="#i-overview"></use></svg>
+            </button>
+            <a class="sap-shellbar__brand" href="/">
+                <span class="sap-shellbar__logo">
+                    <img src="{% static 'img/company-logo.png' %}" alt="Orascom Construction">
+                </span>
+                <span class="sap-shellbar__titles">
+                    <span class="sap-shellbar__product">{% trans "Warehouse management" %}</span>
+                    <span class="sap-shellbar__subtitle">{% trans "Suppliers · Sites · Inventory" %}</span>
+                </span>
+            </a>
+        </div>
+        <div class="sap-shellbar__right">
+            {% include "partials/language_switch.html" %}
+            <div class="sap-user" title="{% trans 'Signed in as' %}">
+                <span class="sap-user__avatar">{{ request.user.username|slice:":1"|upper }}</span>
+                <span class="sap-user__meta">
+                    <span class="sap-user__name">{{ request.user.username }}</span>
+                    <span class="sap-user__role">
+                        {% if is_manager %}{% trans "Warehouse manager" %}{% else %}{% trans "Site user" %}{% endif %}
+                    </span>
+                </span>
+            </div>
+            <a class="sap-btn sap-btn--transparent sap-shellbar__btn" href="{% url 'logout' %}">{% trans "Log off" %}</a>
+        </div>
+    </header>
+
+    <div class="sap-shell">
+        <aside class="sap-sidenav" id="sideNav">
+            <div>
+                <div class="sap-sidenav__label">{% trans "Pages" %}</div>
+                <nav class="sap-sidenav__nav" aria-label="{% trans 'Sections' %}">
+                    <a class="sap-sidenav__item{% if section == 'overview' %} is-active{% endif %}" href="/">
+                        <svg class="sap-icon" aria-hidden="true"><use href="#i-overview"></use></svg>
+                        <span>{% trans "Overview" %}</span>
+                    </a>
+                    <a class="sap-sidenav__item{% if section == 'stock' %} is-active{% endif %}" href="/stock/">
+                        <svg class="sap-icon" aria-hidden="true"><use href="#i-warehouse"></use></svg>
+                        <span>{% trans "Warehouse stock" %}</span>
+                    </a>
+                    <a class="sap-sidenav__item{% if section == 'receipts' %} is-active{% endif %}" href="/receipts/">
+                        <svg class="sap-icon" aria-hidden="true"><use href="#i-download"></use></svg>
+                        <span>{% trans "Additions" %}</span>
+                    </a>
+                    <a class="sap-sidenav__item{% if section == 'issues' %} is-active{% endif %}" href="/issues/">
+                        <svg class="sap-icon" aria-hidden="true"><use href="#i-upload"></use></svg>
+                        <span>{% trans "Issues" %}</span>
+                    </a>
+                    <a class="sap-sidenav__item{% if section == 'report' %} is-active{% endif %}" href="/issues/report/">
+                        <svg class="sap-icon" aria-hidden="true"><use href="#i-data"></use></svg>
+                        <span>{% trans "Issues report" %}</span>
+                    </a>
+                </nav>
+            </div>
+            <div class="sap-sidenav__footer">
+                <a href="{% url 'password_change' %}">{% trans "Change my password" %}</a>
+                <span>v6.0.0</span>
+            </div>
+        </aside>
+
+        <main class="sap-content">
+            <div class="sap-content__inner">
+                <div class="sap-page-header">
+                    <div class="sap-page-header__text">
+                        <div class="sap-breadcrumb">
+                            <a href="/">{% trans "Home" %}</a>
+                            <span class="sap-breadcrumb__sep">/</span>
+                            <span>{% block crumb %}{% endblock %}</span>
+                        </div>
+                        <h1 class="sap-title">{% block heading %}{% endblock %}</h1>
+                        <p class="sap-subtitle">{% block subheading %}{% endblock %}</p>
+                    </div>
+                    <div class="sap-page-header__actions">{% block actions %}{% endblock %}</div>
+                </div>
+
+                {% if messages %}
+                <div class="sap-messages">
+                    {% for message in messages %}
+                    <div class="sap-msgstrip{% if message.tags == 'error' %} sap-msgstrip-error{% elif message.tags == 'warning' %} sap-msgstrip--warning{% elif message.tags == 'success' %} sap-msgstrip--success{% else %} sap-msgstrip--info{% endif %}"
+                        role="status">
+                        <span class="sap-msgstrip__title">{{ message }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <script>
+        (function () {
+            var toggle = document.getElementById("navToggle");
+            if (toggle) {
+                toggle.addEventListener("click", function () {
+                    var open = document.body.classList.toggle("sap-nav-open");
+                    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+                });
+            }
+        })();
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

@@ -2,6 +2,7 @@ import logging
 from django.conf import settings
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -11,8 +12,12 @@ from .models import (
     GoodsReceiptLine,
     Item,
     ShopItem,
+    StockDocument,
+    StockDocumentLine,
     TransferItem,
 )
+from . import documents as stock_documents
+from . import issue_report
 from .barcodes import BarcodeError, render_barcode_svg
 from .ui_strings import js_messages, js_strings
 from .serializers import ItemSerializer, ShopItemSerializer, TransferItemSerializer
@@ -30,7 +35,7 @@ from django.db import transaction
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from decimal import Decimal
-from django.db.models import IntegerField, Q, F
+from django.db.models import F, IntegerField, Q, Sum
 from email_service.email import SendEmail
 from .utils import SpreadsheetTools
 from natsort import natsorted
@@ -869,3 +874,347 @@ def issue_to_site(request):
             "warehouse_quantity": item.quantity,
         }
     )
+
+
+# ---------------------------------------------------------------------------
+# Stock documents: separate pages for adding, issuing, the warehouse and the
+# issues report. A document is the audit record of a movement; the movement
+# itself is applied once, and only after approval.
+# ---------------------------------------------------------------------------
+
+MANAGER_GROUP = "managers"
+RECENT_DOCUMENTS = 25
+
+
+def _is_warehouse_manager(user) -> bool:
+    """Managers approve documents; everyone else's entry waits for one."""
+    return bool(user.is_authenticated and user.groups.filter(name=MANAGER_GROUP).exists())
+
+
+def _form_lines(request):
+    """Read the repeated sku/quantity inputs of a document form."""
+    skus = request.POST.getlist("sku")
+    quantities = request.POST.getlist("quantity")
+    descriptions = request.POST.getlist("description")
+    return [
+        {
+            "sku": sku,
+            "quantity": quantity,
+            "description": descriptions[index] if index < len(descriptions) else "",
+        }
+        for index, (sku, quantity) in enumerate(zip(skus, quantities))
+        if str(sku).strip()
+    ]
+
+
+def _document_from_form(request, doc_type, *, pending=None):
+    site_id = request.POST.get("site") or None
+    site = (
+        User.objects.filter(id=site_id, groups__name="shop_users").first()
+        if site_id
+        else None
+    )
+    return stock_documents.create_document(
+        doc_type=doc_type,
+        lines=_form_lines(request),
+        site=site,
+        counterparty=request.POST.get("counterparty", ""),
+        reference=request.POST.get("reference", ""),
+        external_ref=request.POST.get("external_ref", ""),
+        notes=request.POST.get("notes", ""),
+        created_by=request.user,
+        source=StockDocument.WEB,
+        # Only a warehouse manager may move stock without approval.
+        pending=not _is_warehouse_manager(request.user) if pending is None else pending,
+    )
+
+
+@ensure_csrf_cookie
+@login_required
+def stock_page(request):
+    """The warehouse and site stock, on their own page."""
+    query = (request.GET.get("q") or "").strip()
+    items = Item.objects.filter(is_active=True)
+    if query:
+        items = items.filter(Q(sku__icontains=query) | Q(description__icontains=query))
+    items = items.order_by(Lower("sku"))[:300]
+
+    site_rows = (
+        ShopItem.objects.select_related("item", "shop_user")
+        .filter(quantity__gt=0)
+        .order_by("shop_user__username", Lower("item__sku"))[:300]
+    )
+    return render(
+        request,
+        "pages/stock.html",
+        {
+            "items": items,
+            "site_rows": site_rows,
+            "query": query,
+            "total_items": Item.objects.filter(is_active=True).count(),
+            "total_quantity": Item.objects.filter(is_active=True).aggregate(
+                total=Sum("quantity")
+            )["total"]
+            or 0,
+            "is_manager": _is_warehouse_manager(request.user),
+        },
+    )
+
+
+@ensure_csrf_cookie
+@login_required
+def receipts_page(request):
+    """Additions: PO receipt, transfer in from another project, site return."""
+    if request.method == "POST":
+        doc_type = request.POST.get("doc_type", "")
+        if doc_type not in StockDocument.IN_TYPES:
+            messages.error(request, _("Choose the type of addition."))
+            return HttpResponseRedirect("/receipts/")
+        try:
+            document = _document_from_form(request, doc_type)
+        except stock_documents.DocumentError as exc:
+            messages.error(request, str(exc))
+            return HttpResponseRedirect("/receipts/")
+        _announce(request, document)
+        return HttpResponseRedirect("/receipts/")
+
+    return render(
+        request,
+        "pages/receipts.html",
+        {
+            "sites": _site_accounts(),
+            "types": [
+                (value, _(label))
+                for value, label in StockDocument.TYPE_CHOICES
+                if value in StockDocument.IN_TYPES
+            ],
+            "recent": StockDocument.objects.select_related("site", "created_by")
+            .prefetch_related("lines")
+            .filter(direction=StockDocument.IN)[:RECENT_DOCUMENTS],
+            "is_manager": _is_warehouse_manager(request.user),
+            "form_title": _("New addition"),
+            "form_hint": _("Stock goes IN"),
+            "submit_label": _("Save the addition"),
+            "site_types": StockDocument.SITE_RETURN,
+            "action_url": "/receipts/",
+        },
+    )
+
+
+@ensure_csrf_cookie
+@login_required
+def issues_page(request):
+    """Issues: to a site, to another project, or back to the supplier."""
+    if request.method == "POST":
+        doc_type = request.POST.get("doc_type", "")
+        if doc_type not in StockDocument.OUT_TYPES:
+            messages.error(request, _("Choose the type of issue."))
+            return HttpResponseRedirect("/issues/")
+        try:
+            document = _document_from_form(request, doc_type)
+        except stock_documents.DocumentError as exc:
+            messages.error(request, str(exc))
+            return HttpResponseRedirect("/issues/")
+        _announce(request, document)
+        return HttpResponseRedirect("/issues/")
+
+    return render(
+        request,
+        "pages/issues.html",
+        {
+            "sites": _site_accounts(),
+            "types": [
+                (value, _(label))
+                for value, label in StockDocument.TYPE_CHOICES
+                if value in StockDocument.OUT_TYPES
+            ],
+            "pending": StockDocument.objects.select_related("site", "created_by")
+            .prefetch_related("lines")
+            .filter(status=StockDocument.PENDING),
+            "recent": StockDocument.objects.select_related(
+                "site", "created_by", "decided_by"
+            )
+            .prefetch_related("lines")
+            .filter(direction=StockDocument.OUT)[:RECENT_DOCUMENTS],
+            "is_manager": _is_warehouse_manager(request.user),
+            "form_title": _("New issue"),
+            "form_hint": _("Stock goes OUT"),
+            "submit_label": _("Save the issue"),
+            "site_types": "site_issue,site_return",
+            "action_url": "/issues/",
+        },
+    )
+
+
+@require_POST
+@login_required
+def decide_document(request, pk, action):
+    """Approve or reject a pending document. Managers only."""
+    if not _is_warehouse_manager(request.user):
+        messages.error(request, _("Only a warehouse manager can approve documents."))
+        return HttpResponseRedirect(request.POST.get("next") or "/issues/")
+    document = StockDocument.objects.filter(pk=pk).first()
+    if document is None:
+        messages.error(request, _("Document not found."))
+        return HttpResponseRedirect(request.POST.get("next") or "/issues/")
+    note = request.POST.get("note", "")
+    try:
+        if action == "approve":
+            stock_documents.approve_document(document, user=request.user, note=note)
+            messages.success(
+                request,
+                _("Document %(number)s approved and the stock was moved.") % {
+                    "number": document.number
+                },
+            )
+        elif action == "reject":
+            stock_documents.reject_document(document, user=request.user, note=note)
+            messages.success(
+                request,
+                _("Document %(number)s rejected; nothing was moved.") % {
+                    "number": document.number
+                },
+            )
+        else:
+            messages.error(request, _("Unknown action."))
+    except stock_documents.DocumentError as exc:
+        messages.error(request, str(exc))
+    return HttpResponseRedirect(request.POST.get("next") or "/issues/")
+
+
+def _announce(request, document):
+    """Tell the operator exactly what happened to their document."""
+    if document.status == StockDocument.PENDING:
+        messages.warning(
+            request,
+            _("Document %(number)s was saved and is waiting for a warehouse manager to approve it.")
+            % {"number": document.number},
+        )
+    else:
+        messages.success(
+            request,
+            _("Document %(number)s was saved and the stock was moved.") % {
+                "number": document.number
+            },
+        )
+
+
+@ensure_csrf_cookie
+@login_required
+def issues_report_page(request):
+    """Everything that was issued in a date range, with an Excel export."""
+    date_from, date_to = issue_report.parse_range(
+        request.GET.get("from"), request.GET.get("to")
+    )
+    report = issue_report.build_report(date_from, date_to)
+
+    if request.GET.get("export") == "xlsx":
+        response = HttpResponse(
+            issue_report.workbook_bytes(report),
+            content_type=(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            ),
+        )
+        response["Content-Disposition"] = (
+            f'attachment; filename="issues-{date_from}-to-{date_to}.xlsx"'
+        )
+        return response
+
+    return render(
+        request,
+        "pages/issue_report.html",
+        {"report": report, "date_from": date_from, "date_to": date_to},
+    )
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def stock_documents_api(request):
+    """The Android app's entry point: a submission that moves nothing yet."""
+    if request.method == "POST":
+        try:
+            document = stock_documents.create_document(
+                doc_type=str(request.data.get("doc_type") or ""),
+                lines=request.data.get("lines") or [],
+                site=User.objects.filter(
+                    username=request.data.get("site") or "", groups__name="shop_users"
+                ).first(),
+                counterparty=request.data.get("counterparty", ""),
+                reference=request.data.get("reference", ""),
+                external_ref=request.data.get("external_ref", ""),
+                notes=request.data.get("notes", ""),
+                created_by=request.user,
+                source=str(request.data.get("source") or StockDocument.MOBILE),
+                pending=not _is_warehouse_manager(request.user),
+            )
+        except stock_documents.DocumentError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(_serialize_document(document), status=status.HTTP_201_CREATED)
+
+    queryset = StockDocument.objects.prefetch_related("lines")
+    status_filter = request.query_params.get("status")
+    if status_filter in dict(StockDocument.STATUS_CHOICES):
+        queryset = queryset.filter(status=status_filter)
+    return Response(
+        {
+            "results": [_serialize_document(document) for document in queryset[:100]],
+            "count": queryset.count(),
+        }
+    )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def decide_stock_document_api(request, pk):
+    if not _is_warehouse_manager(request.user):
+        return Response(
+            {"detail": _("Only a warehouse manager can approve documents.")},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    document = StockDocument.objects.filter(pk=pk).first()
+    if document is None:
+        return Response({"detail": _("Document not found.")}, status=status.HTTP_404_NOT_FOUND)
+    action = request.data.get("action")
+    try:
+        if action == "approve":
+            document = stock_documents.approve_document(
+                document, user=request.user, note=request.data.get("note", "")
+            )
+        elif action == "reject":
+            document = stock_documents.reject_document(
+                document, user=request.user, note=request.data.get("note", "")
+            )
+        else:
+            return Response(
+                {"detail": _("Unknown action.")}, status=status.HTTP_400_BAD_REQUEST
+            )
+    except stock_documents.DocumentError as exc:
+        return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(_serialize_document(document))
+
+
+def _serialize_document(document):
+    return {
+        "id": document.id,
+        "number": document.number,
+        "direction": document.direction,
+        "doc_type": document.doc_type,
+        "status": document.status,
+        "site": document.site.username if document.site_id else "",
+        "counterparty": document.counterparty,
+        "reference": document.reference,
+        "external_ref": document.external_ref,
+        "notes": document.notes,
+        "created_by": document.created_by.username if document.created_by else "",
+        "created_at": document.created_at,
+        "applied_at": document.applied_at,
+        "total_quantity": document.total_quantity,
+        "lines": [
+            {
+                "sku": line.sku,
+                "description": line.description,
+                "quantity": line.quantity,
+            }
+            for line in document.lines.all()
+        ],
+    }

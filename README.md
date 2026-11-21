@@ -56,6 +56,62 @@ This is **not** a substitute for a professional third-party audit, and the app h
 - **Email Notifications**: Email notifications may be activated, which sends an email to all warehouse managers in the 'receive_mail' group once a shop user clicks the 'Send Transfer Request' button. This email contains a list of all requested items, and includes the SKU, description, unit price and requested quantity.
 - **Complete Transfers**: Managers can modify, dispatch, and cancel pending transfers from the warehouse to the shops. Warehouse inventory is only reduced - and shop inventory increased - after managers have clicked the 'Dispatch' button. Dispatched (or Cancelled) items are then removed from the shop user's 'Transfers Pending' panel.
 
+### Separate pages: stock, additions, issues and the issues report
+
+Each job has its own page, reachable from the side navigation on every screen:
+
+| Page | URL | What it is for |
+| --- | --- | --- |
+| Warehouse stock | `/stock/` | What the warehouse holds and what each site holds, with search. |
+| Additions | `/receipts/` | Stock coming IN: a purchase order from a supplier, a transfer in from another project, or goods returned from a site. |
+| Issues | `/issues/` | Stock going OUT: issue to a site, transfer to another project, or reject and return to the supplier. It also holds the approval queue. |
+| Issues report | `/issues/report/` | Everything issued in a chosen period, with an Excel export. |
+
+**A document is the audit record.** Every addition and every issue is a
+`StockDocument` with a number (`RCV-2026-0001` / `ISS-2026-0001`), the
+counterparty, the reference, the lines, who entered it, who approved it and when
+the stock actually moved.
+
+**Nothing is deducted until it is approved.** A warehouse manager's entry on the
+web moves the stock immediately. An entry made by anyone else — the site user,
+i.e. the Android app — is saved as *pending approval* and moves **nothing**; the
+manager approves or rejects it from the issues page (or through the API), and
+only then does the stock move. This is enforced in the service layer, not in the
+interface.
+
+**A voucher is booked once.** The *company voucher number* (`external_ref`) is
+unique: sending the same voucher twice — a retried mobile submission or an
+import of a voucher already booked — is refused with the document number that
+already holds it, so the two systems cannot deduct the same quantity twice.
+
+**The issues report** takes a date range (default: the last seven days,
+inclusive) and totals the issues per day, per site and per item, showing what
+was issued, where it went and who sent it. *Export to Excel* downloads a
+workbook with the detail sheet plus the three roll-ups.
+
+### API for the Android app
+
+`POST /api/documents/` creates a document; a non-manager's submission is always
+`pending` and moves no stock.
+
+```json
+{
+  "doc_type": "site_issue",
+  "site": "newcapital",
+  "external_ref": "VCH-2026-0042",
+  "notes": "as per site request",
+  "lines": [{"sku": "NSCOM-1001", "quantity": 5}]
+}
+```
+
+`doc_type` is one of `po_receipt`, `project_transfer_in`, `site_return`
+(additions) or `site_issue`, `project_transfer_out`, `supplier_return` (issues).
+
+- `GET /api/documents/?status=pending` lists the approval queue.
+- `POST /api/documents/<id>/decide/` with `{"action": "approve"}` or
+  `{"action": "reject", "note": "..."}` decides a document (managers only).
+
+
 ## Developer Contact & Support
 
 If you'd like to discuss options to have this application installed and/or maintained on your behalf, or just have comments or suggestions, feel free to get in touch <github@danbright.uk>.

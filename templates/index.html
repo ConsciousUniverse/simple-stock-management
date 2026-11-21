@@ -54,6 +54,25 @@
         <!-- ================= Side navigation ================= -->
         <aside class="sap-sidenav" id="sideNav">
             <div>
+                <div class="sap-sidenav__label">{% trans "Pages" %}</div>
+                <nav class="sap-sidenav__nav" aria-label="{% trans 'Pages' %}">
+                    <a class="sap-sidenav__item" href="/stock/">
+                        <svg class="sap-icon" aria-hidden="true"><use href="#i-warehouse"></use></svg>
+                        <span>{% trans "Warehouse stock" %}</span>
+                    </a>
+                    <a class="sap-sidenav__item" href="/receipts/">
+                        <svg class="sap-icon" aria-hidden="true"><use href="#i-download"></use></svg>
+                        <span>{% trans "Additions" %}</span>
+                    </a>
+                    <a class="sap-sidenav__item" href="/issues/">
+                        <svg class="sap-icon" aria-hidden="true"><use href="#i-upload"></use></svg>
+                        <span>{% trans "Issues" %}</span>
+                    </a>
+                    <a class="sap-sidenav__item" href="/issues/report/">
+                        <svg class="sap-icon" aria-hidden="true"><use href="#i-data"></use></svg>
+                        <span>{% trans "Issues report" %}</span>
+                    </a>
+                </nav>
                 <div class="sap-sidenav__label">{% trans "Inventory" %}</div>
                 <nav class="sap-sidenav__nav" aria-label="{% trans 'Sections' %}">
                     <a class="sap-sidenav__item is-active" href="#overview" data-spy="overview">

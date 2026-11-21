@@ -345,6 +345,104 @@ def write_mo(msgids):
     output += ids + strs
     (LOCALE_DIR / "django.mo").write_bytes(output)
 
+# Strings of the stock-document pages (additions, issues, the report).
+ARABIC.update(
+    {
+        "A purchase order from a supplier, a transfer in from another project, or goods returned from a site.": "أمر شراء من مورد، أو تحويل وارد من مشروع آخر، أو ارتجاع بضاعة من الموقع.",
+        "A voucher number is booked once: the same number cannot move stock twice.": "رقم الإذن يُسجَّل مرة واحدة: لا يمكن لنفس الرقم أن يحرّك المخزون مرتين.",
+        "Active items": "أصناف نشطة",
+        "Additions": "الإضافة",
+        "Additions to the warehouse": "إضافة إلى المخزن",
+        "Approve": "اعتماد",
+        "Approved": "معتمد",
+        "Approved by": "اعتمده",
+        "Barcode": "الباركود",
+        "By": "بواسطة",
+        "By day": "حسب اليوم",
+        "By site": "حسب الموقع",
+        "Change the dates or record an issue first.": "غيّر التواريخ أو سجّل إذن صرف أولًا.",
+        "Choose the site": "اختر الموقع",
+        "Choose the type of addition.": "اختر نوع الإضافة.",
+        "Choose the type of issue.": "اختر نوع الصرف.",
+        "Company voucher number": "رقم إذن الشركة",
+        "Day": "اليوم",
+        "Decision": "القرار",
+        "Description (for a new item)": "الوصف (للصنف الجديد)",
+        "Document": "الإذن",
+        "Document %(number)s approved and the stock was moved.": "تم اعتماد الإذن %(number)s وتحرّك المخزون.",
+        "Document %(number)s rejected; nothing was moved.": "تم رفض الإذن %(number)s ولم يتحرك أي مخزون.",
+        "Document %(number)s was saved and is waiting for a warehouse manager to approve it.": "تم حفظ الإذن %(number)s وهو في انتظار اعتماد أمين المخزن.",
+        "Document %(number)s was saved and the stock was moved.": "تم حفظ الإذن %(number)s وتحرّك المخزون.",
+        "Document not found.": "الإذن غير موجود.",
+        "Document type": "نوع الإذن",
+        "Documents": "الأذون",
+        "Everything that left the warehouse in the chosen period: what, to where, and who sent it.": "كل ما خرج من المخزن في الفترة المختارة: ماذا، وإلى أين، ومن صرفه.",
+        "From": "من",
+        "Issue documents": "أذون الصرف",
+        "Issue stock to a site, transfer it to another project, or reject it and return it to the supplier.": "صرف مخزون لموقع، أو تحويله لمشروع آخر، أو رفضه وإعادته للمورد.",
+        "Issued by": "صرفه",
+        "Issued lines": "البنود المصروفة",
+        "Issues": "الصرف",
+        "Issues from the warehouse": "الصرف من المخزن",
+        "Issues report": "الصرفيات",
+        "Label": "ملصق",
+        "Leave empty if the app is the only record": "اتركه فارغًا إذا كان التطبيق هو السجل الوحيد",
+        "Lines": "البنود",
+        "Log off": "تسجيل الخروج",
+        "New addition": "إضافة جديدة",
+        "New issue": "صرف جديد",
+        "No additions yet.": "لا توجد إضافات بعد.",
+        "No issues yet.": "لا توجد أذون صرف بعد.",
+        "No items match this search.": "لا توجد أصناف مطابقة لهذا البحث.",
+        "No stock has been issued to a site yet.": "لم يُصرف مخزون لأي موقع بعد.",
+        "Nothing was issued in this period.": "لم يُصرف شيء في هذه الفترة.",
+        "Only a warehouse manager can approve documents.": "اعتماد الأذون متاح لأمين المخزن فقط.",
+        "Pages": "الصفحات",
+        "Pending approval": "في انتظار الاعتماد",
+        "Purchase order / reference": "أمر الشراء / المرجع",
+        "Qty": "الكمية",
+        "Quantity on hand": "الكمية المتاحة",
+        "Recent additions": "أحدث الإضافات",
+        "Recent issues": "أحدث أذون الصرف",
+        "Reference": "المرجع",
+        "Reject": "رفض",
+        "Rejected": "مرفوض",
+        "Remove line": "حذف السطر",
+        "Save the addition": "حفظ الإضافة",
+        "Save the issue": "حفظ الصرف",
+        "Search": "بحث",
+        "Search by item code or description": "ابحث بكود الصنف أو الوصف",
+        "Selling price": "سعر البيع",
+        "Showing up to 300 items": "يُعرض حتى 300 صنف",
+        "Site / project": "الموقع / المشروع",
+        "Site / supplier": "الموقع / المورد",
+        "Site stock": "مخزون المواقع",
+        "Stock goes IN": "المخزون يدخل",
+        "Stock goes OUT": "المخزون يخرج",
+        "Submitted by": "قدّمه",
+        "Supplier / other project": "المورد / المشروع الآخر",
+        "Supplier or project name": "اسم المورد أو المشروع",
+        "To": "إلى",
+        "Total quantity": "إجمالي الكمية",
+        "Total value": "إجمالي القيمة",
+        "Type": "النوع",
+        "Unknown action.": "إجراء غير معروف.",
+        "Value": "القيمة",
+        "Waiting for approval": "في انتظار الاعتماد",
+        "Warehouse": "المخزن",
+        "What the warehouse holds, and what each site already holds.": "ما يحتفظ به المخزن، وما يحتفظ به كل موقع.",
+        "Your entry is saved for a warehouse manager to approve; the stock moves after approval.": "يُحفظ إدخالك ليعتمده أمين المخزن؛ ولا يتحرك المخزون إلا بعد الاعتماد.",
+        # Document-type labels: read from the model's choices, so they are not
+        # literal msgids in the source.
+        "Purchase order receipt": "توريد بأمر شراء",
+        "Transfer in from another project": "تحويل وارد من مشروع آخر",
+        "Return from site to warehouse": "ارتجاع من الموقع إلى المخزن",
+        "Issue to site": "صرف لموقع",
+        "Transfer out to another project": "تحويل لمشروع آخر",
+        "Rejected / returned to supplier": "مرفوض / مرتجع للمورد",
+    }
+)
+
 
 def main():
     msgids = collect_msgids()
@@ -354,6 +452,10 @@ def main():
         print(f"{len(missing)} msgid(s) have no Arabic translation", file=sys.stderr)
         return 1
     LOCALE_DIR.mkdir(parents=True, exist_ok=True)
+    # Choice labels and other dynamic strings are not literal msgids in the
+    # source, so the catalog is the union: a translated label can then never
+    # fall back to English on the Arabic interface.
+    msgids = sorted(set(msgids) | set(ARABIC))
     write_po(msgids)
     write_mo(msgids)
     print(f"wrote {len(msgids)} translations to {LOCALE_DIR}")

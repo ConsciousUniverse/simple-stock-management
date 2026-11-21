@@ -1,0 +1,84 @@
+{% load i18n %}
+<form method="post" action="{{ action_url }}" class="sap-card" id="documentForm" data-site-types="{{ site_types }}">
+    {% csrf_token %}
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{{ form_title }}</h2>
+        <div class="sap-card__header-actions">
+            <span class="sap-muted">{{ form_hint }}</span>
+        </div>
+    </div>
+    <div class="sap-card__body">
+        <div class="sap-form-grid">
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Document type" %}</span>
+                <select class="sap-input" name="doc_type" id="docType" required>
+                    {% for value, label in types %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="sap-field" id="siteField">
+                <span class="sap-label">{% trans "Site" %}</span>
+                <select class="sap-input" name="site" id="siteSelect">
+                    <option value="">{% trans "Choose the site" %}</option>
+                    {% for site in sites %}
+                    <option value="{{ site.id }}">{{ site.username }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Supplier / other project" %}</span>
+                <input class="sap-input" type="text" name="counterparty" id="counterparty"
+                    placeholder="{% trans 'Supplier or project name' %}">
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Purchase order / reference" %}</span>
+                <input class="sap-input" type="text" name="reference" placeholder="PO-2026-000123">
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Company voucher number" %}</span>
+                <input class="sap-input" type="text" name="external_ref" id="externalRef"
+                    placeholder="{% trans 'Leave empty if the app is the only record' %}">
+                <span class="sap-field__hint">
+                    {% trans "A voucher number is booked once: the same number cannot move stock twice." %}
+                </span>
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Notes" %}</span>
+                <input class="sap-input" type="text" name="notes">
+            </label>
+        </div>
+
+        <h3 class="sap-subheading">{% trans "Items" %}</h3>
+        <div class="sap-lines" id="documentLines">
+            {% for _ in "1234" %}
+            <div class="sap-line">
+                <input class="sap-input" type="text" name="sku" placeholder="{% trans 'Item code' %}"
+                    aria-label="{% trans 'Item code' %}">
+                <input class="sap-input" type="text" name="description"
+                    placeholder="{% trans 'Description (for a new item)' %}"
+                    aria-label="{% trans 'Description' %}">
+                <input class="sap-input sap-input--qty" type="number" name="quantity" min="1" step="1"
+                    placeholder="{% trans 'Qty' %}" aria-label="{% trans 'Quantity' %}">
+                <button type="button" class="sap-btn sap-btn--icon sap-btn--ghost remove-line"
+                    aria-label="{% trans 'Remove line' %}" title="{% trans 'Remove line' %}">
+                    <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-x-circle"></use></svg>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="sap-form-actions">
+            <button type="button" class="sap-btn sap-btn--ghost" id="addLine">
+                <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-plus"></use></svg>
+                {% trans "Add line" %}
+            </button>
+            <button type="submit" class="sap-btn sap-btn--emphasized">
+                <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-check"></use></svg>
+                {{ submit_label }}
+            </button>
+        </div>
+        {% if not is_manager %}
+        <p class="sap-muted">{% trans "Your entry is saved for a warehouse manager to approve; the stock moves after approval." %}</p>
+        {% endif %}
+    </div>
+</form>

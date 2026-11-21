@@ -1,0 +1,181 @@
+{% extends "base_app.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Issues report" %}{% endblock %}
+{% block crumb %}{% trans "Issues report" %}{% endblock %}
+{% block heading %}{% trans "Issues report" %}{% endblock %}
+{% block subheading %}
+{% trans "Everything that left the warehouse in the chosen period: what, to where, and who sent it." %}
+{% endblock %}
+
+{% block actions %}
+<a class="sap-btn sap-btn--emphasized" id="exportExcel"
+    href="/issues/report/?from={{ date_from|date:'Y-m-d' }}&to={{ date_to|date:'Y-m-d' }}&export=xlsx">
+    <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-data"></use></svg>
+    {% trans "Export to Excel" %}
+</a>
+{% endblock %}
+
+{% block content %}
+<form method="get" action="/issues/report/" class="sap-card">
+    <div class="sap-card__body">
+        <div class="sap-form-grid">
+            <label class="sap-field">
+                <span class="sap-label">{% trans "From" %}</span>
+                <input class="sap-input" type="date" name="from" id="reportFrom" value="{{ date_from|date:'Y-m-d' }}">
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "To" %}</span>
+                <input class="sap-input" type="date" name="to" id="reportTo" value="{{ date_to|date:'Y-m-d' }}">
+            </label>
+        </div>
+        <div class="sap-form-actions">
+            <button class="sap-btn sap-btn--emphasized" type="submit">
+                <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                {% trans "Show" %}
+            </button>
+        </div>
+    </div>
+</form>
+
+<div class="sap-tiles">
+    <div class="sap-tile">
+        <span class="sap-tile__label">{% trans "Issue documents" %}</span>
+        <span class="sap-tile__value" id="kpiDocuments">{{ report.totals.documents }}</span>
+    </div>
+    <div class="sap-tile">
+        <span class="sap-tile__label">{% trans "Lines" %}</span>
+        <span class="sap-tile__value" id="kpiLines">{{ report.totals.lines }}</span>
+    </div>
+    <div class="sap-tile sap-tile--neutral">
+        <span class="sap-tile__label">{% trans "Total quantity" %}</span>
+        <span class="sap-tile__value" id="kpiQuantity">{{ report.totals.quantity }}</span>
+    </div>
+    <div class="sap-tile sap-tile--positive">
+        <span class="sap-tile__label">{% trans "Total value" %}</span>
+        <span class="sap-tile__value" id="kpiValue">{{ report.totals.value_display }}</span>
+    </div>
+</div>
+
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Issued lines" %}</h2>
+        <div class="sap-card__header-actions">
+            <span class="sap-muted" dir="ltr">{{ date_from|date:"Y-m-d" }} → {{ date_to|date:"Y-m-d" }}</span>
+        </div>
+    </div>
+    <div class="sap-card__body sap-card__body--flush">
+        <div class="sap-tablewrap">
+            <table class="sap-table" id="reportRows">
+                <thead>
+                    <tr>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "Document" %}</th>
+                        <th>{% trans "Type" %}</th>
+                        <th>{% trans "Site / project" %}</th>
+                        <th>{% trans "Supplier" %}</th>
+                        <th>{% trans "Item code" %}</th>
+                        <th>{% trans "Description" %}</th>
+                        <th>{% trans "Quantity" %}</th>
+                        <th>{% trans "Value" %}</th>
+                        <th>{% trans "Issued by" %}</th>
+                        <th>{% trans "Approved by" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in report.rows %}
+                    <tr>
+                        <td dir="ltr">{{ row.date }}</td>
+                        <td>{{ row.number }}</td>
+                        <td>{{ row.type_label }}</td>
+                        <td>{{ row.destination|default:"—" }}</td>
+                        <td>{{ row.supplier|default:"—" }}</td>
+                        <td>{{ row.sku }}</td>
+                        <td>{{ row.description }}</td>
+                        <td>{{ row.quantity }}</td>
+                        <td>{{ row.value_display }}</td>
+                        <td>{{ row.issued_by|default:"—" }}</td>
+                        <td>{{ row.approved_by|default:"—" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="11" class="sap-empty">
+                            <span class="sap-empty__title">{% trans "Nothing was issued in this period." %}</span>
+                            <span class="sap-empty__text">{% trans "Change the dates or record an issue first." %}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="sap-form-grid">
+    <div class="sap-card">
+        <div class="sap-card__header">
+            <h2 class="sap-card__title">{% trans "By site" %}</h2>
+        </div>
+        <div class="sap-card__body sap-card__body--flush">
+            <div class="sap-tablewrap">
+                <table class="sap-table" id="reportBySite">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Site / project" %}</th>
+                            <th>{% trans "Documents" %}</th>
+                            <th>{% trans "Quantity" %}</th>
+                            <th>{% trans "Value" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in report.by_site %}
+                        <tr>
+                            <td>{{ row.label }}</td>
+                            <td>{{ row.documents|length }}</td>
+                            <td>{{ row.quantity }}</td>
+                            <td>{{ row.value_display }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="sap-empty">—</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="sap-card">
+        <div class="sap-card__header">
+            <h2 class="sap-card__title">{% trans "By day" %}</h2>
+        </div>
+        <div class="sap-card__body sap-card__body--flush">
+            <div class="sap-tablewrap">
+                <table class="sap-table" id="reportByDay">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Day" %}</th>
+                            <th>{% trans "Documents" %}</th>
+                            <th>{% trans "Quantity" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in report.by_day %}
+                        <tr>
+                            <td>{{ row.label }}</td>
+                            <td>{{ row.documents|length }}</td>
+                            <td>{{ row.quantity }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="sap-empty">—</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

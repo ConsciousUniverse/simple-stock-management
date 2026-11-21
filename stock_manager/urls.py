@@ -20,6 +20,13 @@ from .views import (
     item_barcode,
     print_labels,
     issue_to_site,
+    stock_page,
+    receipts_page,
+    issues_page,
+    decide_document,
+    issues_report_page,
+    stock_documents_api,
+    decide_stock_document_api,
 )
 from django.conf.urls.static import static
 from django.conf import settings
@@ -45,6 +52,14 @@ urlpatterns = [
     # Must precede the router include: its lookup regex is `.+`, which would
     # otherwise match `api/items/<sku>/barcode.svg` as an item detail.
     path("api/items/<str:sku>/barcode.svg", item_barcode, name="item_barcode"),
+    # Registered before the router: its lookup regex is `.+` and would
+    # otherwise swallow these sub-paths as an item detail.
+    path("api/documents/", stock_documents_api, name="stock_documents_api"),
+    path(
+        "api/documents/<int:pk>/decide/",
+        decide_stock_document_api,
+        name="decide_stock_document_api",
+    ),
     path("api/", include(router.urls)),
     path("auth/user/", get_user, name="get_user"),  # Custom user endpoint
     path("api/transfer/", transfer_item, name="transfer_item"),
@@ -68,6 +83,12 @@ urlpatterns = [
     path("api/receipts/", list_receipts, name="list_receipts"),
     path("api/sites/", list_sites, name="list_sites"),
     path("labels/", print_labels, name="print_labels"),
+    # One page per job: the warehouse, additions, issues, and the issues report.
+    path("stock/", stock_page, name="stock_page"),
+    path("receipts/", receipts_page, name="receipts_page"),
+    path("issues/", issues_page, name="issues_page"),
+    path("issues/report/", issues_report_page, name="issues_report"),
+    path("issues/<int:pk>/<str:action>/", decide_document, name="decide_document"),
     path("api/issue/", issue_to_site, name="issue_to_site"),
 ]
 

@@ -1,0 +1,114 @@
+{% extends "base_app.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Warehouse stock" %}{% endblock %}
+{% block crumb %}{% trans "Warehouse stock" %}{% endblock %}
+{% block heading %}{% trans "Warehouse stock" %}{% endblock %}
+{% block subheading %}{% trans "What the warehouse holds, and what each site already holds." %}{% endblock %}
+
+{% block actions %}
+<a class="sap-btn sap-btn--ghost" href="/labels/">
+    <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-package"></use></svg>
+    {% trans "Barcode labels" %}
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="sap-tiles">
+    <div class="sap-tile">
+        <span class="sap-tile__label">{% trans "Active items" %}</span>
+        <span class="sap-tile__value" id="kpiItems">{{ total_items }}</span>
+    </div>
+    <div class="sap-tile sap-tile--neutral">
+        <span class="sap-tile__label">{% trans "Quantity on hand" %}</span>
+        <span class="sap-tile__value" id="kpiQuantity">{{ total_quantity }}</span>
+    </div>
+</div>
+
+<form method="get" action="/stock/" class="sap-search">
+    <input class="sap-input sap-input--search" type="search" name="q" value="{{ query }}"
+        placeholder="{% trans 'Search by item code or description' %}">
+    <button class="sap-btn sap-btn--emphasized" type="submit">{% trans "Search" %}</button>
+</form>
+
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Warehouse" %}</h2>
+        <div class="sap-card__header-actions">
+            <span class="sap-muted">{% trans "Showing up to 300 items" %}</span>
+        </div>
+    </div>
+    <div class="sap-card__body sap-card__body--flush">
+        <div class="sap-tablewrap">
+            <table class="sap-table" id="warehouseTable">
+                <thead>
+                    <tr>
+                        <th>{% trans "Item code" %}</th>
+                        <th>{% trans "Description" %}</th>
+                        <th>{% trans "Quantity" %}</th>
+                        <th>{% trans "Selling price" %}</th>
+                        <th>{% trans "Barcode" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.sku }}</td>
+                        <td>{{ item.description }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.retail_price }}</td>
+                        <td>
+                            <a class="sap-btn sap-btn--ghost sap-btn--sm" href="/api/items/{{ item.sku }}/barcode.svg">
+                                {% trans "Label" %}
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="sap-empty">
+                            <span class="sap-empty__title">{% trans "No items match this search." %}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Site stock" %}</h2>
+    </div>
+    <div class="sap-card__body sap-card__body--flush">
+        <div class="sap-tablewrap">
+            <table class="sap-table" id="siteStockTable">
+                <thead>
+                    <tr>
+                        <th>{% trans "Site" %}</th>
+                        <th>{% trans "Item code" %}</th>
+                        <th>{% trans "Description" %}</th>
+                        <th>{% trans "Quantity" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in site_rows %}
+                    <tr>
+                        <td>{{ row.shop_user.username }}</td>
+                        <td>{{ row.item.sku }}</td>
+                        <td>{{ row.item.description }}</td>
+                        <td>{{ row.quantity }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="sap-empty">
+                            <span class="sap-empty__title">{% trans "No stock has been issued to a site yet." %}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,248 @@
+"""The issues report: what left the warehouse, where it went, and who sent it.
+
+The report is built from APPROVED documents only. A pending or rejected
+document moved nothing, so counting it would report an issue that never
+happened — the same "a sample is not a total" rule the rest of the app
+follows.
+
+Dates are inclusive on both ends and are matched on the day the document was
+applied, not the day it was typed: a mobile submission approved three days
+later belongs to the day the stock actually moved.
+"""
+
+from __future__ import annotations
+
+from datetime import date, datetime, timedelta
+from decimal import Decimal
+from io import BytesIO
+
+from django.utils import timezone
+
+from .models import StockDocument
+
+DEFAULT_RANGE_DAYS = 7
+
+
+def money(value) -> str:
+    """Money as the accountant writes it: 6,250.00 (never a locale comma)."""
+    return f"{Decimal(value or 0):,.2f}"
+MAX_RANGE_DAYS = 366
+
+
+def _as_date(value, fallback: date) -> date:
+    if isinstance(value, date) and not isinstance(value, datetime):
+        return value
+    if isinstance(value, datetime):
+        return value.date()
+    text = str(value or "").strip()
+    if not text:
+        return fallback
+    try:
+        return datetime.strptime(text, "%Y-%m-%d").date()
+    except ValueError:
+        return fallback
+
+
+def parse_range(raw_from=None, raw_to=None, today: date | None = None):
+    """Read the requested window, defaulting to the last week (inclusive)."""
+    today = today or timezone.localdate()
+    end = _as_date(raw_to, today)
+    start = _as_date(raw_from, end - timedelta(days=DEFAULT_RANGE_DAYS - 1))
+    if start > end:
+        start, end = end, start
+    if (end - start).days >= MAX_RANGE_DAYS:
+        start = end - timedelta(days=MAX_RANGE_DAYS - 1)
+    return start, end
+
+
+def documents_in_range(date_from: date, date_to: date, *, direction=None, include_pending=False):
+    """Approved documents whose stock moved inside the window."""
+    start = timezone.make_aware(datetime.combine(date_from, datetime.min.time()))
+    end = timezone.make_aware(datetime.combine(date_to, datetime.max.time()))
+    queryset = StockDocument.objects.prefetch_related("lines__item").filter(
+        applied_at__gte=start, applied_at__lte=end
+    )
+    if not include_pending:
+        queryset = queryset.filter(status=StockDocument.APPROVED)
+    if direction:
+        queryset = queryset.filter(direction=direction)
+    return queryset.order_by("applied_at", "number")
+
+
+def build_report(date_from: date, date_to: date, *, doc_types=None):
+    """Aggregate the issues in a window: rows plus per-day/site/item totals."""
+    queryset = documents_in_range(date_from, date_to, direction=StockDocument.OUT)
+    if doc_types:
+        queryset = queryset.filter(doc_type__in=doc_types)
+
+    rows = []
+    by_day: dict[str, dict] = {}
+    by_site: dict[str, dict] = {}
+    by_item: dict[str, dict] = {}
+    for document in queryset:
+        day = timezone.localtime(document.applied_at).date().isoformat()
+        destination = _destination(document)
+        for line in document.lines.all():
+            unit_price = line.item.retail_price if line.item else Decimal("0.00")
+            value = (unit_price or Decimal("0.00")) * line.quantity
+            row = {
+                "date": day,
+                "number": document.number,
+                "doc_type": document.doc_type,
+                "type_label": str(document.type_label),
+                "destination": destination,
+                "supplier": document.counterparty,
+                "reference": document.reference,
+                "sku": line.sku,
+                "description": line.description,
+                "quantity": line.quantity,
+                "unit_price": unit_price,
+                "value": value,
+                "value_display": money(value),
+                "issued_by": document.created_by.username if document.created_by else "",
+                "approved_by": document.decided_by.username if document.decided_by else "",
+                "notes": document.notes,
+            }
+            rows.append(row)
+            _add(by_day, day, row, label=day)
+            _add(by_site, destination or "—", row, label=destination or "—")
+            _add(by_item, line.sku, row, label=line.sku, extra=line.description)
+
+    total_value = sum((row["value"] for row in rows), Decimal("0.00"))
+    totals = {
+        "documents": len({row["number"] for row in rows}),
+        "lines": len(rows),
+        "quantity": sum(row["quantity"] for row in rows),
+        "value": total_value,
+        "value_display": money(total_value),
+    }
+    return {
+        "date_from": date_from,
+        "date_to": date_to,
+        "rows": rows,
+        "totals": totals,
+        "by_day": sorted(by_day.values(), key=lambda item: item["label"]),
+        "by_site": sorted(by_site.values(), key=lambda item: -item["quantity"]),
+        "by_item": sorted(by_item.values(), key=lambda item: -item["quantity"]),
+    }
+
+
+def _destination(document) -> str:
+    if document.site_id and document.site:
+        return document.site.username
+    return document.counterparty
+
+
+def _add(bucket: dict, key: str, row: dict, *, label: str, extra: str = "") -> None:
+    entry = bucket.setdefault(
+        key,
+        {
+            "label": label,
+            "description": extra,
+            "documents": set(),
+            "lines": 0,
+            "quantity": 0,
+            "value": Decimal("0.00"),
+            "value_display": money(0),
+        },
+    )
+    entry["documents"].add(row["number"])
+    entry["lines"] += 1
+    entry["quantity"] += row["quantity"]
+    entry["value"] += row["value"]
+    entry["value_display"] = money(entry["value"])
+
+
+def workbook_bytes(report) -> bytes:
+    """The issues workbook: a detail sheet plus the three roll-ups."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils import get_column_letter
+
+    workbook = Workbook()
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill("solid", fgColor="354A5F")
+
+    def write_sheet(sheet, headers, data, widths):
+        sheet.append(headers)
+        for cell in sheet[1]:
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal="center")
+        for record in data:
+            sheet.append(record)
+        for index, width in enumerate(widths, start=1):
+            sheet.column_dimensions[get_column_letter(index)].width = width
+        sheet.freeze_panes = "A2"
+
+    detail = workbook.active
+    detail.title = "Issues"
+    write_sheet(
+        detail,
+        [
+            "Date",
+            "Document",
+            "Type",
+            "Site / project",
+            "Supplier",
+            "Reference",
+            "Item code",
+            "Description",
+            "Quantity",
+            "Unit price",
+            "Value",
+            "Issued by",
+            "Approved by",
+            "Notes",
+        ],
+        [
+            [
+                row["date"],
+                row["number"],
+                row["type_label"],
+                row["destination"],
+                row["supplier"],
+                row["reference"],
+                row["sku"],
+                row["description"],
+                row["quantity"],
+                float(row["unit_price"] or 0),
+                float(row["value"] or 0),
+                row["issued_by"],
+                row["approved_by"],
+                row["notes"],
+            ]
+            for row in report["rows"]
+        ],
+        [12, 16, 26, 22, 22, 16, 18, 40, 10, 12, 14, 14, 14, 30],
+    )
+    detail.append([])
+    detail.append(
+        ["Total", "", "", "", "", "", "", "", report["totals"]["quantity"], "",
+         float(report["totals"]["value"])]
+    )
+
+    def rollup(title, key, label_header, with_description=False):
+        sheet = workbook.create_sheet(title)
+        headers = [label_header]
+        if with_description:
+            headers.append("Description")
+        headers += ["Documents", "Lines", "Quantity", "Value"]
+        write_sheet(
+            sheet,
+            headers,
+            [
+                ([entry["label"]] + ([entry["description"]] if with_description else []))
+                + [len(entry["documents"]), entry["lines"], entry["quantity"], float(entry["value"])]
+                for entry in report[key]
+            ],
+            [26, 40, 12, 10, 12, 14] if with_description else [26, 12, 10, 12, 14],
+        )
+
+    rollup("By day", "by_day", "Day")
+    rollup("By site", "by_site", "Site / project")
+    rollup("By item", "by_item", "Item code", with_description=True)
+
+    buffer = BytesIO()
+    workbook.save(buffer)
+    return buffer.getvalue()

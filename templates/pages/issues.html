@@ -1,0 +1,175 @@
+{% extends "base_app.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Issues" %}{% endblock %}
+{% block crumb %}{% trans "Issues" %}{% endblock %}
+{% block heading %}{% trans "Issues from the warehouse" %}{% endblock %}
+{% block subheading %}
+{% trans "Issue stock to a site, transfer it to another project, or reject it and return it to the supplier." %}
+{% endblock %}
+
+{% block content %}
+{% include "partials/document_form.html" %}
+
+{% if pending %}
+<div class="sap-card" id="approvals">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Waiting for approval" %}</h2>
+        <div class="sap-card__header-actions">
+            <span class="sap-pill sap-pill--info">{{ pending|length }}</span>
+        </div>
+    </div>
+    <div class="sap-card__body sap-card__body--flush">
+        <div class="sap-tablewrap">
+            <table class="sap-table">
+                <thead>
+                    <tr>
+                        <th>{% trans "Document" %}</th>
+                        <th>{% trans "Type" %}</th>
+                        <th>{% trans "Site / project" %}</th>
+                        <th>{% trans "Items" %}</th>
+                        <th>{% trans "Quantity" %}</th>
+                        <th>{% trans "Submitted by" %}</th>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "Decision" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for document in pending %}
+                    <tr>
+                        <td>{{ document.number }}</td>
+                        <td>{{ document.type_label }}</td>
+                        <td>{% if document.site %}{{ document.site.username }}{% else %}{{ document.counterparty }}{% endif %}</td>
+                        <td>
+                            {% for line in document.lines.all %}
+                            <span class="sap-pill sap-pill--neutral">{{ line.sku }} × {{ line.quantity }}</span>
+                            {% endfor %}
+                        </td>
+                        <td>{{ document.total_quantity }}</td>
+                        <td>{{ document.created_by.username|default:"—" }}</td>
+                        <td dir="ltr">{{ document.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            {% if is_manager %}
+                            <div class="sap-inline-actions">
+                                <form method="post" action="/issues/{{ document.id }}/approve/">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="/issues/">
+                                    <button class="sap-btn sap-btn--positive sap-btn--sm" type="submit">
+                                        <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-check"></use></svg>
+                                        {% trans "Approve" %}
+                                    </button>
+                                </form>
+                                <form method="post" action="/issues/{{ document.id }}/reject/">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="/issues/">
+                                    <button class="sap-btn sap-btn--negative sap-btn--sm" type="submit">
+                                        <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-x-circle"></use></svg>
+                                        {% trans "Reject" %}
+                                    </button>
+                                </form>
+                            </div>
+                            {% else %}
+                            <span class="sap-muted">{% trans "Only a warehouse manager can approve documents." %}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Recent issues" %}</h2>
+        <div class="sap-card__header-actions">
+            <a class="sap-btn sap-btn--ghost sap-btn--sm" href="/issues/report/">
+                {% trans "Issues report" %}
+            </a>
+        </div>
+    </div>
+    <div class="sap-card__body sap-card__body--flush">
+        <div class="sap-tablewrap">
+            <table class="sap-table">
+                <thead>
+                    <tr>
+                        <th>{% trans "Document" %}</th>
+                        <th>{% trans "Type" %}</th>
+                        <th>{% trans "Site / project" %}</th>
+                        <th>{% trans "Items" %}</th>
+                        <th>{% trans "Quantity" %}</th>
+                        <th>{% trans "Status" %}</th>
+                        <th>{% trans "Issued by" %}</th>
+                        <th>{% trans "Approved by" %}</th>
+                        <th>{% trans "Date" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for document in recent %}
+                    <tr>
+                        <td>{{ document.number }}</td>
+                        <td>{{ document.type_label }}</td>
+                        <td>{% if document.site %}{{ document.site.username }}{% else %}{{ document.counterparty }}{% endif %}</td>
+                        <td>{{ document.lines.all|length }}</td>
+                        <td>{{ document.total_quantity }}</td>
+                        <td>
+                            {% if document.status == "approved" %}
+                            <span class="sap-pill sap-pill--positive">{% trans "Approved" %}</span>
+                            {% elif document.status == "pending" %}
+                            <span class="sap-pill sap-pill--info">{% trans "Pending approval" %}</span>
+                            {% else %}
+                            <span class="sap-pill sap-pill--critical">{% trans "Rejected" %}</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ document.created_by.username|default:"—" }}</td>
+                        <td>{{ document.decided_by.username|default:"—" }}</td>
+                        <td dir="ltr">{{ document.created_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="sap-empty">
+                            <span class="sap-empty__title">{% trans "No issues yet." %}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        var lines = document.getElementById("documentLines");
+        var add = document.getElementById("addLine");
+        var type = document.getElementById("docType");
+        var siteTypes = (document.getElementById("documentForm").dataset.siteTypes || "").split(",");
+        var siteField = document.getElementById("siteField");
+
+        function syncSite() {
+            var needsSite = siteTypes.indexOf(type.value) !== -1;
+            siteField.classList.toggle("d-none", !needsSite);
+            document.getElementById("siteSelect").required = needsSite;
+        }
+
+        add.addEventListener("click", function () {
+            var row = lines.querySelector(".sap-line").cloneNode(true);
+            row.querySelectorAll("input").forEach(function (input) { input.value = ""; });
+            lines.appendChild(row);
+        });
+
+        lines.addEventListener("click", function (event) {
+            var button = event.target.closest(".remove-line");
+            if (!button || lines.children.length === 1) { return; }
+            button.closest(".sap-line").remove();
+        });
+
+        type.addEventListener("change", syncSite);
+        syncSite();
+    })();
+</script>
+{% endblock %}
