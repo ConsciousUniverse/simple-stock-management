@@ -173,6 +173,28 @@ class TestCompanyLogo:
         assert "img/company-logo.png" in html
         assert "img/favicon.png" in html
 
+    def test_the_assets_are_the_orascom_artwork(self):
+        """A wide wordmark on a white plate, plus a square emblem tab icon.
+
+        The supplier's file arrived as a 1200x1200 square with the transparency
+        checkerboard baked into the pixels, so shipping it uncropped shrank the
+        wordmark to a smudge inside the shell bar.
+        """
+        from PIL import Image
+
+        logo = Image.open(finders.find("img/company-logo.png"))
+        favicon = Image.open(finders.find("img/favicon.png"))
+
+        assert logo.width / logo.height > 3, logo.size
+        assert logo.height >= 120, logo.size
+        assert favicon.size == (64, 64), favicon.size
+
+    def test_the_logo_is_labelled_with_the_company_name(self, client, shop_user, app_config):
+        client.force_login(shop_user)
+
+        assert 'alt="Orascom Construction"' in client.get("/").content.decode()
+        assert 'alt="Orascom Construction"' in client.get(LOGIN_URL).content.decode()
+
     def test_shellbar_logo_is_sized_by_height(self):
         css = (settings.BASE_DIR / "stock_manager/static/css/ssm-sap.css").read_text()
         rule = re.search(
