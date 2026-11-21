@@ -25,7 +25,6 @@ if not getattr(settings, "ALLOW_PW_CHANGE", True):
 urlpatterns += [
     path("", include("stock_manager.urls")),
     path("admin/", admin.site.urls),
-    path("api/", include("stock_manager.urls")),
     # The portal's own "password changed" confirmation, so the Django admin's
     # registration/password_change_done.html stays admin-styled.
     path(

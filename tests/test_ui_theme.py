@@ -53,44 +53,60 @@ class TestLoginPage:
 
 
 class TestDashboardTheme:
-    def test_renders_the_shell_bar_and_all_tables(self, client, shop_user, app_config):
+    def test_renders_the_shell_bar_and_the_overview(self, client, shop_user, app_config):
         client.force_login(shop_user)
         html = client.get("/").content.decode()
 
         assert STYLESHEET in html
         assert 'class="sap-shellbar"' in html
+        # The overview states the figures and queues the site requests; the
+        # tables that do the work live on their own pages.
         for marker in (
-            'id="itemTable1"',
-            'id="itemTable2"',
+            'id="kpiWarehouse"',
             'id="itemTable3"',
-            'id="searchBox1"',
-            'id="searchBox2"',
-            'id="searchBox3"',
-            'id="paginationControls1"',
-            'id="paginationControls2"',
             'id="paginationControls3"',
-            'id="updateModeToggle"',
             'id="submitTransferRequest"',
-            'id="addItemSection"',
-            'id="uploadStockDataButton"',
-            'id="downloadStockData"',
-            'id="change_pw_link"',
+            'id="refreshInventory"',
         ):
             assert marker in html, marker
         assert "bootstrap" not in html.lower()
 
-    def test_every_id_the_page_script_selects_exists(self, client, shop_user, app_config):
+    def test_the_items_page_carries_the_item_manager(self, client, manager, app_config):
+        client.force_login(manager)
+        html = client.get("/stock/").content.decode()
+
+        for marker in (
+            'id="itemTable1"',
+            'id="searchBox1"',
+            'id="paginationControls1"',
+            'id="addItemSection"',
+            'id="updateModeToggle"',
+            'id="uploadStockDataButton"',
+            'id="downloadStockData"',
+            'id="siteStockTable"',
+        ):
+            assert marker in html, marker
+
+    def test_every_id_the_page_script_selects_exists(self, client, manager, app_config):
         """A renamed element id would break the UI without any server error."""
-        client.force_login(shop_user)
-        html = client.get("/").content.decode()
-        script = html.rsplit("<script>", 1)[-1]
+        from django.contrib.staticfiles import finders
+
+        client.force_login(manager)
+        script = ""
+        with open(finders.find("js/warehouse.js"), encoding="utf-8") as handle:
+            script = handle.read()
 
         selected = set(
             re.findall(r"""\$\(\s*['"]#([A-Za-z][A-Za-z0-9_-]*)['"]""", script)
         )
         assert selected, "expected the page script to select elements by id"
 
-        missing = sorted(i for i in selected if f'id="{i}"' not in html)
+        # The script serves two pages, so each id must exist on one of them.
+        dashboard = client.get("/").content.decode()
+        items = client.get("/stock/").content.decode()
+        missing = sorted(
+            i for i in selected if f'id="{i}"' not in dashboard and f'id="{i}"' not in items
+        )
         assert missing == []
 
 

@@ -25,10 +25,10 @@ class TestIndexView:
 
 class TestGetUser:
     def test_anonymous_denied(self, api_client):
-        assert api_client.get("/auth/user/").status_code == 403
+        assert api_client.get("/api/auth/user/").status_code == 403
 
     def test_returns_identity_and_groups(self, shop_client, shop_user):
-        response = shop_client.get("/auth/user/")
+        response = shop_client.get("/api/auth/user/")
         assert response.status_code == 200
         data = response.json()
         assert data["id"] == shop_user.id

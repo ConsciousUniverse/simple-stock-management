@@ -23,7 +23,7 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 from . import audit
 from .models import AppRelease, AuditEvent, Item
-from .views import _is_warehouse_manager
+from .permissions import is_warehouse_manager
 
 AUDIT_PAGE_SIZE = 40
 MIN_PASSWORD_LENGTH = 8
@@ -57,7 +57,7 @@ def _redirect_users():
 
 def _manager_only(request):
     """The message a non-manager sees, or None when the user may continue."""
-    if _is_warehouse_manager(request.user):
+    if is_warehouse_manager(request.user):
         return None
     messages.error(request, _("Only a warehouse manager can open this page."))
     return True
@@ -215,7 +215,7 @@ def _is_acceptable_download_url(value: str) -> bool:
 def android_page(request):
     """The Android app: the current build, its history, and where to get it."""
     if request.method == "POST":
-        if not _is_warehouse_manager(request.user):
+        if not is_warehouse_manager(request.user):
             messages.error(request, _("Only a warehouse manager can publish a build."))
             return _redirect_android()
 

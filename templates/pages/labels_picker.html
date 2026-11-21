@@ -7,7 +7,7 @@
 {% block subheading %}{% trans "Choose the items, then print their labels." %}{% endblock %}
 
 {% block content %}
-<form method="get" action="{{ print_url }}" class="sap-card" id="labelPicker">
+<form method="get" action="{{ print_url }}" target="_blank" class="sap-card" id="labelPicker">
     <div class="sap-card__header">
         <h2 class="sap-card__title">{% trans "Choose the items" %}</h2>
         <div class="sap-card__header-actions">

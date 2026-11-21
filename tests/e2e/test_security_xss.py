@@ -34,6 +34,7 @@ class TestStoredXSS:
         # <td>, so an <img onerror> would execute if not escaped.
         make_item(sku="SKU-1", description=IMG_PAYLOAD)
         login("shop1")
+        page.goto(f"{live_server.url}/stock/")
 
         expect(page.locator("#itemTable1")).to_contain_text(IMG_PAYLOAD)
         assert xss_fired(page) is False
@@ -45,6 +46,7 @@ class TestStoredXSS:
         # attribute-breakout payload would execute if not escaped.
         make_item(sku="SKU-1", description=ATTR_BREAKOUT_PAYLOAD)
         login("manager")
+        page.goto(f"{live_server.url}/stock/")
 
         field = page.locator('#itemTable1 input[data-field="description"]')
         expect(field).to_have_value(ATTR_BREAKOUT_PAYLOAD)
@@ -56,8 +58,10 @@ class TestStoredXSS:
         item = make_item(sku="SKU-1", description=IMG_PAYLOAD)
         ShopItem.objects.create(shop_user=shop_user, item=item, quantity=1)
         login("shop1")
+        page.goto(f"{live_server.url}/stock/")
 
-        expect(page.locator("#itemTable2")).to_contain_text(IMG_PAYLOAD)
+        # The site stock is rendered by the server into its own table.
+        expect(page.locator("#siteStockTable")).to_contain_text(IMG_PAYLOAD)
         assert xss_fired(page) is False
 
 
@@ -117,5 +121,7 @@ class TestUsernameXSS:
 
         login(IMG_PAYLOAD)
 
-        expect(page.locator("#userStatus")).to_contain_text("Hello")
+        # The shellbar renders the name with {{ user.username }}, which Django
+        # escapes; the payload must show as text.
+        expect(page.locator(".sap-user__name")).to_contain_text(IMG_PAYLOAD)
         assert xss_fired(page) is False

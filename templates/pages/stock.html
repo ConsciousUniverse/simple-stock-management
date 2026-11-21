@@ -1,5 +1,5 @@
 {% extends "base_app.html" %}
-{% load i18n %}
+{% load static i18n %}
 
 {% block title %}{% trans "Items" %}{% endblock %}
 {% block crumb %}{% trans "Items" %}{% endblock %}
@@ -17,66 +17,19 @@
 <div class="sap-tiles">
     <div class="sap-tile">
         <span class="sap-tile__label">{% trans "Active items" %}</span>
-        <span class="sap-tile__value" id="kpiItems">{{ total_items }}</span>
+        <span class="sap-tile__value" id="kpiWarehouse">{{ total_items }}</span>
     </div>
     <div class="sap-tile sap-tile--neutral">
         <span class="sap-tile__label">{% trans "Quantity on hand" %}</span>
         <span class="sap-tile__value" id="kpiQuantity">{{ total_quantity }}</span>
     </div>
-</div>
-
-<form method="get" action="/stock/" class="sap-search">
-    <input class="sap-input sap-input--search" type="search" name="q" value="{{ query }}"
-        placeholder="{% trans 'Search by item code or description' %}">
-    <button class="sap-btn sap-btn--emphasized" type="submit">{% trans "Search" %}</button>
-</form>
-
-<div class="sap-card">
-    <div class="sap-card__header">
-        <h2 class="sap-card__title">{% trans "Warehouse" %}</h2>
-        <div class="sap-card__header-actions">
-            <span class="sap-muted">{% trans "Showing up to 300 items" %}</span>
-        </div>
-    </div>
-    <div class="sap-card__body sap-card__body--flush">
-        <div class="sap-tablewrap">
-            <table class="sap-table" id="warehouseTable">
-                <thead>
-                    <tr>
-                        <th>{% trans "Item code" %}</th>
-                        <th>{% trans "Description" %}</th>
-                        <th>{% trans "Quantity" %}</th>
-                        <th>{% trans "Unit" %}</th>
-                        <th>{% trans "Selling price" %}</th>
-                        <th>{% trans "Barcode" %}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in items %}
-                    <tr>
-                        <td>{{ item.sku }}</td>
-                        <td>{{ item.description }}</td>
-                        <td>{{ item.quantity }}</td>
-                        <td>{{ item.unit|default:"—" }}</td>
-                        <td>{{ item.retail_price }}</td>
-                        <td>
-                            <a class="sap-btn sap-btn--ghost sap-btn--sm" href="/api/items/{{ item.sku }}/barcode.svg">
-                                {% trans "Label" %}
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="sap-empty">
-                            <span class="sap-empty__title">{% trans "No items match this search." %}</span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <div class="sap-tile sap-tile--neutral">
+        <span class="sap-tile__label">{% trans "Site stock lines" %}</span>
+        <span class="sap-tile__value">{{ site_rows|length }}</span>
     </div>
 </div>
+
+{% include "partials/item_manager.html" %}
 
 <div class="sap-card">
     <div class="sap-card__header">
@@ -115,4 +68,9 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ js_messages|json_script:"i18n-js" }}
+<script src="{% static 'js/warehouse.js' %}"></script>
 {% endblock %}

@@ -11,43 +11,59 @@ from stock_manager.models import Item, ShopItem, TransferItem
 pytestmark = [pytest.mark.e2e, pytest.mark.django_db(transaction=True)]
 
 
-class TestDashboardTailoring:
+class TestTheTwoPages:
     def test_anonymous_visitor_is_sent_to_login(self, page, live_server):
         page.goto(f"{live_server.url}/")
         page.wait_for_url(f"{live_server.url}/accounts/login/?next=/")
         expect(page.locator('input[name="username"]')).to_be_visible()
 
-    def test_manager_dashboard(self, page, live_server, login, manager, app_config, make_item):
+    def test_manager_gets_the_item_manager_on_the_items_page(
+        self, page, live_server, login, manager, app_config, make_item
+    ):
         make_item(sku="SKU-1", description="Widget")
         login("manager")
+        page.goto(f"{live_server.url}/stock/")
 
-        expect(page.locator("#userStatus")).to_contain_text("Hello manager")
+        # The shell states the reader once, on every page.
+        expect(page.locator(".sap-user__name")).to_have_text("manager")
         # Managers get the maintenance toggle, add-item panel and editable rows.
         expect(page.locator("#updateModeSwitch")).to_be_visible()
         expect(page.locator("#addItemSection")).to_be_visible()
         expect(
             page.locator('#itemTable1 input[data-sku="SKU-1"][data-field="description"]')
         ).to_have_value("Widget")
-        # The shop stock panel and transfer-request button are hidden.
-        expect(page.locator(".shop-stock")).to_be_hidden()
-        expect(page.locator("#submitTransferRequest")).to_be_hidden()
+        # A manager does not request stock from itself.
+        expect(page.locator("#submitTransferRequest")).to_have_count(0)
 
-    def test_shop_user_dashboard(
+    def test_shop_user_gets_read_only_rows_and_a_transfer_field(
         self, page, live_server, login, shop_user, app_config, make_item
     ):
         item = make_item(sku="SKU-1", description="Widget")
         ShopItem.objects.create(shop_user=shop_user, item=item, quantity=2)
         login("shop1")
+        page.goto(f"{live_server.url}/stock/")
 
-        expect(page.locator("#userStatus")).to_contain_text("Hello shop1")
+        expect(page.locator(".sap-user__name")).to_have_text("shop1")
         # Shop users get read-only warehouse rows with a transfer field...
         expect(page.locator("#updateModeSwitch")).to_be_hidden()
         expect(page.locator("#addItemSection")).to_be_hidden()
         expect(page.locator('#itemTable1 input.xferQntField[data-sku="SKU-1"]')).to_be_visible()
-        expect(page.locator("#submitTransferRequest")).to_be_visible()
-        # ...and their own shop stock panel.
-        expect(page.locator(".shop-stock")).to_be_visible()
-        expect(page.locator("#quantity2-SKU-1")).to_have_value("2")
+        # ...and the site stock is stated by the server on the same page.
+        expect(page.locator("#siteStockTable")).to_contain_text("Widget")
+        expect(page.locator("#siteStockTable")).to_contain_text("2")
+
+    def test_the_dashboard_is_an_overview_not_a_second_copy(
+        self, page, live_server, login, manager, app_config, make_item
+    ):
+        make_item(sku="SKU-1", description="Widget")
+        login("manager")
+
+        # The figures and the request queue are here; the tables are not.
+        expect(page.locator("#kpiWarehouse")).to_have_text("1")
+        expect(page.locator("#itemTable3")).to_have_count(1)
+        expect(page.locator("#itemTable1")).to_have_count(0)
+        expect(page.locator("#addItemSection")).to_have_count(0)
+        expect(page.locator(".sap-quicklink")).not_to_have_count(0)
 
 
 class TestSearch:
@@ -57,6 +73,7 @@ class TestSearch:
         make_item(sku="ABC", description="Bird feeder")
         make_item(sku="XYZ", description="Dog lead")
         login("manager")
+        page.goto(f"{live_server.url}/stock/")
         expect(page.locator("#itemTable1 tr")).to_have_count(2)
 
         # The search box listens for keyup, so type rather than fill.
@@ -74,11 +91,14 @@ class TestTransferFlow:
         item = make_item(sku="SKU-1", quantity=10)
         login("shop1")
 
-        # Entering a quantity (field fires on blur) creates a pending transfer.
+        # Entering a quantity on the items page (the field fires on blur)
+        # creates a pending transfer, which the dashboard then queues.
+        page.goto(f"{live_server.url}/stock/")
         qty_field = page.locator('#itemTable1 input.xferQntField[data-sku="SKU-1"]')
         qty_field.fill("3")
         qty_field.blur()
 
+        page.goto(f"{live_server.url}/")
         pending_row = page.locator('#itemTable3 tr[data-sku="SKU-1"]')
         expect(pending_row).to_have_attribute("data-quantity", "3")
         expect(pending_row).to_have_attribute("data-ordered", "false")
@@ -123,8 +143,10 @@ class TestTransferFlow:
         expect(pending_row).to_contain_text("shop1")
         page.click("#dispatchButton-SKU-1")
 
-        # The pending line disappears and the warehouse quantity is reduced.
+        # The pending line disappears and the warehouse quantity is reduced;
+        # the item itself lives on its own page.
         expect(pending_row).to_have_count(0)
+        page.goto(f"{live_server.url}/stock/")
         expect(
             page.locator('#itemTable1 input[data-sku="SKU-1"][data-field="quantity"]')
         ).to_have_value("6")
@@ -143,6 +165,7 @@ class TestMaintenanceMode:
 
         make_item(sku="SKU-1")
         login("manager")
+        page.goto(f"{live_server.url}/stock/")
         expect(page.locator(".maintenanceMode")).to_be_hidden()
 
         page.click("#updateModeSwitch")
@@ -161,6 +184,7 @@ class TestMaintenanceMode:
         app_config.save()
         make_item(sku="SKU-1", quantity=10)
         login("shop1")
+        page.goto(f"{live_server.url}/stock/")
 
         expect(page.locator(".maintenanceMode")).to_be_visible()
         expect(

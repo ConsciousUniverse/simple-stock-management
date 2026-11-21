@@ -953,18 +953,10 @@ img {
     margin-top: 0.25rem;
 }
 
-/* The dashboard's in-page jump list: a section index, deliberately quieter
-   than the site menu above it so the two do not read as one long list. */
-.sap-sidenav__nav--sections .sap-sidenav__item {
-    padding-inline-start: 1.5rem;
-    font-size: 0.8125rem;
-    color: var(--sap-text-muted);
-}
-
-.sap-sidenav__nav--sections .sap-sidenav__item .sap-icon {
-    width: 0.875rem;
-    height: 0.875rem;
-    opacity: 0.75;
+/* A group heading inside the menu: the second one needs air above it so the
+   two blocks read as separate, not as one long list. */
+.sap-sidenav__nav + .sap-sidenav__label {
+    margin-top: 0.875rem;
 }
 
 /* A field that sits in a card header (label + small input side by side). */
@@ -2053,4 +2045,43 @@ body.sap-login {
     .sap-line {
         grid-template-columns: 1fr 1fr;
     }
+}
+
+/* The dashboard's "where to go next" cards: a link that reads as a tile, so
+   the page points at the screens that do the work instead of copying them. */
+.sap-quicklinks {
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+}
+
+.sap-quicklink {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid var(--sap-border);
+    border-radius: var(--sap-radius-md);
+    color: var(--sap-text);
+    text-decoration: none;
+    transition: border-color 0.12s ease, background-color 0.12s ease;
+}
+
+.sap-quicklink:hover,
+.sap-quicklink:focus-visible {
+    border-color: var(--sap-accent);
+    background-color: var(--sap-surface-hover, rgba(53, 74, 95, 0.04));
+}
+
+.sap-quicklink .sap-icon {
+    color: var(--sap-accent);
+}
+
+.sap-quicklink__title {
+    font-weight: 600;
+}
+
+.sap-quicklink__text {
+    font-size: 0.8125rem;
+    color: var(--sap-text-muted);
 }

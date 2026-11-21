@@ -16,6 +16,9 @@ msgstr "عنوان دائم وليس ملفًّا على هذا الخادم: ق
 msgid "A purchase order from a supplier, a transfer in from another project, or goods returned from a site."
 msgstr "أمر شراء من مورد، أو تحويل وارد من مشروع آخر، أو ارتجاع بضاعة من الموقع."
 
+msgid "A request appears here when a site asks for stock."
+msgstr "يظهر الطلب هنا عندما يطلب أحد المواقع أصنافًا."
+
 msgid "A voucher number is booked once: the same number cannot move stock twice."
 msgstr "رقم الإذن يُسجَّل مرة واحدة: لا يمكن لنفس الرقم أن يحرّك المخزون مرتين."
 
@@ -367,6 +370,9 @@ msgstr "أدخل الإصدار."
 msgid "Events"
 msgstr "الأحداث"
 
+msgid "Every movement, by period"
+msgstr "كل حركة خلال فترة محددة."
+
 msgid "Every recorded action: who did what, and when."
 msgstr "كل إجراء مسجل: من فعله ومتى."
 
@@ -432,6 +438,9 @@ msgstr "أذون الصرف"
 
 msgid "Issue stock to a site and it appears here."
 msgstr "اصرف مخزونًا لموقع وسيظهر هنا."
+
+msgid "Issue stock to a site or send it back"
+msgstr "صرف أصناف إلى موقع أو إرجاعها."
 
 msgid "Issue stock to a site, transfer it to another project, or reject it and return it to the supplier."
 msgstr "صرف مخزون لموقع، أو تحويله لمشروع آخر، أو رفضه وإعادته للمورد."
@@ -538,6 +547,9 @@ msgstr "بريد الاستلام"
 msgid "Maintain item codes, descriptions, prices and quantities"
 msgstr "إدارة أكواد الأصناف والأوصاف والأسعار والكميات"
 
+msgid "Maintain the catalogue and the quantities"
+msgstr "تحديث دليل الأصناف والكميات."
+
 msgid "Maintenance mode"
 msgstr "وضع الصيانة"
 
@@ -597,6 +609,9 @@ msgstr "لا توجد سجلات"
 
 msgid "No release notes."
 msgstr "لا توجد ملاحظات للإصدار."
+
+msgid "No site requests are waiting"
+msgstr "لا توجد طلبات مواقع في الانتظار."
 
 msgid "No site stock yet"
 msgstr "لا يوجد مخزون بالمواقع بعد"
@@ -685,6 +700,9 @@ msgstr "طباعة"
 msgid "Print a Code 128 label per item. The barcode carries the item code used in the company system."
 msgstr "اطبع ملصق Code 128 لكل صنف. الباركود يحمل كود الصنف المستخدم في نظام الشركة."
 
+msgid "Print a label sheet for the items you pick"
+msgstr "طبع ورقة ملصقات للأصناف التي تختارها."
+
 msgid "Print labels"
 msgstr "طباعة الملصقات"
 
@@ -723,6 +741,9 @@ msgstr "توريدات (30 يومًا)"
 
 msgid "Receive"
 msgstr "استلام"
+
+msgid "Receive a purchase order or a return"
+msgstr "استلام أمر شراء أو مرتجع."
 
 msgid "Receive from supplier (PO)"
 msgstr "استلام من المورد (أمر شراء)"
@@ -846,6 +867,9 @@ msgstr "اختر الأصناف المطلوب طباعة ملصقاتها"
 
 msgid "Selling price"
 msgstr "سعر البيع"
+
+msgid "Send my request"
+msgstr "إرسال طلبي."
 
 msgid "Send transfer request"
 msgstr "إرسال طلب النقل"
@@ -1204,11 +1228,17 @@ msgstr "مخزون المخزن"
 msgid "We could not sign you in."
 msgstr "تعذّر تسجيل الدخول."
 
+msgid "What the sites asked for, and what is still to dispatch"
+msgstr "ما طلبته المواقع وما زال في انتظار الصرف."
+
 msgid "What the warehouse holds, and what each site already holds."
 msgstr "ما يحتفظ به المخزن، وما يحتفظ به كل موقع."
 
 msgid "When"
 msgstr "التاريخ والوقت"
+
+msgid "Where to go next"
+msgstr "إلى أين تتجه."
 
 msgid "Who may sign in, and what each person may do."
 msgstr "من يستطيع تسجيل الدخول، وماذا يستطيع كل شخص فعله."

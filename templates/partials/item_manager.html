@@ -1,0 +1,179 @@
+{% load i18n %}
+{% comment %}
+The warehouse item manager: create an item, edit it in the table, exchange the
+catalogue as a workbook. It lives on the items page only — the dashboard shows
+the overview and the site-request queue, so the same table is not rendered twice.
+{% endcomment %}
+
+<section class="sap-card d-none" id="addItemSection">
+    <div class="sap-card__header">
+        <div class="sap-card__heading">
+            <h2 class="sap-card__title">
+                <svg class="sap-icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+                {% trans "Create warehouse item" %}
+            </h2>
+            <p class="sap-card__subtitle">{% trans "Add a new item code to the warehouse catalogue" %}</p>
+        </div>
+    </div>
+    <div class="sap-card__body" id="addItemSectionInner">
+        <div class="sap-form-grid">
+            <div class="sap-field">
+                <label class="sap-label" for="sku">{% trans "Item code" %}</label>
+                <input type="text" id="sku" class="sap-input" placeholder="{% trans 'e.g. NSCOM-1001' %}"
+                    autocomplete="off">
+            </div>
+            <div class="sap-field">
+                <label class="sap-label" for="description">{% trans "Description" %}</label>
+                <input type="text" id="description" class="sap-input" placeholder="{% trans 'Description' %}"
+                    autocomplete="off">
+            </div>
+            <div class="sap-field">
+                <label class="sap-label" for="retail_price">{% trans "Retail price" %}</label>
+                <input type="number" step="0.01" min="0.00" id="retail_price" class="sap-input"
+                    placeholder="0.00">
+            </div>
+            <div class="sap-field">
+                <label class="sap-label" for="quantity">{% trans "Quantity" %}</label>
+                <input type="number" min="0" id="quantity" class="sap-input" placeholder="0">
+            </div>
+            <div class="sap-field">
+                <label class="sap-label" for="unit">{% trans "Unit" %}</label>
+                <input type="text" id="unit" class="sap-input" list="unitOptions"
+                    placeholder="{% trans 'e.g. piece, metre, kg' %}" autocomplete="off">
+                <datalist id="unitOptions">
+                    <option value="قطعة"></option>
+                    <option value="متر"></option>
+                    <option value="كجم"></option>
+                    <option value="لفة"></option>
+                    <option value="كرتونة"></option>
+                    <option value="لتر"></option>
+                    <option value="عبوة"></option>
+                    <option value="PCS"></option>
+                    <option value="MTR"></option>
+                    <option value="KG"></option>
+                </datalist>
+            </div>
+        </div>
+        <div class="sap-form-actions">
+            <button id="addItem" class="sap-btn sap-btn--emphasized" type="button">
+                <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-plus"></use></svg>
+                {% trans "Add item" %}
+            </button>
+        </div>
+    </div>
+</section>
+
+<section class="sap-card warehouse-stock" id="warehouse">
+    <div class="sap-card__header">
+        <div class="sap-card__heading">
+            <h2 class="sap-card__title">
+                <svg class="sap-icon" aria-hidden="true"><use href="#i-warehouse"></use></svg>
+                {% trans "Warehouse stock" %}
+            </h2>
+            <p class="sap-card__subtitle">
+                {% trans "Maintain item codes, descriptions, prices and quantities" %}
+            </p>
+        </div>
+        <div class="sap-card__header-actions">
+            <label id="updateModeSwitch" class="sap-switch d-none"
+                title="{% trans 'Pause site transfers while the warehouse is maintained' %}">
+                <input type="checkbox" id="updateModeToggle">
+                <span class="sap-switch__track"><span class="sap-switch__thumb"></span></span>
+                <span class="sap-switch__label">{% trans "Maintenance mode" %}</span>
+            </label>
+            <button id="refreshWarehouse" class="sap-btn sap-btn--ghost d-none" type="button">
+                <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-refresh"></use></svg>
+                {% trans "Refresh" %}
+            </button>
+        </div>
+    </div>
+    <div class="sap-toolbar">
+        <div class="sap-search">
+            <svg class="sap-icon" aria-hidden="true"><use href="#i-search"></use></svg>
+            <input type="text" id="searchBox1" class="sap-input sap-input--search"
+                placeholder="{% trans 'Search items by code or description...' %}"
+                onkeyup="search(1, this.value)">
+        </div>
+        <div class="sap-toolbar__meta">
+            <span id="count1"></span>
+        </div>
+    </div>
+    <div class="sap-msgstrip sap-msgstrip--warning maintenanceMode d-none" role="alert">
+        <svg class="sap-icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+        <span><span class="sap-msgstrip__title">{% trans "Warehouse maintenance is in progress." %}</span>
+            {% trans "Site transfer requests are paused until the manager reopens the warehouse." %}</span>
+    </div>
+    <div class="sap-tablewrap">
+        <table class="sap-table whTable">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(1, 'sku')" data-sort-col="sku" aria-sort="none">{% trans "Item code" %}<span
+                            class="sap-sort" aria-hidden="true">&#8597;</span></th>
+                    <th onclick="sortTable(1, 'description')" data-sort-col="description"
+                        aria-sort="none">{% trans "Description" %}<span class="sap-sort"
+                            aria-hidden="true">&#8597;</span></th>
+                    <th onclick="sortTable(1, 'retail_price')" data-sort-col="retail_price" class="sap-table__num"
+                        aria-sort="none">{% trans "Retail price" %}<span class="sap-sort"
+                            aria-hidden="true">&#8597;</span></th>
+                    <th onclick="sortTable(1, 'quantity')" data-sort-col="quantity" class="sap-table__num"
+                        aria-sort="none">
+                        {% trans "Warehouse qty" %}<span class="sap-sort" aria-hidden="true">&#8597;</span></th>
+                    <th id="whXferQnt">{% trans "Transfer qty" %}</th>
+                    <th id="whActions">{% trans "Actions" %}</th>
+                </tr>
+            </thead>
+            <tbody id="itemTable1"></tbody>
+        </table>
+        <div class="sap-empty d-none" id="empty1">
+            <svg class="sap-icon" aria-hidden="true"><use href="#i-package"></use></svg>
+            <div class="sap-empty__title">{% trans "No warehouse items found" %}</div>
+            <div class="sap-empty__text">{% trans "Adjust your search or add a new item code." %}</div>
+        </div>
+    </div>
+    <div id="paginationControls1" class="sap-pagination"></div>
+</section>
+
+<section class="sap-card" id="dlStockSection">
+    <div class="sap-card__header">
+        <div class="sap-card__heading">
+            <h2 class="sap-card__title">
+                <svg class="sap-icon" aria-hidden="true"><use href="#i-data"></use></svg>
+                {% trans "Data import / export" %}
+            </h2>
+            <p class="sap-card__subtitle">
+                {% trans "Exchange warehouse and site stock as an Excel workbook" %}
+            </p>
+        </div>
+    </div>
+    <div class="sap-card__body">
+        <div class="sap-form-grid">
+            <div class="sap-field">
+                <span class="sap-label">{% trans "Export" %}</span>
+                <span class="sap-subtitle">{% trans "Download the current warehouse and site stock." %}</span>
+                <div class="sap-form-actions">
+                    <button id="downloadStockData" class="sap-btn sap-btn--ghost d-none" type="button">
+                        <svg class="sap-icon sap-icon--sm" aria-hidden="true">
+                            <use href="#i-download"></use>
+                        </svg>
+                        {% trans "Download stock data" %}
+                    </button>
+                </div>
+            </div>
+            <div class="sap-field" id="importPanel">
+                <label class="sap-label" for="uploadStockData">
+                    {% trans "Import" %} <span class="sap-label__hint">{% trans "(.xlsx — the sheet is the source of truth)" %}</span>
+                </label>
+                <input type="file" id="uploadStockData" class="sap-input d-none" accept=".xlsx">
+                <div class="sap-form-actions">
+                    <button id="uploadStockDataButton" class="sap-btn sap-btn--ghost d-none"
+                        type="button">
+                        <svg class="sap-icon sap-icon--sm" aria-hidden="true">
+                            <use href="#i-upload"></use>
+                        </svg>
+                        {% trans "Upload stock data" %}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

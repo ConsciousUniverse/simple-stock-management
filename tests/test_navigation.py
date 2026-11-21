@@ -1,4 +1,4 @@
-"""The sidebar: exactly the entries the operator asked for, in that order.
+"""The sidebar: the entries the operator asked for, in that order.
 
 The navigation is the one thing every user sees on every page, so it is pinned
 here rather than checked by eye: the order, who may see the manager-only
@@ -8,17 +8,16 @@ entries, the active state, and that no entry leads nowhere.
 import re
 
 import pytest
-from django.urls import reverse
 
 pytestmark = pytest.mark.django_db
 
-# The order the operator specified.
+# Daily work first, administration last.
 EXPECTED = [
-    ("issues", "/issues/"),
-    ("additions", "/receipts/"),
-    ("spending", "/issues/report/"),
     ("dashboard", "/"),
     ("items", "/stock/"),
+    ("additions", "/receipts/"),
+    ("issues", "/issues/"),
+    ("spending", "/issues/report/"),
     ("labels", "/labels/"),
     ("users", "/users/"),
     ("android", "/android/"),
@@ -31,17 +30,15 @@ MANAGER_ONLY = {"users", "audit"}
 def nav_items(response):
     """(section, href, is_active) for each entry, in the order rendered."""
     html = response.content.decode()
-    nav = re.search(r'<nav class="sap-sidenav__nav".*?</nav>', html, re.S)
-    assert nav, "the sidebar is missing from the page"
+    # The menu is a group per block (operations, then administration), so the
+    # entries are read across every block in render order.
+    blocks = re.findall(r'<nav class="sap-sidenav__nav".*?</nav>', html, re.S)
+    assert blocks, "the sidebar is missing from the page"
     return [
-        (
-            section,
-            href,
-            "is-active" in classes,
-        )
+        (section, href, "is-active" in classes)
         for classes, href, section in re.findall(
             r'<a class="sap-sidenav__item([^"]*)" href="([^"]+)" data-nav="([^"]+)"',
-            nav.group(0),
+            "".join(blocks),
         )
     ]
 
@@ -75,29 +72,45 @@ class TestOrder:
 
 
 class TestOneDefinition:
-    def test_the_dashboard_and_the_other_pages_share_the_same_menu(
-        self, client, manager
-    ):
-        # The dashboard has its own shell, so it once carried a second, different
-        # menu. Both now include the same partial; this pins that.
-        client.force_login(manager)
-
-        dashboard = [(section, href) for section, href, _ in nav_items(client.get("/"))]
-        other = [(section, href) for section, href, _ in nav_items(client.get("/stock/"))]
-        assert dashboard == other
-
-    def test_no_template_repeats_the_menu_by_hand(self):
+    def test_the_order_lives_in_the_navigation_module_only(self):
+        """The template must not list the entries by hand: it loops over them."""
         from pathlib import Path
 
         root = Path(__file__).resolve().parent.parent / "templates"
-        # ``data-nav`` marks a SITE menu entry (the dashboard's in-page scroller
-        # uses ``data-spy`` instead, so it is not counted).
         owners = [
             path.name
             for path in root.rglob("*.html")
             if 'data-nav="' in path.read_text(encoding="utf-8")
         ]
         assert owners == ["sidenav.html"]
+
+        from stock_manager import navigation
+
+        order = [item.key for group in navigation.NAV_GROUPS for item in group.items]
+        assert order == [section for section, _ in EXPECTED]
+
+    def test_every_entry_names_a_real_url(self):
+        """A renamed URL pattern would silently drop its entry from the menu."""
+        from django.urls import NoReverseMatch, reverse
+
+        from stock_manager import navigation
+
+        for group in navigation.NAV_GROUPS:
+            for item in group.items:
+                try:
+                    assert reverse(item.url_name) == item.url
+                except NoReverseMatch:  # pragma: no cover - the failure message
+                    pytest.fail(f"{item.key} names unknown url {item.url_name!r}")
+
+    def test_the_dashboard_and_the_other_pages_share_the_same_menu(
+        self, client, manager
+    ):
+        # The dashboard once had its own shell and a second, different menu.
+        client.force_login(manager)
+
+        dashboard = [(section, href) for section, href, _ in nav_items(client.get("/"))]
+        other = [(section, href) for section, href, _ in nav_items(client.get("/stock/"))]
+        assert dashboard == other
 
 
 class TestActiveState:

@@ -11,6 +11,7 @@ from django.db import transaction
 from datetime import datetime
 import pytz
 
+from .permissions import is_warehouse_manager
 from .models import Item, ShopItem, User, Admin
 
 
@@ -148,7 +149,7 @@ class SpreadsheetTools:
         shop_item_sheet.append(shop_item_header)
 
         # If user is not a manager, limit the queryset
-        is_manager = self.user.groups.filter(name="managers").exists()
+        is_manager = is_warehouse_manager(self.user)
         queryset = ShopItem.objects.select_related(*shop_item_relation_fields).only(
             *shop_item_retrieved_fields
         )

@@ -76,7 +76,7 @@
                 {% if messages %}
                 <div class="sap-messages">
                     {% for message in messages %}
-                    <div class="sap-msgstrip{% if message.tags == 'error' %} sap-msgstrip-error{% elif message.tags == 'warning' %} sap-msgstrip--warning{% elif message.tags == 'success' %} sap-msgstrip--success{% else %} sap-msgstrip--info{% endif %}"
+                    <div class="sap-msgstrip{% if message.tags == 'error' %} sap-msgstrip--error{% elif message.tags == 'warning' %} sap-msgstrip--warning{% elif message.tags == 'success' %} sap-msgstrip--success{% else %} sap-msgstrip--info{% endif %}"
                         role="status">
                         <span class="sap-msgstrip__title">{{ message }}</span>
                     </div>
@@ -89,6 +89,7 @@
         </main>
     </div>
 
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
         (function () {
             var toggle = document.getElementById("navToggle");

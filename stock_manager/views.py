@@ -19,10 +19,12 @@ from .models import (
     TransferItem,
 )
 from . import audit
+from .ordering import apply_ordering
+from .permissions import is_warehouse_manager
 from . import documents as stock_documents
 from . import issue_report
 from .barcodes import BarcodeError, render_barcode_svg
-from .ui_strings import js_messages, js_strings
+from .ui_strings import js_messages
 from .serializers import ItemSerializer, ShopItemSerializer, TransferItemSerializer
 from .pagination import CustomPagination
 from django.contrib.auth.models import User  # For accessing the User model
@@ -30,7 +32,7 @@ from rest_framework.response import (
     Response,
 )  # For returning HTTP responses in REST framework
 from rest_framework.decorators import api_view, permission_classes
-from django.db.models.functions import Lower, Cast
+from django.db.models.functions import Lower
 from rest_framework import status
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_POST
@@ -38,10 +40,9 @@ from django.db import transaction
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from decimal import Decimal
-from django.db.models import F, IntegerField, Q, Sum
+from django.db.models import F, Q, Sum
 from email_service.email import SendEmail
 from .utils import SpreadsheetTools
-from natsort import natsorted
 
 logger = logging.getLogger(__name__)
 
@@ -61,30 +62,14 @@ class ItemViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(
                 Q(description__icontains=search_query) | Q(sku__icontains=search_query)
             )  # 🔍 Search filter
-        ordering = self.request.query_params.get("ordering", None)
-        if ordering:
-            if ordering.lstrip('-') == "sku":
-                items = list(queryset)
-                reverse = ordering.startswith('-')
-                items = natsorted(items, key=lambda x: x.sku, reverse=reverse)
-                return items
-            if ordering.startswith("-"):
-                field = ordering[1:]
-                if field == "quantity":
-                    queryset = queryset.order_by(Cast(field, IntegerField()).desc())
-                else:
-                    queryset = queryset.order_by(Lower(field)).reverse()
-            else:
-                if ordering == "quantity":
-                    queryset = queryset.order_by(Cast(ordering, IntegerField()))
-                else:
-                    queryset = queryset.order_by(Lower(ordering))
-        else:
-            queryset = queryset.order_by("last_updated").reverse()
-        return queryset
+        return apply_ordering(
+            queryset,
+            self.request.query_params.get("ordering"),
+            natural_key=lambda row: row.sku,
+        )
 
     def create(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name="managers").exists():
+        if not is_warehouse_manager(request.user):
             return Response(
                 {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
             )
@@ -124,7 +109,7 @@ class ItemViewSet(viewsets.ModelViewSet):
         return response
 
     def update(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name="managers").exists():
+        if not is_warehouse_manager(request.user):
             return Response(
                 {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
             )
@@ -158,7 +143,7 @@ class ItemViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def destroy(self, request, *args, **kwargs):
-        if not request.user.groups.filter(name="managers").exists():
+        if not is_warehouse_manager(request.user):
             return Response(
                 {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
             )
@@ -197,28 +182,11 @@ class ShopItemViewSet(viewsets.ReadOnlyModelViewSet):
                 Q(item__description__icontains=search_query)
                 | Q(item__sku__icontains=search_query)
             )  # 🔍 Search filter
-        ordering = self.request.query_params.get("ordering", None)
-        if ordering:
-            if ordering.lstrip('-') == "sku":
-                items = list(queryset)
-                reverse = ordering.startswith('-')
-                items = natsorted(items, key=lambda x: x.item.sku if x.item else '', reverse=reverse)
-                return items
-            if ordering.startswith("-"):
-                field = ordering[1:]
-                if field == "quantity":
-                    queryset = queryset.order_by(Cast(field, IntegerField()).desc())
-                else:
-                    queryset = queryset.order_by(Lower(field)).reverse()
-            else:
-                if ordering == "quantity":
-                    queryset = queryset.order_by(Cast(ordering, IntegerField()))
-                else:
-                    queryset = queryset.order_by(Lower(ordering))
-        else:
-            # Deterministic default ordering keeps pagination stable.
-            queryset = queryset.order_by("-last_updated")
-        return queryset
+        return apply_ordering(
+            queryset,
+            self.request.query_params.get("ordering"),
+            natural_key=lambda row: row.item.sku if row.item else "",
+        )
 
 
 class TransferItemViewSet(viewsets.ReadOnlyModelViewSet):
@@ -233,7 +201,7 @@ class TransferItemViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.groups.filter(name="managers").exists():
+        if is_warehouse_manager(user):
             queryset = TransferItem.objects.filter(ordered=True)
         else:
             queryset = TransferItem.objects.filter(shop_user=user)
@@ -243,34 +211,17 @@ class TransferItemViewSet(viewsets.ReadOnlyModelViewSet):
                 Q(item__description__icontains=search_query)
                 | Q(item__sku__icontains=search_query)
             )  # 🔍 Search filter
-        ordering = self.request.query_params.get("ordering", None)
-        if ordering:
-            if ordering.lstrip('-') == "sku":
-                items = list(queryset)
-                reverse = ordering.startswith('-')
-                items = natsorted(items, key=lambda x: x.item.sku, reverse=reverse)
-                return items
-            if ordering.startswith("-"):
-                field = ordering[1:]
-                if field == "quantity":
-                    queryset = queryset.order_by(Cast(field, IntegerField()).desc())
-                else:
-                    queryset = queryset.order_by(Lower(field)).reverse()
-            else:
-                if ordering == "quantity":
-                    queryset = queryset.order_by(Cast(ordering, IntegerField()))
-                else:
-                    queryset = queryset.order_by(Lower(ordering))
-        else:
-            # Deterministic default ordering keeps pagination stable.
-            queryset = queryset.order_by("-last_updated")
-        return queryset
+        return apply_ordering(
+            queryset,
+            self.request.query_params.get("ordering"),
+            natural_key=lambda row: row.item.sku,
+        )
 
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def set_edit_lock_status(request):
-    if not request.user.groups.filter(name="managers").exists():
+    if not is_warehouse_manager(request.user):
         return Response(
             {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
         )
@@ -338,13 +289,26 @@ def switch_language(request):
 @ensure_csrf_cookie
 @login_required
 def index(request):
+    """The overview: the key figures, the site-request queue, and where to go.
+
+    The tables that do the work live on their own pages; this page states the
+    numbers so a reader sees the state of the warehouse without opening them.
+    """
+    user = request.user
+    site_lines = ShopItem.objects.filter(quantity__gt=0)
+    transfers = TransferItem.objects.filter(ordered=True)
+    if not is_warehouse_manager(user):
+        site_lines = site_lines.filter(shop_user=user)
+        transfers = transfers.filter(shop_user=user)
     return render(
         request,
         "index.html",
         {
-            "js_i18n": js_strings(),
             "js_messages": js_messages(),
-            "sites": _site_accounts(),
+            "total_items": Item.objects.filter(is_active=True).count(),
+            "site_lines": site_lines.count(),
+            "pending_transfers": transfers.count(),
+            "edit_locked": Admin.is_edit_locked(),
         },
     )
 
@@ -539,7 +503,7 @@ def complete_transfer(request):
         return Response(
             {"detail": "Shop user not found."}, status=status.HTTP_400_BAD_REQUEST
         )
-    is_manager = request.user.groups.filter(name="managers").exists()
+    is_manager = is_warehouse_manager(request.user)
     if not is_manager:
         # Non-managers may only cancel, and only their own transfers. The
         # shop_user_id in the request body must not let one shop user act on
@@ -625,7 +589,7 @@ def export_data_excel(request):
     Export data as Excel for download.
     """
     if not (
-        request.user.groups.filter(name="managers").exists()
+        is_warehouse_manager(request.user)
         or request.user.groups.filter(name="shop_users").exists()
     ):
         logger.debug("Permission denied: user is not in shop_users or managers group.")
@@ -648,7 +612,7 @@ def import_data_excel(request):
     Import data from an uploaded Excel file.
     """
     # Only allow managers to perform the upload.
-    if not request.user.groups.filter(name="managers").exists():
+    if not is_warehouse_manager(request.user):
         logger.debug("Permission denied: user is not in managers group.")
         return Response(
             {"detail": "Permission denied."}, status=status.HTTP_403_FORBIDDEN
@@ -891,7 +855,7 @@ def issue_to_site(request):
             {"detail": _("Issuing stock is disabled while the warehouse is being maintained.")},
             status=status.HTTP_403_FORBIDDEN,
         )
-    if not request.user.groups.filter(name="managers").exists():
+    if not is_warehouse_manager(request.user):
         return Response(
             {"detail": _("Only a warehouse manager can issue stock to a site.")},
             status=status.HTTP_403_FORBIDDEN,
@@ -957,13 +921,7 @@ def issue_to_site(request):
 # itself is applied once, and only after approval.
 # ---------------------------------------------------------------------------
 
-MANAGER_GROUP = "managers"
 RECENT_DOCUMENTS = 25
-
-
-def _is_warehouse_manager(user) -> bool:
-    """Managers approve documents; everyone else's entry waits for one."""
-    return bool(user.is_authenticated and user.groups.filter(name=MANAGER_GROUP).exists())
 
 
 def _form_lines(request):
@@ -1002,7 +960,7 @@ def _document_from_form(request, doc_type, *, pending=None):
         created_by=request.user,
         source=StockDocument.WEB,
         # Only a warehouse manager may move stock without approval.
-        pending=not _is_warehouse_manager(request.user) if pending is None else pending,
+        pending=not is_warehouse_manager(request.user) if pending is None else pending,
     )
 
 
@@ -1010,12 +968,6 @@ def _document_from_form(request, doc_type, *, pending=None):
 @login_required
 def stock_page(request):
     """The warehouse and site stock, on their own page."""
-    query = (request.GET.get("q") or "").strip()
-    items = Item.objects.filter(is_active=True)
-    if query:
-        items = items.filter(Q(sku__icontains=query) | Q(description__icontains=query))
-    items = items.order_by(Lower("sku"))[:300]
-
     site_rows = (
         ShopItem.objects.select_related("item", "shop_user")
         .filter(quantity__gt=0)
@@ -1025,15 +977,14 @@ def stock_page(request):
         request,
         "pages/stock.html",
         {
-            "items": items,
+            "js_messages": js_messages(),
             "site_rows": site_rows,
-            "query": query,
             "total_items": Item.objects.filter(is_active=True).count(),
             "total_quantity": Item.objects.filter(is_active=True).aggregate(
                 total=Sum("quantity")
             )["total"]
             or 0,
-            "is_manager": _is_warehouse_manager(request.user),
+            "is_manager": is_warehouse_manager(request.user),
         },
     )
 
@@ -1069,7 +1020,7 @@ def receipts_page(request):
             "recent": StockDocument.objects.select_related("site", "created_by")
             .prefetch_related("lines")
             .filter(direction=StockDocument.IN)[:RECENT_DOCUMENTS],
-            "is_manager": _is_warehouse_manager(request.user),
+            "is_manager": is_warehouse_manager(request.user),
             "form_title": _("New addition"),
             "form_hint": _("Stock goes IN"),
             "submit_label": _("Save the addition"),
@@ -1115,7 +1066,7 @@ def issues_page(request):
             )
             .prefetch_related("lines")
             .filter(direction=StockDocument.OUT)[:RECENT_DOCUMENTS],
-            "is_manager": _is_warehouse_manager(request.user),
+            "is_manager": is_warehouse_manager(request.user),
             "form_title": _("New issue"),
             "form_hint": _("Stock goes OUT"),
             "submit_label": _("Save the issue"),
@@ -1129,7 +1080,7 @@ def issues_page(request):
 @login_required
 def decide_document(request, pk, action):
     """Approve or reject a pending document. Managers only."""
-    if not _is_warehouse_manager(request.user):
+    if not is_warehouse_manager(request.user):
         messages.error(request, _("Only a warehouse manager can approve documents."))
         return HttpResponseRedirect(request.POST.get("next") or "/issues/")
     document = StockDocument.objects.filter(pk=pk).first()
@@ -1224,7 +1175,7 @@ def stock_documents_api(request):
                 notes=request.data.get("notes", ""),
                 created_by=request.user,
                 source=str(request.data.get("source") or StockDocument.MOBILE),
-                pending=not _is_warehouse_manager(request.user),
+                pending=not is_warehouse_manager(request.user),
             )
         except stock_documents.DocumentError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
@@ -1245,7 +1196,7 @@ def stock_documents_api(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def decide_stock_document_api(request, pk):
-    if not _is_warehouse_manager(request.user):
+    if not is_warehouse_manager(request.user):
         return Response(
             {"detail": _("Only a warehouse manager can approve documents.")},
             status=status.HTTP_403_FORBIDDEN,

@@ -1,45 +1,14 @@
 {% load i18n %}
 {% comment %}
 The one definition of the site menu. Both shells (the dashboard and every other
-page) include this, so the menu cannot differ between pages.
+page) include this, and the order lives in stock_manager/navigation.py, so the
+menu cannot differ between pages or drift from the URL map.
 {% endcomment %}
-<a class="sap-sidenav__item{% if section == 'issues' %} is-active{% endif %}" href="/issues/" data-nav="issues">
-    <svg class="sap-icon" aria-hidden="true"><use href="#i-upload"></use></svg>
-    <span>{% trans "Issues" %}</span>
-</a>
-<a class="sap-sidenav__item{% if section == 'additions' %} is-active{% endif %}" href="/receipts/" data-nav="additions">
-    <svg class="sap-icon" aria-hidden="true"><use href="#i-download"></use></svg>
-    <span>{% trans "Additions" %}</span>
-</a>
-<a class="sap-sidenav__item{% if section == 'spending' %} is-active{% endif %}" href="/issues/report/" data-nav="spending">
-    <svg class="sap-icon" aria-hidden="true"><use href="#i-data"></use></svg>
-    <span>{% trans "Issues report" %}</span>
-</a>
-<a class="sap-sidenav__item{% if section == 'dashboard' %} is-active{% endif %}" href="/" data-nav="dashboard">
-    <svg class="sap-icon" aria-hidden="true"><use href="#i-overview"></use></svg>
-    <span>{% trans "Dashboard" %}</span>
-</a>
-<a class="sap-sidenav__item{% if section == 'items' %} is-active{% endif %}" href="/stock/" data-nav="items">
-    <svg class="sap-icon" aria-hidden="true"><use href="#i-warehouse"></use></svg>
-    <span>{% trans "Items" %}</span>
-</a>
-<a class="sap-sidenav__item{% if section == 'labels' %} is-active{% endif %}" href="/labels/" data-nav="labels">
-    <svg class="sap-icon" aria-hidden="true"><use href="#i-package"></use></svg>
-    <span>{% trans "Barcode printing" %}</span>
-</a>
-{% if nav_is_manager %}
-<a class="sap-sidenav__item{% if section == 'users' %} is-active{% endif %}" href="/users/" data-nav="users">
-    <svg class="sap-icon" aria-hidden="true"><use href="#i-users"></use></svg>
-    <span>{% trans "Users" %}</span>
-</a>
-{% endif %}
-<a class="sap-sidenav__item{% if section == 'android' %} is-active{% endif %}" href="/android/" data-nav="android">
-    <svg class="sap-icon" aria-hidden="true"><use href="#i-phone"></use></svg>
-    <span>{% trans "Android app" %}</span>
-</a>
-{% if nav_is_manager %}
-<a class="sap-sidenav__item{% if section == 'audit' %} is-active{% endif %}" href="/audit/" data-nav="audit">
-    <svg class="sap-icon" aria-hidden="true"><use href="#i-history"></use></svg>
-    <span>{% trans "Audit log" %}</span>
-</a>
-{% endif %}
+{% for group in nav_groups %}
+<div class="sap-sidenav__label">{{ group.label }}</div>
+<nav class="sap-sidenav__nav" aria-label="{{ group.label }}">
+    {% for item in group.items %}{% with active=section|lower %}
+    <a class="sap-sidenav__item{% if section == item.key %} is-active{% endif %}" href="{{ item.url }}" data-nav="{{ item.key }}"{% if section == item.key %} aria-current="page"{% endif %}><svg class="sap-icon" aria-hidden="true"><use href="#{{ item.icon }}"></use></svg><span>{{ item.label }}</span></a>
+    {% endwith %}{% endfor %}
+</nav>
+{% endfor %}

@@ -62,7 +62,9 @@ urlpatterns = [
         name="decide_stock_document_api",
     ),
     path("api/", include(router.urls)),
-    path("auth/user/", get_user, name="get_user"),  # Custom user endpoint
+    # The page scripts read the reader's groups from here; it lives under /api/
+    # like every other endpoint the browser calls.
+    path("api/auth/user/", get_user, name="get_user"),
     path("api/transfer/", transfer_item, name="transfer_item"),
     path(
         "api/submit-transfer-request/",

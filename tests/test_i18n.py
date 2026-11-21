@@ -29,7 +29,8 @@ class TestLanguageSelection:
 
         assert 'lang="en"' in html
         assert 'dir="ltr"' in html
-        assert "Warehouse stock" in html
+        assert "Warehouse items" in html
+        assert "Where to go next" in html
         assert 'id="languageSelect"' in html
 
     def test_arabic_is_right_to_left_and_translated(self, client, manager, app_config):
@@ -38,11 +39,11 @@ class TestLanguageSelection:
         assert 'lang="ar"' in html
         assert 'dir="rtl"' in html
         # Headings, navigation and table headers all come from the catalog.
-        assert "مخزون المخزن" in html
-        assert "ملصقات الباركود" in html
-        assert "استلام من المورد (أمر شراء)" in html
-        assert "Warehouse stock" not in visible_markup(html)
-        assert "Barcode labels" not in visible_markup(html)
+        assert "أصناف المخزن" in html
+        assert "طباعة الباركود" in html
+        assert "إلى أين تتجه" in html
+        assert "Warehouse items" not in visible_markup(html)
+        assert "Where to go next" not in visible_markup(html)
 
     def test_the_switch_sets_the_cookie_and_returns_to_the_page(self, client, manager):
         client.force_login(manager)

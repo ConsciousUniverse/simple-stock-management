@@ -32,7 +32,7 @@ class TestUnitOnTheAdditionForm:
 
         # The stock page states the unit beside the quantity.
         page.goto(f"{live_server.url}/stock/")
-        row = page.locator("#warehouseTable tbody tr", has_text="NSCOM-3001")
+        row = page.locator("#itemTable1 tr", has_text="NSCOM-3001")
         assert "لفة" in row.inner_text()
 
 

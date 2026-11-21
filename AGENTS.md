@@ -135,3 +135,51 @@ django.db.utils.ProgrammingError: relation "stock_manager_admin" already exists
   `manage.py migrate` in a subprocess against a real SQLite file. Two of them
   fail against the previous migrations, so they guard the behaviour rather than
   the code path.
+
+## The shell, the pages and the scripts have one definition each
+
+The dashboard used to be a 1,900-line template that re-implemented the sidebar,
+the item tables and the label picker, while `stock.html`, `receipts.html` and
+`issues.html` carried their own copies of the same markup. The result was the
+defect class this repository keeps recording: the same fact stated twice, and
+the copies drifting.
+
+- **`stock_manager/navigation.py` is the only menu.** `NAV_GROUPS` holds the
+  order, the group titles, the icon and the manager-only flag; `URL_SECTIONS`
+  maps a URL name to the entry key, so the active entry follows the page being
+  rendered instead of a value each view must remember to pass. A test asserts
+  `reverse(url_name) == url` for every entry, so the menu cannot point at a
+  route that moved.
+- **`templates/partials/sidenav.html` renders it once**, and only
+  `base_app.html` includes that partial. A page that renders its own menu is a
+  second definition — `tests/test_navigation.py` fails if one appears.
+- **`stock_manager/permissions.py` is the only role check.** `is_warehouse_manager`
+  replaced a dozen copies of `groups.filter(name="managers").exists()`; the group
+  name is spelled once.
+- **`stock_manager/ordering.py` is the only table ordering.** Three viewsets had
+  byte-identical branches (natural sort on the code, numeric sort on quantities,
+  case-insensitive text, stable default). `tests/test_ordering.py` drives the
+  helper and then asserts the branches are gone from `views.py`, because a
+  helper nobody calls fixes nothing.
+- **The dashboard is an overview, not a second copy of the items page**: KPI
+  tiles, the site-request queue, and quick links. The tables that do the work
+  live on `/stock/`, `/receipts/`, `/issues/` and `/labels/`. The E2E test
+  `test_the_dashboard_is_an_overview_not_a_second_copy` fails if the item tables
+  come back.
+- **`stock_manager/ui_strings.py` had two string maps.** `JS_STRINGS`/`js_strings()`
+  were dead once the dashboard stopped being the whole app (nothing imported
+  them) while `JS_TEXTS`/`js_messages()` are the live ones: the second map reads
+  the `.po` catalog of the active language, so a template message is translatable
+  from the script with no second list. Deleting the dead map is safe because the
+  catalog is collected from templates, not from that dict.
+- **Page scripts live in `stock_manager/static/js/warehouse.js`** (tracked, loaded
+  by `base_app.html` after jQuery). It was never in git before this refactor —
+  the script was inline in `index.html` — so a static-file check that passes
+  locally can still 404 in production if the file is not committed.
+- **`sap-msgstrip-error` vs `sap-msgstrip--error`**: the shell template emitted
+  the single-dash class for error messages while the stylesheet defines the BEM
+  double-dash one, so an error rendered unstyled. Any modifier class in
+  `base_app.html` must match `ssm-sap.css`.
+- **Printing the label sheet opens a new tab** (`target="_blank"` on the picker
+  form): navigating away from the picker to a print page loses the selection the
+  operator just made.

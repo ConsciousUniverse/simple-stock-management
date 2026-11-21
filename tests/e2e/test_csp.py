@@ -29,6 +29,7 @@ class TestContentSecurityPolicyRuntime:
         make_item(sku="ABC", description="Bird feeder")
         make_item(sku="XYZ", description="Dog lead")
         login("manager")
+        page.goto(f"{live_server.url}/stock/")
 
         # The CSP header is actually served.
         # (Re-fetch to read headers; the dashboard is already loaded.)
