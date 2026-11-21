@@ -51,6 +51,7 @@ class TestPaginatedResponseShape:
         data = response.json()
         assert set(data.keys()) == {
             "results",
+            "count",
             "current_page",
             "total_pages",
             "previous",
@@ -59,6 +60,7 @@ class TestPaginatedResponseShape:
             "next_page_number",
         }
         assert len(data["results"]) == 2
+        assert data["count"] == 5
         assert data["current_page"] == 1
         assert data["total_pages"] == 3
         assert data["previous"] is None

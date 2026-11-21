@@ -15,7 +15,20 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = get_bool_env(os.getenv("DJANGO_DEBUG"))
 ALLOWED_HOSTS = [
-    host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
+    host.strip()
+    for host in os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
+    if host.strip()
+]
+# Render injects the service's public hostname; trusting it here keeps the
+# deployment from failing with DisallowedHost when the host list is incomplete.
+RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+# Origins allowed to POST over HTTPS (needed when a custom domain is used).
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
 ]
 ALLOW_PW_CHANGE = get_bool_env(os.getenv("ALLOW_PW_CHANGE"))
 # --- HTTPS / cookie hardening ---
@@ -63,6 +76,8 @@ INSTALLED_APPS = [
 ]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # Serves /static/ straight from the WSGI app (no separate static host).
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "ssm.middleware.ContentSecurityPolicyMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -80,6 +95,8 @@ AXES_COOLOFF_TIME = int(os.getenv("AXES_COOLOFF_TIME"))
 # out all users.
 AXES_LOCKOUT_PARAMETERS = ["username"]
 AXES_CLIENT_IP_CALLABLE = lambda x: None  # Disable logging IP
+# Render the lockout as a branded page instead of a bare 429 text response.
+AXES_LOCKOUT_TEMPLATE = "registration/lockout.html"
 # axes.W006 recommends adding "ip_address" to AXES_LOCKOUT_PARAMETERS, but
 # that advice does not apply here: with the client IP nulled above, every
 # request shares one IP identity and the lockout would become global.
@@ -125,12 +142,24 @@ ANYMAIL = {
     "SPARKPOST_API_URL": os.getenv("MAIL_SERVICE_API_URL"),
 }
 WSGI_APPLICATION = "ssm.wsgi.application"
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / os.environ.get("DB_NAME"),
+DATABASE_URL = os.getenv("DATABASE_URL")
+if DATABASE_URL:
+    # Managed Postgres (Render) when the URL is provided...
+    import dj_database_url
+
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL, conn_max_age=600, conn_health_checks=True
+        )
     }
-}
+else:
+    # ...SQLite for local runs and the test suite.
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / os.environ.get("DB_NAME"),
+        }
+    }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTHENTICATION_BACKENDS = [
     "axes.backends.AxesStandaloneBackend",
@@ -156,6 +185,13 @@ USE_I18N = True
 USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
+WHITENOISE_MAX_AGE = 60 * 60 * 24 * 30
 MEDIA_URL = "/media/"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 LOG_FILE = os.getenv("LOG_FILE")  # this directory & file needs to be created first!

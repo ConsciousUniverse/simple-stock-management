@@ -1,24 +1,79 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="container mt-5">
-    <h2 class="mb-4">Login</h2>
-    <form method="post">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="username" class="form-label">Username</label>
-            <input type="text" name="username" class="form-control" required>
+{% extends "registration/base_auth.html" %}
+{% load static %}
+
+{% block title %}Log On{% endblock %}
+
+{% block card %}
+<div class="sap-login__brand">
+    <span class="sap-login__logo">
+        <img src="{% static 'img/logo-mark.png' %}" alt="Simpler Stock Management">
+    </span>
+    <h1 class="sap-login__title">Log On</h1>
+    <p class="sap-login__subtitle">Sign in with your username and password</p>
+</div>
+
+{% if form.non_field_errors %}
+<div class="sap-msgstrip sap-msgstrip--error" role="alert">
+    <svg class="sap-icon" aria-hidden="true">
+        <use href="#i-alert"></use>
+    </svg>
+    <div>
+        <span class="sap-msgstrip__title">We could not sign you in.</span>
+        <ul class="sap-errorlist">
+            {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+
+<form method="post" action="{{ request.get_full_path }}" class="sap-login__form" novalidate>
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ next }}">
+
+    <div class="sap-field{% if form.username.errors %} sap-field--error{% endif %}">
+        <label class="sap-label" for="id_username">Username</label>
+        <input type="text" name="username" id="id_username" class="sap-input" value="{{ form.username.value|default:'' }}"
+            autocomplete="username" autocapitalize="none" spellcheck="false" autofocus required>
+        {% for error in form.username.errors %}
+        <span class="sap-field__error">{{ error }}</span>
+        {% endfor %}
+    </div>
+
+    <div class="sap-field{% if form.password.errors %} sap-field--error{% endif %}">
+        <label class="sap-label" for="id_password">Password</label>
+        <div class="sap-input-group">
+            <input type="password" name="password" id="id_password" class="sap-input"
+                autocomplete="current-password" required>
+            <button type="button" class="sap-input-group__btn" id="togglePassword" aria-pressed="false"
+                aria-controls="id_password">Show</button>
         </div>
-        <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
-            <input type="password" name="password" class="form-control" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Login</button>
-    </form>
-</body>
-</html>
+        {% for error in form.password.errors %}
+        <span class="sap-field__error">{{ error }}</span>
+        {% endfor %}
+    </div>
+
+    <button type="submit" class="sap-btn sap-btn--emphasized sap-btn--block">Log On</button>
+</form>
+
+<p class="sap-login__hint">
+    Authorised users only. Accounts are created by the system administrator.
+</p>
+
+<script>
+    (() => {
+        'use strict';
+        const toggle = document.getElementById('togglePassword');
+        const field = document.getElementById('id_password');
+        if (!toggle || !field) return;
+        toggle.addEventListener('click', () => {
+            const showing = field.type === 'text';
+            field.type = showing ? 'password' : 'text';
+            toggle.textContent = showing ? 'Show' : 'Hide';
+            toggle.setAttribute('aria-pressed', showing ? 'false' : 'true');
+            field.focus();
+        });
+    })();
+</script>
+{% endblock %}

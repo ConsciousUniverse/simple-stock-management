@@ -1,0 +1,30 @@
+{% extends "registration/base_auth.html" %}
+{% load static %}
+
+{% block title %}Account temporarily locked{% endblock %}
+
+{% block card %}
+<div class="sap-login__brand">
+    <span class="sap-login__logo">
+        <img src="{% static 'img/logo-mark.png' %}" alt="Simpler Stock Management">
+    </span>
+    <h1 class="sap-login__title">Account temporarily locked</h1>
+    <p class="sap-login__subtitle">Too many unsuccessful sign-in attempts</p>
+</div>
+
+<div class="sap-msgstrip sap-msgstrip--error" role="alert">
+    <svg class="sap-icon" aria-hidden="true">
+        <use href="#i-lock"></use>
+    </svg>
+    <div>
+        <span class="sap-msgstrip__title">Sign-in is paused for this username.</span>
+        {% if failure_limit %}
+        <p>The limit is {{ failure_limit }} failed attempts. Access is restored automatically once the
+            cool-off period ends.</p>
+        {% endif %}
+        <p>Wait for the lock to expire, or ask the system administrator to reset it.</p>
+    </div>
+</div>
+
+<a class="sap-btn sap-btn--emphasized sap-btn--block" href="/accounts/login/">Back to sign in</a>
+{% endblock %}
