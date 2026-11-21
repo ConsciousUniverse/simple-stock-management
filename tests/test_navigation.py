@@ -221,3 +221,40 @@ class TestLabelsPicker:
         response = client.get("/labels/?q=Saw")
 
         assert [item.sku for item in response.context["items"]] == ["BBB-2"]
+
+
+class TestTheMobileDrawer:
+    """Below 860px the sidebar is a drawer; the button must actually open it."""
+
+    def _shell_and_css(self):
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parent.parent
+        shell = (root / "templates" / "base_app.html").read_text(encoding="utf-8")
+        css = (root / "stock_manager" / "static" / "css" / "ssm-sap.css").read_text(
+            encoding="utf-8"
+        )
+        return shell, css
+
+    def test_the_toggle_uses_the_class_the_stylesheet_opens(self):
+        shell, css = self._shell_and_css()
+
+        toggled = set(re.findall(r'classList\.(?:toggle|contains|add|remove)\("([^"]+)"', shell))
+        assert toggled, "the shell script no longer toggles a drawer class"
+        for name in toggled:
+            assert f".sap-sidenav.{name}" in css, (
+                f"the script toggles {name!r} but the stylesheet opens on another class"
+            )
+
+    def test_the_old_second_spelling_is_gone(self):
+        shell, css = self._shell_and_css()
+
+        assert "sap-nav-open" not in shell
+        assert "sap-nav-open" not in css
+
+    def test_the_button_controls_the_drawer_it_names(self):
+        shell, _ = self._shell_and_css()
+
+        assert 'id="navToggle"' in shell
+        assert 'aria-controls="sideNav"' in shell
+        assert 'id="sideNav"' in shell

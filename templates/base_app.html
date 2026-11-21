@@ -92,13 +92,35 @@
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script>
         (function () {
+            // The drawer state is the class the stylesheet opens on the panel
+            // itself; a second spelling on <body> would leave the button dead.
             var toggle = document.getElementById("navToggle");
-            if (toggle) {
-                toggle.addEventListener("click", function () {
-                    var open = document.body.classList.toggle("sap-nav-open");
-                    toggle.setAttribute("aria-expanded", open ? "true" : "false");
-                });
+            var nav = document.getElementById("sideNav");
+            if (!toggle || !nav) {
+                return;
             }
+
+            function setOpen(open) {
+                nav.classList.toggle("is-open", open);
+                toggle.setAttribute("aria-expanded", open ? "true" : "false");
+            }
+
+            toggle.addEventListener("click", function () {
+                setOpen(!nav.classList.contains("is-open"));
+            });
+
+            // Following a link, or leaving the menu, closes it: a drawer that
+            // stays open covers the page the reader just asked for.
+            nav.addEventListener("click", function (event) {
+                if (event.target.closest("a")) {
+                    setOpen(false);
+                }
+            });
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") {
+                    setOpen(false);
+                }
+            });
         })();
     </script>
     {% block scripts %}{% endblock %}

@@ -190,3 +190,29 @@ class TestMaintenanceMode:
         expect(
             page.locator('#itemTable1 input.xferQntField[data-sku="SKU-1"]')
         ).to_be_disabled()
+
+class TestMobileDrawer:
+    def test_the_menu_button_opens_the_sidebar(
+        self, page, live_server, login, manager, app_config
+    ):
+        page.set_viewport_size({"width": 420, "height": 820})
+        login("manager")
+
+        page.click("#navToggle")
+        page.wait_for_selector("#sideNav.is-open")
+        # The panel slides in, so wait for the outcome, not for the class.
+        page.wait_for_function(
+            "() => document.getElementById('sideNav').getBoundingClientRect().left >= 0"
+        )
+
+        page.click("#sideNav a[data-nav='items']")
+        page.wait_for_url("**/stock/")
+
+    def test_escape_closes_the_drawer(self, page, live_server, login, manager, app_config):
+        page.set_viewport_size({"width": 420, "height": 820})
+        login("manager")
+
+        page.click("#navToggle")
+        page.wait_for_selector("#sideNav.is-open")
+        page.keyboard.press("Escape")
+        page.wait_for_selector("#sideNav:not(.is-open)")
