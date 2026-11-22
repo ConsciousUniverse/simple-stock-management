@@ -90,6 +90,35 @@ class VersionDecisionTest {
         assertTrue(required.mandatory)
     }
 
+    /**
+     * The payload below is copied verbatim from the running server
+     * (`GET /api/mobile/version/?code=0` after publishing build 1). Renaming a
+     * field on the server breaks the phone silently — the app would read null
+     * and never offer the update — so the two sides are pinned together here.
+     */
+    @Test
+    fun the_payload_the_server_really_sends_is_read() {
+        val info = parseVersionResponse(
+            """{"updateAvailable": true, "latest": {"versionName": "1.0.0",
+               "versionCode": 1,
+               "downloadUrl": "https://github.com/melsofany/warehouse-app-releases/releases/download/v1/warehouse-1.apk",
+               "notes": "", "mandatory": false,
+               "sha256": "b7a17c7d359ab4304b955e94d4c42a39f5a58059d3997c963ce79a0740ac5844",
+               "sizeBytes": 5096181, "publishedAt": "2026-11-22T01:59:05.953386+00:00",
+               "updateAvailable": true, "current": false}, "installedVersionCode": 0}"""
+        )!!
+
+        assertEquals(1, info.versionCode)
+        assertEquals("1.0.0", info.versionName)
+        assertEquals(5096181L, info.sizeBytes)
+        assertEquals(
+            "b7a17c7d359ab4304b955e94d4c42a39f5a58059d3997c963ce79a0740ac5844",
+            info.sha256,
+        )
+        assertTrue(info.isNewerThan(0))
+        assertFalse(info.isNewerThan(1))
+    }
+
     @Test
     fun a_missing_version_name_falls_back_to_the_build_number() {
         val info = parseVersionResponse(
