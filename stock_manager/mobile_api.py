@@ -116,6 +116,7 @@ class LoginView(MobileView):
                 identifier,
                 payload.get("password"),
                 device=payload.get("device") or "",
+                device_id=payload.get("deviceId") or payload.get("device_id") or "",
                 request=request,
             )
         except mobile.MobileError as exc:

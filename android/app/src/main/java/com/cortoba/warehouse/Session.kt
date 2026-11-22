@@ -31,8 +31,30 @@ class Session(context: Context) {
         get() = prefs.getString("display_name", "").orEmpty()
         set(value) = prefs.edit().putString("display_name", value).apply()
 
+    /**
+     * This phone's own identity, generated once and kept for the life of the
+     * install. The server binds an account to it, so a second phone is refused
+     * by name until a manager clears the first from the web — an account open
+     * on two phones is two people signing off stock in one name.
+     */
+    val deviceId: String
+        get() = prefs.getString("device_id", null)
+            ?: java.util.UUID.randomUUID().toString().also {
+                prefs.edit().putString("device_id", it).apply()
+            }
+
     val isSignedIn: Boolean
         get() = !token.isNullOrEmpty()
+
+    /**
+     * The sign-in number, reduced to what identifies the account without
+     * printing it on a screen anyone standing nearby can read.
+     */
+    val maskedPhone: String
+        get() = phone.takeLast(4).let { if (it.length == 4) "•••• $it" else "" }
+
+    /** A phone label for the manager's page: "Samsung SM-A125F". */
+    fun deviceLabel(): String = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}"
 
     fun api(): Api = Api(baseUrl)
 

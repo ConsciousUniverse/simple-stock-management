@@ -39,6 +39,17 @@ class Api(private val baseUrl: String) {
 
     private val root: String = if (baseUrl.endsWith("/")) baseUrl else "$baseUrl/"
 
+    /**
+     * Called when a request had to be retried because the server was not
+     * answering yet — Render stops an idle service, and the first request
+     * after fifteen quiet minutes wakes it. The screen says so instead of
+     * showing a failure the operator would read as "the app is broken".
+     */
+    var onWaking: (() -> Unit)? = null
+
+    /** How many times a connection-level failure is retried, and how long to wait. */
+    private val wakeDelaysMs = longArrayOf(2_000, 3_000, 4_000, 6_000, 8_000, 10_000)
+
     fun version(installedCode: Int): UpdateInfo? =
         parseVersionResponse(
             request("api/mobile/version/?code=$installedCode", "GET").second
@@ -47,13 +58,21 @@ class Api(private val baseUrl: String) {
     fun versionAnonymous(): UpdateInfo? =
         parseVersionResponse(request("api/mobile/version/", "GET").second)
 
-    fun login(phone: String, password: String, device: String): Pair<String, Profile> {
+    /** Repeating a sign-in is harmless: it only opens a session. */
+    fun login(
+        phone: String,
+        password: String,
+        device: String,
+        deviceId: String,
+    ): Pair<String, Profile> {
         val body = JSONObject()
             .put("phone", phone)
             .put("password", password)
             .put("device", device)
+            .put("deviceId", deviceId)
             .toString()
-        val (_, text) = request("api/mobile/login/", "POST", body)
+        // Repeatable: a second sign-in only opens another session.
+        val (_, text) = request("api/mobile/login/", "POST", body, repeatable = true)
         val json = JSONObject(text)
         val token = json.optString("token")
         if (token.isEmpty()) throw ApiException(500, "لم يُرجع الخادم جلسة.")
@@ -121,13 +140,23 @@ class Api(private val baseUrl: String) {
         file: File?,
         fileField: String,
         mimeType: String,
+    ): Pair<Int, String> =
+        retrying(false) { multipartOnce(path, token, fields, file, fileField, mimeType) }
+
+    private fun multipartOnce(
+        path: String,
+        token: String,
+        fields: Map<String, String>,
+        file: File?,
+        fileField: String,
+        mimeType: String,
     ): Pair<Int, String> {
         val boundary = "----warehouse-${UUID.randomUUID()}"
         val connection = (URL(root + path).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             connectTimeout = 20_000
             // A photograph on a site connection is slower than a JSON call.
-            readTimeout = 60_000
+            readTimeout = 90_000
             setRequestProperty("Accept", "application/json")
             setRequestProperty("Authorization", "Bearer $token")
             setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
@@ -170,11 +199,47 @@ class Api(private val baseUrl: String) {
         method: String,
         body: String? = null,
         token: String? = null,
+        repeatable: Boolean = false,
+    ): Pair<Int, String> = retrying(method == "GET" || repeatable) {
+        requestOnce(path, method, body, token)
+    }
+
+    /**
+     * Run a call, waking the server if it is asleep.
+     *
+     * A stopped Render service does not answer with an error the operator can
+     * act on: the connection is refused, or the proxy answers 502/503 while
+     * the instance boots. Both mean "try again in a moment", and the app has
+     * to do the retrying itself — nobody is going to press the button again.
+     * A refusal from the API (401, 400, 409…) is NOT retried: it is an answer.
+     */
+    private fun retrying(repeatable: Boolean, call: () -> Pair<Int, String>): Pair<Int, String> {
+        var last: Exception? = null
+        for (attempt in 0..wakeDelaysMs.size) {
+            try {
+                return call()
+            } catch (error: Exception) {
+                if (!Retry.shouldRetry(repeatable, error, attempt, wakeDelaysMs.size)) throw error
+                last = error
+            }
+            onWaking?.invoke()
+            Thread.sleep(wakeDelaysMs[attempt])
+        }
+        throw last ?: java.io.IOException("تعذّر الاتصال بالخادم.")
+    }
+
+    private fun requestOnce(
+        path: String,
+        method: String,
+        body: String? = null,
+        token: String? = null,
     ): Pair<Int, String> {
         val connection = (URL(root + path).openConnection() as HttpURLConnection).apply {
             requestMethod = method
-            connectTimeout = 15_000
-            readTimeout = 30_000
+            // A sleeping service needs time to accept the connection at all,
+            // and the first query after a cold start is slower than a warm one.
+            connectTimeout = 20_000
+            readTimeout = 60_000
             setRequestProperty("Accept", "application/json")
             if (token != null) setRequestProperty("Authorization", "Bearer $token")
             if (body != null) {

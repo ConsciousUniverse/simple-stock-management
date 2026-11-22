@@ -23,6 +23,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 LOCALE_DIR = BASE_DIR / "locale" / "ar" / "LC_MESSAGES"
 
 ARABIC = {
+    # --- one account, one phone ------------------------------------------
+    "Phone bound to": "الهاتف المرتبط",
+    "Any phone": "أي هاتف",
+    "Clear the phone": "مسح الجهاز",
+    "Clear the phone this account is bound to? The old phone stops working at once.":
+        "تمسح الهاتف المرتبط بالحساب؟ الهاتف القديم هيقف عن العمل فورًا.",
+    "The device was cleared from %(name)s. They can sign in on a new phone now.":
+        "تم مسح الجهاز من حساب %(name)s. يقدر يدخل من هاتف جديد الآن.",
+    "%(name)s was not bound to any phone.": "حساب %(name)s مش مرتبط بأي هاتف.",
+    "Phone unbound from the app": "فك ارتباط الهاتف بالتطبيق",
     # --- the Android page: the build, and the people who use it -----------
     "The build on the phones, and the people who sign in from them.":
         "النسخة اللي على الموبايلات، والناس اللي بتدخل منها.",

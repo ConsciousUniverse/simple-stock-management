@@ -332,11 +332,22 @@ def test_a_rejected_document_moves_nothing(client, token, cable, manager):
 
 
 def test_an_issue_bigger_than_the_stock_is_refused_at_approval(client, token, cable, manager):
-    response = submit(client, token, lines=[{"code": "CBL-3X25", "quantity": 500}])
+    """The shelf can empty between the submission and the approval.
+
+    The phone sent a valid 100 of 100; a manager then issued 60 elsewhere. The
+    approval must refuse rather than take the balance negative — the phone's
+    check is the message, this one is the guarantee.
+    """
+    response = submit(client, token, lines=[{"code": "CBL-3X25", "quantity": 100}])
     document = StockDocument.objects.get(pk=response.json()["document"]["id"])
+
+    Item.objects.filter(pk="CBL-3X25").update(quantity=40)
     with pytest.raises(stock_documents.DocumentError):
         stock_documents.approve_document(document, user=manager)
-    assert Item.objects.get(pk="CBL-3X25").quantity == 100
+
+    assert Item.objects.get(pk="CBL-3X25").quantity == 40
+    document.refresh_from_db()
+    assert document.status == StockDocument.PENDING
 
 
 # ------------------------------------------------------------- the review screen
@@ -430,3 +441,57 @@ def test_the_web_form_records_the_same_paper_fields(client, cable, manager):
     assert document.document_date == date(2026, 11, 1)
     assert document.location == "محطة الرفع"
     assert document.engineer_name == "م. سارة"
+
+
+# ------------------------------------------------------------ more than the shelf
+
+
+def test_an_issue_larger_than_the_shelf_is_refused_at_the_phone(client, token, cable):
+    response = submit(
+        client, token, voucher="050399001", lines=[{"code": "CBL-3X25", "quantity": 101}]
+    )
+
+    assert response.status_code == 400
+    message = response.json()["error"]
+    # The operator must learn both numbers while still holding the phone.
+    assert "CBL-3X25" in message
+    assert "101" in message
+    assert "100" in message
+    assert StockDocument.objects.filter(external_ref="050399001").exists() is False
+
+
+def test_issuing_exactly_what_is_on_the_shelf_is_allowed(client, token, cable):
+    response = submit(
+        client, token, voucher="050399002", lines=[{"code": "CBL-3X25", "quantity": 100}]
+    )
+
+    assert response.status_code == 201, response.content
+    assert response.json()["document"]["status"] == "pending"
+
+
+def test_two_lines_of_the_same_item_are_added_up_before_the_check(client, token, cable):
+    """60 + 60 is 120 of 100 — two lines must not each pass on their own."""
+    response = submit(
+        client,
+        token,
+        voucher="050399003",
+        lines=[
+            {"code": "CBL-3X25", "quantity": 60},
+            {"code": "CBL-3X25", "quantity": 60},
+        ],
+    )
+
+    assert response.status_code == 400
+    assert "120" in response.json()["error"]
+
+
+def test_an_addition_is_not_capped_by_the_shelf(client, token, cable):
+    response = submit(
+        client,
+        token,
+        direction="in",
+        voucher="050399004",
+        lines=[{"code": "CBL-3X25", "quantity": 5000}],
+    )
+
+    assert response.status_code == 201, response.content

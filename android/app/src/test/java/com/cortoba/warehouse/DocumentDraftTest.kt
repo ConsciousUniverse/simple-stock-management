@@ -181,4 +181,55 @@ class DocumentDraftTest {
         assertTrue(parseDocuments("""{"documents":[]}""").isEmpty())
         assertTrue(parseDocuments("{}").isEmpty())
     }
+
+    // ------------------------------------------------- more than the shelf
+
+    @Test
+    fun `an issue line records what the shelf held`() {
+        val draft = DocumentDraft(DocumentDirection.OUT)
+        val line = draft.add(ItemInfo("CBL", "Cable", "متر", 100, "0"))
+
+        assertEquals(100, line.available)
+        assertFalse(line.exceedsShelf)
+    }
+
+    @Test
+    fun `an addition is never capped by the shelf`() {
+        val draft = DocumentDraft(DocumentDirection.IN)
+        val line = draft.add(ItemInfo("CBL", "Cable", "متر", 0, "0"))
+
+        assertNull(line.available)
+        assertFalse(line.exceedsShelf)
+        draft.setQuantity("CBL", 5000)
+        assertNull(draft.overIssued())
+    }
+
+    @Test
+    fun `asking for more than the shelf is flagged`() {
+        val draft = DocumentDraft(DocumentDirection.OUT)
+        draft.add(ItemInfo("CBL", "Cable", "متر", 100, "0"))
+        draft.setQuantity("CBL", 101)
+
+        assertTrue(draft.lines.first().exceedsShelf)
+        assertEquals("CBL", draft.overIssued()?.code)
+    }
+
+    @Test
+    fun `exactly the shelf is allowed`() {
+        val draft = DocumentDraft(DocumentDirection.OUT)
+        draft.add(ItemInfo("CBL", "Cable", "متر", 100, "0"))
+        draft.setQuantity("CBL", 100)
+
+        assertNull(draft.overIssued())
+    }
+
+    @Test
+    fun `scanning past the shelf flags the line the scan landed on`() {
+        val draft = DocumentDraft(DocumentDirection.OUT)
+        draft.add(ItemInfo("CBL", "Cable", "متر", 1, "0"))
+        draft.add(ItemInfo("CBL", "Cable", "متر", 1, "0"))
+
+        assertEquals(2, draft.lines.first().quantity)
+        assertTrue(draft.lines.first().exceedsShelf)
+    }
 }

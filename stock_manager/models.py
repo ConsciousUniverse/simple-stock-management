@@ -434,6 +434,7 @@ class AuditEvent(models.Model):
     PHONE_CHANGED = "phone_changed"
     PHONE_REQUESTED = "phone_requested"
     PHONE_REQUEST_DECIDED = "phone_request_decided"
+    MOBILE_DEVICE_CLEARED = "mobile_device_cleared"
 
     ACTION_CHOICES = (
         (LOGIN, _lazy("Signed in")),
@@ -461,6 +462,7 @@ class AuditEvent(models.Model):
         (PHONE_CHANGED, _lazy("Sign-in phone changed")),
         (PHONE_REQUESTED, _lazy("Phone change requested")),
         (PHONE_REQUEST_DECIDED, _lazy("Phone change decided")),
+        (MOBILE_DEVICE_CLEARED, _lazy("Phone unbound from the app")),
     )
 
     # Grouping for the log's filter: which part of the app an action belongs to.
@@ -498,6 +500,7 @@ class AuditEvent(models.Model):
         RELEASE_PUBLISHED: "app",
         PHONE_CHANGED: "users",
         PHONE_REQUESTED: "users",
+        MOBILE_DEVICE_CLEARED: "users",
         PHONE_REQUEST_DECIDED: "users",
     }
 
@@ -553,6 +556,13 @@ class MobileProfile(models.Model):
     # web login, so the web sign-in form refuses them by name instead of letting
     # them into a page they cannot use. Set by a manager on /users/.
     mobile_only = models.BooleanField(default=False)
+    # The one phone this account is open on. The app generates the id once and
+    # keeps it; a second phone is refused until a manager clears the first one
+    # from /android/, because two phones sharing an account is two people
+    # signing off stock movements in one name.
+    device_id = models.CharField(max_length=64, blank=True, default="")
+    device_label = models.CharField(max_length=120, blank=True, default="")
+    device_bound_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -640,6 +650,9 @@ class MobileSession(models.Model):
     )
     token_hash = models.CharField(max_length=64, unique=True)
     device = models.CharField(max_length=120, blank=True, default="")
+    # Which phone this token was issued to, so clearing the device on the web
+    # also stops the token that phone is still holding.
+    device_id = models.CharField(max_length=64, blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     last_used_at = models.DateTimeField(auto_now=True)
     revoked_at = models.DateTimeField(null=True, blank=True)

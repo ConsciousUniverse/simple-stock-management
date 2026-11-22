@@ -1,11 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="brand">#003D7D</color>
-    <color name="brand_dark">#002B57</color>
-    <color name="accent">#E8730C</color>
+    <!-- The brand: a deep navy that carries the header, and a warm orange that
+         marks the one action on each screen. -->
+    <color name="brand">#0B2C4D</color>
+    <color name="brand_dark">#071F38</color>
+    <color name="brand_mid">#12456F</color>
+    <color name="brand_light">#1E6FA8</color>
+    <color name="accent">#F2802B</color>
+    <color name="accent_soft">#FFE7D3</color>
+
     <color name="surface">#FFFFFF</color>
-    <color name="background">#F4F6F9</color>
-    <color name="text">#12232E</color>
-    <color name="text_muted">#5B6B77</color>
+    <color name="surface_alt">#F3F6FA</color>
+    <color name="background">#EEF2F7</color>
+    <color name="line">#DCE4EE</color>
+
+    <color name="text">#0F2438</color>
+    <color name="text_muted">#5E7183</color>
+    <color name="text_on_brand">#FFFFFF</color>
+    <color name="text_on_brand_muted">#B9CCDE</color>
+
+    <color name="success">#17795E</color>
+    <color name="success_bg">#DCF3EA</color>
+    <color name="warn">#8A5B00</color>
+    <color name="warn_bg">#FDF0D2</color>
     <color name="danger">#B3261E</color>
+    <color name="danger_bg">#FBE3E1</color>
+    <color name="info">#1B5E8A</color>
+    <color name="info_bg">#DEEBF6</color>
+    <color name="neutral_bg">#E9EEF4</color>
 </resources>

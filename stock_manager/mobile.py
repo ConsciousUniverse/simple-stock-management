@@ -112,12 +112,84 @@ def resolve_user(identifier):
     return User.objects.filter(username__iexact=text).first()
 
 
-def login(identifier, password, device="", request=None):
+def device_refusal(profile):
+    """The sentence a second phone is shown, naming the phone that has it."""
+    label = profile.device_label or "هاتف مسجَّل"
+    when = (
+        f" منذ {profile.device_bound_at:%Y-%m-%d}" if profile.device_bound_at else ""
+    )
+    return (
+        f"هذا الحساب مفتوح على هاتف آخر ({label}{when}). "
+        "لا يمكن فتحه على هاتف جديد إلا بعد أن يمسح مدير المخزن الجهاز القديم "
+        "من صفحة «مستخدمو التطبيق» على الويب."
+    )
+
+
+def bind_device(profile, device_id, label=""):
+    """Claim the account for this phone, or refuse it by name.
+
+    Returns True when the phone was newly bound. An account with no device yet
+    (a fresh one, or one a manager just cleared) is claimed by whoever signs in
+    first — that is the only moment a second phone can take it, and it is the
+    same moment the person proves the password.
+    """
+    device_id = str(device_id or "").strip()[:64]
+    if not device_id:
+        # An older build that does not send an id yet: nothing to bind, and
+        # refusing it would lock out the phones already in people's hands.
+        return False
+    if profile.device_id and profile.device_id != device_id:
+        raise MobileError(
+            device_refusal(profile), status=409, code="device_locked"
+        )
+    label = str(label or "").strip()[:120]
+    if not profile.device_id:
+        profile.device_id = device_id
+        profile.device_label = label
+        profile.device_bound_at = timezone.now()
+        profile.save(
+            update_fields=["device_id", "device_label", "device_bound_at", "updated_at"]
+        )
+        return True
+    if label and label != profile.device_label:
+        profile.device_label = label
+        profile.save(update_fields=["device_label", "updated_at"])
+    return False
+
+
+def clear_device(user, by=None):
+    """Free the account for another phone, and stop the old phone's token."""
+    profile = getattr(user, "mobile_profile", None)
+    if profile is None:
+        return False
+    had_device = bool(profile.device_id)
+    label = profile.device_label
+    profile.device_id = ""
+    profile.device_label = ""
+    profile.device_bound_at = None
+    profile.save(
+        update_fields=["device_id", "device_label", "device_bound_at", "updated_at"]
+    )
+    MobileSession.objects.filter(user=user, revoked_at__isnull=True).update(
+        revoked_at=timezone.now()
+    )
+    audit.record(
+        user=by,
+        action=AuditEvent.MOBILE_DEVICE_CLEARED,
+        entity="mobile_profile",
+        entity_id=user.pk,
+        description=f"{user.get_username()} · {label or 'جهاز غير معروف'}",
+    )
+    return had_device
+
+
+def login(identifier, password, device="", device_id="", request=None):
     """Sign in with a phone number or a user name, and the account's password.
 
     Neither the phone nor the user name is a credential — the phone is printed
     on every order, and a user name is guessable. The password is what proves
-    it.
+    it. The phone itself is the second lock: an account is open on ONE device
+    until a manager clears it.
     """
     if not str(identifier or "").strip():
         raise MobileError(
@@ -158,9 +230,16 @@ def login(identifier, password, device="", request=None):
     user.last_login = timezone.now()
     user.save(update_fields=["last_login"])
 
+    profile = getattr(user, "mobile_profile", None)
+    if profile is not None:
+        bind_device(profile, device_id, device)
+
     token = secrets.token_urlsafe(32)
     MobileSession.objects.create(
-        user=user, token_hash=_hash(token), device=str(device or "")[:120]
+        user=user,
+        token_hash=_hash(token),
+        device=str(device or "")[:120],
+        device_id=str(device_id or "").strip()[:64],
     )
     audit.record(
         user=user,
@@ -188,6 +267,16 @@ def session_for_token(token):
         session.save(update_fields=["revoked_at"])
         return None
     if not session.user.is_active:
+        return None
+    # A phone whose account was cleared (or handed to another phone) must not
+    # keep working on the token it already holds.
+    profile = getattr(session.user, "mobile_profile", None)
+    if (
+        profile is not None
+        and session.device_id
+        and profile.device_id != session.device_id
+    ):
+        MobileSession.objects.filter(pk=session.pk).update(revoked_at=timezone.now())
         return None
     MobileSession.objects.filter(pk=session.pk).update(last_used_at=timezone.now())
     return session

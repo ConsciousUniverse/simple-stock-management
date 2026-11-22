@@ -221,6 +221,21 @@ def create_document(
     if pending is None:
         pending = source != StockDocument.WEB
 
+    # An issue is checked against the shelf NOW, so the operator reads the
+    # shortage while holding the phone instead of after a manager approves it.
+    # ``_apply`` re-checks inside the conditional UPDATE — this is the message,
+    # that is the guarantee.
+    if direction == OUT:
+        for sku, quantity, _description, _unit in parsed:
+            item = _item_for_line(sku)
+            available = item.quantity if item is not None else 0
+            if item is None or quantity > available:
+                unit = (item.unit if item is not None else "") or ""
+                raise DocumentError(
+                    f"لا يمكن صرف {quantity} {unit} من {sku} — "
+                    f"المتاح في المخزن {available} {unit}".rstrip()
+                )
+
     if external_ref:
         existing = _existing_by_reference(external_ref)
         if existing:

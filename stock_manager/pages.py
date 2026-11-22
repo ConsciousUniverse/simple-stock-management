@@ -228,6 +228,38 @@ def _unlock_user(request):
     return _redirect_users(request)
 
 
+def _clear_device(request):
+    """Free an app account from the phone it is bound to.
+
+    The one action that lets a person move to a new phone: until this is done,
+    the second phone is refused by name. Clearing also revokes the tokens the
+    old phone is holding, so a phone that was lost stops working now rather
+    than when its token expires.
+    """
+    from stock_manager import mobile
+
+    raw_id = (request.POST.get("user_id") or "").strip()
+    user = User.objects.filter(pk=raw_id).first() if raw_id.isdigit() else None
+    if user is None:
+        messages.error(request, _("That user does not exist."))
+        return _redirect_users(request)
+    had_device = mobile.clear_device(user, by=request.user)
+    if had_device:
+        messages.success(
+            request,
+            _(
+                "The device was cleared from %(name)s. They can sign in on a new phone now."
+            )
+            % {"name": user.get_username()},
+        )
+    else:
+        messages.info(
+            request,
+            _("%(name)s was not bound to any phone.") % {"name": user.get_username()},
+        )
+    return _redirect_users(request)
+
+
 def _toggle_active(request):
     """Close or reopen an account without opening the edit panel."""
     raw_id = (request.POST.get("user_id") or "").strip()
@@ -294,6 +326,8 @@ def _save_user(request):
         return _toggle_active(request)
     if action == "unlock":
         return _unlock_user(request)
+    if action == "clear-device":
+        return _clear_device(request)
     if action == "password":
         user = User.objects.filter(pk=request.POST.get("user_id")).first()
         password = request.POST.get("password") or ""
@@ -495,6 +529,8 @@ def android_page(request):
         )
         account.lock = lock_states[account.get_username()]
         account.phone_display = display_phone(account.mobile_profile.phone)
+        account.device_label = account.mobile_profile.device_label
+        account.device_bound_at = account.mobile_profile.device_bound_at
     return render(
         request,
         "pages/android.html",

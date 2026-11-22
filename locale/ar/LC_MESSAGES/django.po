@@ -10,6 +10,9 @@ msgstr ""
 msgid "%(active)s of %(total)s active"
 msgstr "%(active)s نشِط من %(total)s"
 
+msgid "%(name)s was not bound to any phone."
+msgstr "حساب %(name)s مش مرتبط بأي هاتف."
+
 msgid "(.xlsx — the sheet is the source of truth)"
 msgstr "(‎.xlsx — الملف هو مصدر البيانات)"
 
@@ -138,6 +141,9 @@ msgstr "حدث خطأ غير متوقع أثناء استلام التوريد."
 
 msgid "Android app"
 msgstr "تطبيق الأندرويد"
+
+msgid "Any phone"
+msgstr "أي هاتف"
 
 msgid "App account"
 msgstr "حساب تطبيق"
@@ -279,6 +285,12 @@ msgstr "مسح الفلاتر"
 
 msgid "Clear the lockout"
 msgstr "فتح القفل"
+
+msgid "Clear the phone"
+msgstr "مسح الجهاز"
+
+msgid "Clear the phone this account is bound to? The old phone stops working at once."
+msgstr "تمسح الهاتف المرتبط بالحساب؟ الهاتف القديم هيقف عن العمل فورًا."
 
 msgid "Close"
 msgstr "إغلاق"
@@ -1027,6 +1039,9 @@ msgstr "إجمالي الأذون"
 msgid "Phone"
 msgstr "الهاتف"
 
+msgid "Phone bound to"
+msgstr "الهاتف المرتبط"
+
 msgid "Phone change decided"
 msgstr "تم البتّ في طلب تغيير الرقم"
 
@@ -1038,6 +1053,9 @@ msgstr "طلبات تغيير رقم الهاتف"
 
 msgid "Phone the app signs in with"
 msgstr "رقم الهاتف الذي يدخل به التطبيق"
+
+msgid "Phone unbound from the app"
+msgstr "فك ارتباط الهاتف بالتطبيق"
 
 msgid "Photo"
 msgstr "صورة"
@@ -1524,6 +1542,9 @@ msgstr "رقم إذن الشركة أطول من المسموح."
 
 msgid "The date written on the paper, not today's date."
 msgstr "التاريخ المكتوب على الورقة، وليس تاريخ اليوم."
+
+msgid "The device was cleared from %(name)s. They can sign in on a new phone now."
+msgstr "تم مسح الجهاز من حساب %(name)s. يقدر يدخل من هاتف جديد الآن."
 
 msgid "The download address must start with https:// or with /."
 msgstr "يجب أن يبدأ عنوان التنزيل بـ https:// أو بـ /."

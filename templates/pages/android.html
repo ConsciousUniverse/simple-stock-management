@@ -111,6 +111,7 @@
                         <th>{% trans "User name" %}</th>
                         <th>{% trans "Phone" %}</th>
                         <th>{% trans "Role" %}</th>
+                        <th>{% trans "Phone bound to" %}</th>
                         <th>{% trans "Last sign-in" %}</th>
                         <th>{% trans "Status" %}</th>
                         <th class="sap-actions">{% trans "Actions" %}</th>
@@ -123,6 +124,16 @@
                         <td dir="ltr">{{ row.get_username }}</td>
                         <td dir="ltr">{{ row.phone_display|default:"—" }}</td>
                         <td>{{ row.role_names|join:", "|default:"—" }}</td>
+                        <td>
+                            {% if row.device_label or row.device_bound_at %}
+                            <span class="sap-pill sap-pill--info">{{ row.device_label|default:"هاتف" }}</span>
+                            {% if row.device_bound_at %}
+                            <span class="sap-muted" dir="ltr">{{ row.device_bound_at|date:"Y-m-d" }}</span>
+                            {% endif %}
+                            {% else %}
+                            <span class="sap-muted">{% trans "Any phone" %}</span>
+                            {% endif %}
+                        </td>
                         <td>{{ row.last_login|date:"Y-m-d H:i"|default:"—" }}</td>
                         <td>
                             {% if not row.is_active %}
@@ -154,6 +165,18 @@
                                     type="submit">{% trans "Clear the lockout" %}</button>
                             </form>
                             {% endif %}
+                            {% if row.device_label or row.device_bound_at %}
+                            <form method="post" action="/users/" class="sap-inline-form"
+                                onsubmit="return confirm('{% trans "Clear the phone this account is bound to? The old phone stops working at once." %}');">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="clear-device">
+                                <input type="hidden" name="user_id" value="{{ row.pk }}">
+                                <input type="hidden" name="next" value="/android/">
+                                <button class="sap-btn sap-btn--negative sap-btn--sm" type="submit">
+                                    {% trans "Clear the phone" %}
+                                </button>
+                            </form>
+                            {% endif %}
                             {% if row.pk != request.user.pk %}
                             <form method="post" action="/users/" class="sap-inline-form">
                                 {% csrf_token %}
@@ -172,7 +195,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" class="sap-empty">
+                        <td colspan="8" class="sap-empty">
                             <span class="sap-empty__title">{% trans "No one signs in from the app yet." %}</span>
                             <span class="sap-empty__hint">{% trans "Add a user below: the phone number is what they sign in with." %}</span>
                         </td>

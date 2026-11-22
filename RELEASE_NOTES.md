@@ -1,5 +1,40 @@
 # Release Notes
 
+## v6.2.0 — 2026-11-23
+
+Three rules that were asked for and are now enforced in the code, not in a
+habit.
+
+**One account, one phone.** The first phone that signs in claims the account.
+A second phone is refused with a sentence that names the phone holding it, and
+a manager frees the account from **/android/ → مستخدمو التطبيق → مسح الجهاز**.
+Clearing also stops the token the old phone is still holding, so a lost phone
+stops working at once instead of when its token expires.
+
+**Never issue more than the shelf.** The phone refuses a scan that asks for
+more than the stock on hand, and the server refuses the same document if the
+shelf emptied between submission and approval — the approval moves the balance
+through a conditional update, so two approvals can never oversell.
+
+**The app wakes the server instead of failing.** Render stops an idle service
+after fifteen minutes; the first request after that used to look like a broken
+app. The client now retries with backoff and says «بيتم تشغيل الخادم…» while it
+waits.
+
+**Android app 1.4.0 (build 5)**
+
+- **The sign-in screen asks for one thing: the password.** The account stays on
+  the phone it was opened on, so the number is no longer retyped every morning.
+  «الدخول بحساب آخر» shows the identifier field when a different person uses the
+  phone.
+- **A dashboard instead of a settings list**: the person, the two actions
+  (صرف / إضافة) as full-width tiles, and one line saying how many documents are
+  waiting for a manager.
+- **The gear** now holds the account, the app version, the manual update check,
+  a connection test and the way out — the daily screen stays two buttons.
+- **The shelf is visible while you scan**: every line shows «المتاح: 100 متر»,
+  turns red past it, and the review button refuses to continue.
+
 ## v6.1.0 — 2026-11-22
 
 The warehouse app can now carry a signed paper voucher end to end: the operator

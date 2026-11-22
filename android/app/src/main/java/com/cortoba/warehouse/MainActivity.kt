@@ -1,23 +1,16 @@
 package com.cortoba.warehouse
 
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
-import android.text.InputType
 import android.view.View
-import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import com.cortoba.warehouse.databinding.ActivityMainBinding
-import java.io.File
 
 /**
- * The signed-in screen: who you are, the number you sign in with (read-only),
- * and the update prompt.
+ * The signed-in screen: who you are, the two things you came to do, and the
+ * gear that holds everything else.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -40,23 +33,31 @@ class MainActivity : AppCompatActivity() {
         askForNotificationPermission()
         UpdateWorker.schedule(this)
 
-        binding.newIssue.setOnClickListener {
-            openDocument(DocumentDirection.OUT)
-        }
-        binding.newAddition.setOnClickListener {
-            openDocument(DocumentDirection.IN)
-        }
+        binding.newIssue.setOnClickListener { openDocument(DocumentDirection.OUT) }
+        binding.newAddition.setOnClickListener { openDocument(DocumentDirection.IN) }
         binding.myDocuments.setOnClickListener {
             startActivity(Intent(this, DocumentsActivity::class.java))
         }
-        binding.signOut.setOnClickListener { signOut() }
-        binding.requestPhoneChange.setOnClickListener { askForNewPhone() }
-        binding.checkUpdates.setOnClickListener { checkForUpdate(showWhenCurrent = true) }
-        binding.refresh.setOnClickListener { loadProfile() }
+        binding.settingsButton.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
+        binding.versionFooter.text = getString(
+            R.string.version_line, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE
+        )
 
+        // The name is on the phone already; the server only refreshes it.
+        renderName(session.displayName, "")
         loadProfile()
+        loadSummary()
+        // The silent check that actually delivers updates: a new build is
+        // offered here, and the manual check lives behind the gear.
         checkForUpdate(showWhenCurrent = false)
         handleIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (session.isSignedIn) loadSummary()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -83,9 +84,9 @@ class MainActivity : AppCompatActivity() {
     // ---------------------------------------------------------------- profile
 
     private fun loadProfile() {
-        binding.progress.visibility = View.VISIBLE
         val api = session.api()
         val token = session.token ?: return goToLogin()
+        api.onWaking = { runOnUiThread { binding.progress.visibility = View.VISIBLE } }
         Thread {
             val result = runCatching { api.me(token) }
             runOnUiThread {
@@ -110,15 +111,38 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
 
+    /** How much is waiting for a manager: the one number worth a card. */
+    private fun loadSummary() {
+        val api = session.api()
+        val token = session.token ?: return
+        Thread {
+            val result = runCatching { api.documents(token) }
+            runOnUiThread {
+                result.onSuccess { documents ->
+                    val pending = documents.count { it.status == "pending" }
+                    binding.documentsSummary.text = if (documents.isEmpty()) {
+                        getString(R.string.documents_summary_none)
+                    } else {
+                        getString(R.string.documents_summary, documents.size, pending)
+                    }
+                }
+            }
+        }.start()
+    }
+
     private fun render(loaded: Profile) {
-        binding.name.text = loaded.displayName
-        binding.role.text = roleLabel(loaded.role)
-        binding.phone.text = loaded.phone.ifEmpty { getString(R.string.no_phone) }
-        binding.phoneLock.visibility = View.VISIBLE
+        renderName(loaded.displayName, roleLabel(loaded.role))
         binding.pending.visibility = if (loaded.pendingPhone != null) View.VISIBLE else View.GONE
         if (loaded.pendingPhone != null) {
             binding.pending.text = getString(R.string.pending_phone_change, loaded.pendingPhone)
         }
+    }
+
+    private fun renderName(name: String, role: String) {
+        val shown = name.ifEmpty { getString(R.string.my_account) }
+        binding.name.text = shown
+        binding.role.text = role.ifEmpty { getString(R.string.role_user) }
+        binding.avatar.text = shown.trim().firstOrNull()?.uppercase() ?: "؟"
     }
 
     private fun roleLabel(role: String): String = when (role) {
@@ -126,60 +150,6 @@ class MainActivity : AppCompatActivity() {
         "shop_user" -> getString(R.string.role_shop)
         "receive_mail" -> getString(R.string.role_receive)
         else -> getString(R.string.role_user)
-    }
-
-    private fun askForNewPhone() {
-        val input = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_PHONE
-            hint = getString(R.string.new_phone_hint)
-        }
-        val reason = EditText(this).apply {
-            hint = getString(R.string.new_phone_reason)
-            setSingleLine(false)
-        }
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(48, 16, 48, 0)
-            addView(input)
-            addView(reason)
-        }
-        AlertDialog.Builder(this)
-            .setTitle(R.string.request_phone_change)
-            .setMessage(R.string.request_phone_change_explained)
-            .setView(container)
-            .setPositiveButton(R.string.send_request) { _, _ ->
-                submitPhoneChange(input.text.toString().trim(), reason.text.toString().trim())
-            }
-            .setNegativeButton(R.string.cancel, null)
-            .show()
-    }
-
-    private fun submitPhoneChange(newPhone: String, reason: String) {
-        if (newPhone.isEmpty()) {
-            Toast.makeText(this, R.string.phone_and_password_required, Toast.LENGTH_LONG).show()
-            return
-        }
-        val api = session.api()
-        val token = session.token ?: return
-        Thread {
-            val result = runCatching { api.requestPhoneChange(token, newPhone, reason) }
-            runOnUiThread {
-                result.onSuccess { message ->
-                    Toast.makeText(
-                        this,
-                        message.ifEmpty { getString(R.string.request_sent) },
-                        Toast.LENGTH_LONG,
-                    ).show()
-                    loadProfile()
-                }.onFailure { error ->
-                    Toast.makeText(
-                        this,
-                        error.message ?: getString(R.string.sign_in_failed),
-                        Toast.LENGTH_LONG,
-                    ).show()
-                }
-            }
-        }.start()
     }
 
     // ----------------------------------------------------------------- update
@@ -191,7 +161,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 result.onSuccess { info ->
                     if (info != null && info.isNewerThan(BuildConfig.VERSION_CODE)) {
-                        showUpdate(info)
+                        Updates.offer(this, info)
                     } else if (showWhenCurrent) {
                         Toast.makeText(
                             this,
@@ -212,101 +182,17 @@ class MainActivity : AppCompatActivity() {
         }.start()
     }
 
-    /**
-     * The dialog the operator asked for. A mandatory build has no "later": the
-     * whole point of the flag is a client that can no longer talk to the server.
-     */
-    private fun showUpdate(info: UpdateInfo) {
-        val builder = AlertDialog.Builder(this)
-            .setTitle(getString(R.string.update_available_title))
-            .setMessage(
-                buildString {
-                    append(getString(R.string.update_available_body, info.versionName))
-                    if (info.notes.isNotBlank()) {
-                        append("\n\n")
-                        append(info.notes)
-                    }
-                    if (info.mandatory) {
-                        append("\n\n")
-                        append(getString(R.string.update_mandatory_note))
-                    }
-                }
-            )
-            .setPositiveButton(R.string.update_now) { _, _ -> downloadAndInstall(info) }
-            .setCancelable(!info.mandatory)
-
-        if (!info.mandatory) {
-            builder.setNegativeButton(R.string.later, null)
-        }
-        builder.show()
-    }
-
-    private fun downloadAndInstall(info: UpdateInfo) {
-        if (!Apk.canInstall(this)) {
-            Toast.makeText(this, R.string.allow_install_explained, Toast.LENGTH_LONG).show()
-            Apk.openInstallPermission(this)
-            return
-        }
-
-        val target = Apk.targetFile(this, info)
-        val progress = android.widget.ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
-            max = 100
-            setPadding(48, 32, 48, 32)
-        }
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(R.string.downloading_update)
-            .setView(progress)
-            .setCancelable(false)
-            .create()
-        dialog.show()
-
-        Thread {
-            val result = runCatching {
-                Apk.download(info.downloadUrl, target) { percent ->
-                    runOnUiThread { progress.progress = percent }
-                }
-                if (!Apk.checksumMatches(target, info.sha256)) {
-                    target.delete()
-                    throw IllegalStateException(getString(R.string.checksum_mismatch))
-                }
-                target
-            }
-            runOnUiThread {
-                dialog.dismiss()
-                result.onSuccess { file ->
-                    UpdateNotifier.clear(this)
-                    Apk.install(this, file)
-                }.onFailure { error ->
-                    Toast.makeText(
-                        this,
-                        error.message ?: getString(R.string.update_check_failed),
-                        Toast.LENGTH_LONG,
-                    ).show()
-                }
-            }
-        }.start()
-    }
-
-    // ------------------------------------------------------------------- misc
+    // ------------------------------------------------------------------ misc
 
     private fun askForNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        if (android.os.Build.VERSION.SDK_INT < 33) return
+        val granted = checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (!granted) {
             ActivityCompat.requestPermissions(
-                this,
-                arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
-                REQUEST_NOTIFICATIONS,
+                this, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101
             )
         }
-    }
-
-    private fun signOut() {
-        val api = session.api()
-        val token = session.token
-        session.clear()
-        Thread {
-            runCatching { token?.let { api.logout(it) } }
-        }.start()
-        goToLogin()
     }
 
     private fun goToLogin() {
@@ -316,6 +202,5 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_CHECK_UPDATES = "check_updates"
-        private const val REQUEST_NOTIFICATIONS = 91
     }
 }

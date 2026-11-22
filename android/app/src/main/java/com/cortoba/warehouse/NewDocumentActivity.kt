@@ -255,7 +255,40 @@ class NewDocumentActivity : AppCompatActivity() {
             runOnUiThread {
                 binding.progress.visibility = View.GONE
                 result.onSuccess { item ->
-                    draft.add(item)
+                    if (draft.direction == DocumentDirection.OUT && item.quantity <= 0) {
+                        MaterialAlertDialogBuilder(this)
+                            .setTitle(R.string.over_issue_blocked)
+                            .setMessage(
+                                getString(
+                                    R.string.not_enough_stock,
+                                    item.quantity,
+                                    item.unit.ifBlank { getString(R.string.stock_none) },
+                                )
+                            )
+                            .setPositiveButton(android.R.string.ok, null)
+                            .show()
+                        return@onSuccess
+                    }
+                    val line = draft.add(item)
+                    if (line.exceedsShelf) {
+                        // Put the draft back where it was: a scan that cannot
+                        // be issued must not leave a quantity on the sheet.
+                        line.quantity -= 1
+                        if (line.quantity <= 0) draft.remove(line.code)
+                        renderLines()
+                        MaterialAlertDialogBuilder(this)
+                            .setTitle(R.string.over_issue_blocked)
+                            .setMessage(
+                                getString(
+                                    R.string.not_enough_stock,
+                                    line.available ?: 0,
+                                    line.unit,
+                                )
+                            )
+                            .setPositiveButton(android.R.string.ok, null)
+                            .show()
+                        return@onSuccess
+                    }
                     renderLines()
                     toast("${item.description} · ${item.unit}")
                 }.onFailure { error ->
@@ -286,9 +319,29 @@ class NewDocumentActivity : AppCompatActivity() {
             row.lineMeta.text = buildString {
                 append(line.code)
                 if (line.unit.isNotBlank()) append(" · ").append(line.unit)
+                if (line.available != null) {
+                    append("  ·  ")
+                    append(getString(R.string.available_stock, line.available!!, line.unit))
+                }
             }
+            row.lineMeta.setTextColor(
+                androidx.core.content.ContextCompat.getColor(
+                    this,
+                    if (line.exceedsShelf) R.color.danger else R.color.text_muted,
+                )
+            )
             row.lineQty.text = line.quantity.toString()
             row.linePlus.setOnClickListener {
+                if (line.exceedsShelf || line.quantity >= (line.available ?: Int.MAX_VALUE)) {
+                    toast(
+                        getString(
+                            R.string.not_enough_stock,
+                            line.available ?: 0,
+                            line.unit,
+                        )
+                    )
+                    return@setOnClickListener
+                }
                 draft.setQuantity(line.code, line.quantity + 1)
                 renderLines()
             }
@@ -318,6 +371,10 @@ class NewDocumentActivity : AppCompatActivity() {
         val missing = draft.missing()
         if (missing != null) {
             toast(getString(R.string.required_field, missingLabel(missing)))
+            return
+        }
+        draft.overIssued()?.let { line ->
+            toast(getString(R.string.not_enough_stock, line.available ?: 0, line.unit))
             return
         }
         startActivity(Intent(this, ReviewActivity::class.java))

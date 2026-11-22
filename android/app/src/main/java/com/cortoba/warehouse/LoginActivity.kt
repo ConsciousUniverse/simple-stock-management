@@ -1,20 +1,20 @@
 package com.cortoba.warehouse
 
-import android.app.Activity
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
+import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.cortoba.warehouse.databinding.ActivityLoginBinding
 
 /**
- * Signing in: the phone number and the password a manager gave.
+ * Signing in, in one field.
  *
- * The phone is the identity and the app cannot change it — the sign-in screen
- * has no "change my number" field, because there is nothing it could do with
- * one. A new number is asked for from the profile screen and approved by a
- * warehouse manager.
+ * The account stays on the phone it was first opened on — the server binds it
+ * to a device id — so asking for the phone number every morning is asking for
+ * something the app already knows. The identifier field appears only when the
+ * person asks for another account.
  */
 class LoginActivity : AppCompatActivity() {
 
@@ -28,10 +28,30 @@ class LoginActivity : AppCompatActivity() {
         session = Session(this)
 
         session.forgetStoredServer()
-        binding.phoneInput.setText(session.phone)
+        binding.versionLabel.text = getString(
+            R.string.version_line, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE
+        )
+
         binding.signIn.setOnClickListener { signIn() }
+        binding.switchAccount.setOnClickListener { showIdentifierField() }
         binding.forgotPhone.setOnClickListener {
             Toast.makeText(this, R.string.forgot_phone_hint, Toast.LENGTH_LONG).show()
+        }
+        binding.passwordInput.setOnEditorActionListener { _, _, _ ->
+            signIn()
+            true
+        }
+
+        // A remembered account signs in with the password alone.
+        val remembered = session.phone
+        if (remembered.isEmpty()) {
+            showIdentifierField()
+        } else {
+            // The name only: the number is the account's business, not the
+            // business of whoever is looking over the shoulder.
+            val name = session.displayName.ifEmpty { getString(R.string.role_user) }
+            binding.welcomeTitle.text = getString(R.string.welcome_back)
+            binding.welcomeAccount.text = name
         }
 
         if (session.isSignedIn) {
@@ -40,42 +60,77 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
+    private fun showIdentifierField() {
+        binding.phoneBox.visibility = View.VISIBLE
+        binding.welcomeTitle.setText(R.string.sign_in_title)
+        binding.welcomeAccount.setText(R.string.sign_in_subtitle)
+        binding.switchAccount.visibility = View.GONE
+        binding.phoneInput.setText(session.phone)
+        binding.passwordInput.requestFocus()
+    }
+
     private fun signIn() {
         val phone = binding.phoneInput.text?.toString()?.trim().orEmpty()
+            .ifEmpty { session.phone }
         val password = binding.passwordInput.text?.toString().orEmpty()
 
-        if (phone.isEmpty() || password.isEmpty()) {
+        if (phone.isEmpty()) {
+            showIdentifierField()
             showError(getString(R.string.phone_and_password_required))
+            return
+        }
+        if (password.isEmpty()) {
+            showError(getString(R.string.password_required))
             return
         }
 
         setBusy(true)
         val api = session.api()
+        api.onWaking = { runOnUiThread { binding.waking.visibility = View.VISIBLE } }
         Thread {
             val result = runCatching {
-                api.login(phone, password, "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}")
+                api.login(phone, password, session.deviceLabel(), session.deviceId)
             }
             runOnUiThread {
                 setBusy(false)
+                binding.waking.visibility = View.GONE
                 result.onSuccess { (token, profile) ->
                     session.token = token
                     session.remember(profile)
                     startActivity(Intent(this, MainActivity::class.java))
                     finish()
-                }.onFailure { error ->
-                    showError(error.message ?: getString(R.string.sign_in_failed))
-                }
+                }.onFailure { error -> showFailure(error) }
             }
         }.start()
     }
 
+    /**
+     * A refusal is shown as the server wrote it: "the account is on another
+     * phone (Samsung A12)" is a sentence the person can take to their manager,
+     * and a generic "sign-in failed" is not.
+     */
+    private fun showFailure(error: Throwable) {
+        if (error is ApiException && error.code == "device_locked") {
+            AlertDialog.Builder(this)
+                .setTitle(R.string.device_locked_title)
+                .setMessage(error.message)
+                .setPositiveButton(android.R.string.ok, null)
+                .show()
+            return
+        }
+        showError(error.message ?: getString(R.string.sign_in_failed))
+    }
+
     private fun setBusy(busy: Boolean) {
         binding.signIn.isEnabled = !busy
-        binding.progress.visibility = if (busy) android.view.View.VISIBLE else android.view.View.GONE
+        binding.signIn.text =
+            if (busy) getString(R.string.server_waking_status) else getString(R.string.sign_in)
+        binding.progress.visibility = if (busy) View.VISIBLE else View.GONE
+        binding.error.visibility = View.GONE
     }
 
     private fun showError(message: String) {
         binding.error.text = message
-        binding.error.visibility = android.view.View.VISIBLE
+        binding.error.visibility = View.VISIBLE
     }
 }

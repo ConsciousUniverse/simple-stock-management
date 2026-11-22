@@ -36,7 +36,17 @@ data class DraftLine(
     val description: String,
     val unit: String,
     var quantity: Int,
-)
+    /** What the shelf held when the label was scanned; null when unknown. */
+    val available: Int? = null,
+) {
+    /**
+     * More than the warehouse holds. A quantity above the shelf is refused
+     * rather than trimmed: quietly sending 80 when the paper says 100 is a
+     * document that lies about what left the store.
+     */
+    val exceedsShelf: Boolean
+        get() = available != null && quantity > available
+}
 
 /** The first thing standing between the draft and the server. */
 enum class MissingField { DATE, VOUCHER, LOCATION, ENGINEER, PHOTO, LINES }
@@ -75,10 +85,16 @@ class DocumentDraft(val direction: DocumentDirection) {
             description = item.description,
             unit = item.unit,
             quantity = amount,
+            // An addition has no ceiling: it is what the shelf is about to get.
+            available = if (direction == DocumentDirection.OUT) item.quantity else null,
         )
         entries.add(line)
         return line
     }
+
+    /** The first line asking for more than the shelf holds, if any. */
+    fun overIssued(): DraftLine? =
+        if (direction == DocumentDirection.OUT) entries.firstOrNull { it.exceedsShelf } else null
 
     fun setQuantity(code: String, quantity: Int) {
         val line = entries.firstOrNull { it.code == code } ?: return

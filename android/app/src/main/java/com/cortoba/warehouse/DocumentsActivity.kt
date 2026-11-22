@@ -68,12 +68,12 @@ class DocumentsActivity : AppCompatActivity() {
             else -> getString(R.string.status_pending)
         }
         val (textColour, background) = when (document.status) {
-            "approved" -> R.color.brand to R.color.background
-            "rejected" -> R.color.danger to R.color.background
-            else -> R.color.accent to R.color.background
+            "approved" -> R.color.success to R.drawable.bg_pill_success
+            "rejected" -> R.color.danger to R.drawable.bg_pill_danger
+            else -> R.color.warn to R.drawable.bg_pill_warn
         }
         row.status.setTextColor(ContextCompat.getColor(this, textColour))
-        row.status.setBackgroundColor(ContextCompat.getColor(this, background))
+        row.status.setBackgroundResource(background)
 
         row.meta.text = buildString {
             append(document.documentDate)
