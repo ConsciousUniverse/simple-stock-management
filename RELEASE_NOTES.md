@@ -1,5 +1,22 @@
 # Release Notes
 
+## v6.2.1 — 2026-11-23
+
+The scanning screen, fixed where it was wrong: the phone stayed upright, and
+the camera kept looking for focus.
+
+**The phone no longer turns sideways to scan.** The barcode library's own
+capture screen is declared `sensorLandscape`, so tapping "scan" rotated a phone
+the operator was holding upright — and every rotation restarts the camera. The
+app now has its own capture screen, locked to portrait.
+
+**Scanning stops waiting for a lucky frame.** The default is a single autofocus
+attempt; when it misses on a cheap phone nothing ever refocuses, so the label
+has to be moved back and forth. Focus is now continuous, the barcode scene mode
+is on, and the torch lights up by itself in a dark aisle.
+
+**Android 1.4.1 (build 6).** Everything else is unchanged.
+
 ## v6.2.0 — 2026-11-23
 
 Three rules that were asked for and are now enforced in the code, not in a

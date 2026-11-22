@@ -224,7 +224,10 @@ class NewDocumentActivity : AppCompatActivity() {
             setDesiredBarcodeFormats(ScanOptions.ALL_CODE_TYPES)
             setPrompt(getString(R.string.scan_barcode))
             setBeepEnabled(false)
+            // Our own activity: portrait, and focusing continuously. Locking the
+            // orientation here would ask for landscape.
             setOrientationLocked(false)
+            setCaptureActivity(ScannerActivity::class.java)
         }
         runCatching { scan.launch(options) }
             .onFailure { askForCode() } // no camera: typing the code still works

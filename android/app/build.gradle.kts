@@ -11,8 +11,8 @@ android {
         applicationId = "com.cortoba.warehouse"
         minSdk = 24
         targetSdk = 34
-        versionCode = 5
-        versionName = "1.4.0"
+        versionCode = 6
+        versionName = "1.4.1"
         // The deployment the app talks to. There is no field on the phone to
         // change it: one build serves the site it was made for, and a wrong
         // address cannot be typed in by mistake.
