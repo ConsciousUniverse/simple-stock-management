@@ -2128,3 +2128,48 @@ body.sap-login {
     margin-inline-end: 0.6rem;
     white-space: nowrap;
 }
+
+/* Two ways of creating an account, chosen before the fields appear: the same
+   form shown twice with half of it irrelevant is how a manager creates a web
+   account when they meant the phone. */
+.sap-tabs {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    margin-bottom: 18px;
+    border: 1px solid var(--sap-border);
+    border-radius: 10px;
+    background: var(--sap-surface-alt, #f4f5f7);
+}
+
+.sap-tab {
+    border: 0;
+    border-radius: 7px;
+    padding: 8px 18px;
+    font: inherit;
+    font-weight: 600;
+    color: var(--sap-text-muted, #556b82);
+    background: transparent;
+    cursor: pointer;
+}
+
+.sap-tab.is-active {
+    color: #fff;
+    background: var(--sap-brand, #0a58ca);
+}
+
+.is-hidden {
+    display: none !important;
+}
+
+/* Two controls in one cell (Edit + Close) on a narrow screen. */
+.sap-actions {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.sap-actions .sap-inline-form {
+    margin: 0;
+}

@@ -7,12 +7,10 @@
     <string name="sign_in_subtitle">Your phone number or user name, and the password a manager gave you.</string>
     <string name="phone_label">Phone number or user name</string>
     <string name="password_label">Password</string>
-    <string name="server_label">Server</string>
     <string name="sign_in">Sign in</string>
     <string name="forgot_phone">My number changed</string>
     <string name="forgot_phone_hint">Only a warehouse manager can change the number you sign in with. Ask the manager to change it from the system, then sign in again.</string>
     <string name="phone_and_password_required">Enter the phone number and the password.</string>
-    <string name="server_address_invalid">The server address must start with http:// or https://</string>
     <string name="sign_in_failed">Could not sign in.</string>
 
     <!-- Profile -->

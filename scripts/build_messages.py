@@ -23,6 +23,34 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 LOCALE_DIR = BASE_DIR / "locale" / "ar" / "LC_MESSAGES"
 
 ARABIC = {
+    # --- who may sign in where ------------------------------------------
+    "This is the last warehouse manager.": "هذا آخر مدير مخزن.",
+    "A warehouse worker's account signs in from the phone app only.": "حساب عامل المخزن يعمل على تطبيق الهاتف فقط.",
+    # --- the app is tied to its server ---------------------------------
+    "Nothing to configure: the app is already tied to this server, and the phone cannot change that address.": "لا شيء يُضبط: التطبيق مربوط بهذا الخادم، ولا يستطيع الهاتف تغيير هذا العنوان.",
+    "Server address (fixed in the app)": "عنوان الخادم (مثبَّت في التطبيق)",
+    "Built into the app for support only: there is no field on the phone to change it, so a password cannot be sent to another server.": "مثبَّت داخل التطبيق للدعم فقط: لا يوجد حقل في الهاتف لتغييره، فلا يمكن إرسال كلمة المرور إلى خادم آخر.",
+    # --- app accounts on /users/ (the phone is the whole account) ------
+    "A warehouse worker needs the phone only.": "عامل المخزن يحتاج التطبيق فقط.",
+    "App account": "حساب تطبيق",
+    "Web account": "حساب ويب",
+    "Name": "الاسم",
+    "This number is the account. The app cannot change it.": "هذا الرقم هو الحساب نفسه. التطبيق لا يستطيع تغييره.",
+    "User name (optional)": "اسم المستخدم (اختياري)",
+    "left empty: taken from the phone": "اتركه فارغًا ليُؤخذ من الرقم",
+    "Bookkeeping only: the app signs in with the phone.": "للتنظيم فقط: التطبيق يسجّل الدخول بالرقم.",
+    "Create the app account": "إنشاء حساب التطبيق",
+    "The app account %(name)s was created. They sign in with the phone number.": "تم إنشاء حساب التطبيق %(name)s. يسجّل الدخول برقم الهاتف.",
+    "You cannot close your own account.": "لا يمكنك إغلاق حسابك أنت.",
+    "The account of %(name)s was reopened.": "أُعيد فتح حساب %(name)s.",
+    "The account of %(name)s was closed.": "أُغلق حساب %(name)s.",
+    "App only: the web sign-in form refuses this account": "تطبيق فقط: صفحة الدخول على الويب ترفض هذا الحساب",
+    "Door": "باب الدخول",
+    "App only": "تطبيق فقط",
+    "Web and app": "ويب وتطبيق",
+    "Web only": "ويب فقط",
+    "Close": "إغلاق",
+    "Reopen": "إعادة فتح",
     # --- company permits (one issue, several permits) -----------------
     "Company permits": "أذون الصرف",
     "Company permit": "إذن الصرف",

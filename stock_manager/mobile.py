@@ -14,7 +14,7 @@ import hashlib
 import secrets
 
 from django.contrib.auth import authenticate
-from django.contrib.auth.models import User
+from django.contrib.auth.models import Group, User
 from django.db import transaction
 from django.utils import timezone
 
@@ -27,6 +27,11 @@ from .models import (
     PhoneChangeRequest,
 )
 from .phones import canonical_phone, display_phone, is_valid_phone
+
+#: Shortest password the app accounts accept. The web form uses the same number
+#: (``pages.MIN_PASSWORD_LENGTH``); a shorter one in one place than the other is
+#: how a manager creates an account the other screen then refuses.
+MIN_PASSWORD_LENGTH = 8
 
 #: How long a token stays valid without being used. A warehouse phone that sits
 #: in a drawer for a month should have to sign in again.
@@ -72,6 +77,7 @@ def profile_payload(user):
         # Read-only in the app, on purpose: see the module docstring.
         "phone": display_phone(profile.phone) if profile else "",
         "phoneLocked": True,
+        "mobileOnly": bool(profile and profile.mobile_only),
         "pendingPhoneChange": (
             {
                 "requestedPhone": display_phone(pending.requested_phone),
@@ -134,15 +140,24 @@ def login(identifier, password, device="", request=None):
     # The request is required by django-axes (it is the project's auth backend
     # and counts failures per account and address). Passing it means an app
     # attacker hits the same lockout as the web form.
+    # ``app_sign_in`` tells the one password backend which door this is: an
+    # account created for the phone only is refused by the web form and admitted
+    # here, and the refusal has to be decided with the credential, not globally.
     user = authenticate(
         request=request,
         username=user.get_username(),
         password=str(password or ""),
+        app_sign_in=True,
     )
     if user is None or not user.is_active:
         raise MobileError(
             "كلمة المرور غير صحيحة.", status=401, code="bad_password"
         )
+
+    # django writes last_login from login(); this path does not call it, so
+    # without this the users page shows "—" for someone who signs in daily.
+    user.last_login = timezone.now()
+    user.save(update_fields=["last_login"])
 
     token = secrets.token_urlsafe(32)
     MobileSession.objects.create(
@@ -219,6 +234,88 @@ def version_payload(installed_code=None):
 # --------------------------------------------------------------------------
 # The phone: one writer, and the request that leads to it
 # --------------------------------------------------------------------------
+
+
+APP_GROUP = "shop_users"
+
+#: The name a phone-only account is given when nobody types one: the app signs
+#: in by phone, so the user name is bookkeeping — but it must be unique and it
+#: must be readable in the accounts table.
+def _username_for_phone(phone):
+    base = f"app-{phone}"
+    candidate, n = base, 1
+    while User.objects.filter(username__iexact=candidate).exists():
+        n += 1
+        candidate = f"{base}-{n}"
+    return candidate
+
+
+@transaction.atomic
+def create_app_user(*, phone, password, name="", username="", actor=None):
+    """A warehouse worker who signs in from the phone and nowhere else.
+
+    One function, because an app account is three rows that must agree: the
+    user, its group, and the phone that IS its identity. A form that wrote them
+    separately would leave accounts that cannot sign in, or can sign in on the
+    web by accident.
+    """
+    canonical = canonical_phone(phone)
+    if not is_valid_phone(canonical):
+        raise MobileError("رقم الهاتف غير صحيح.", code="phone_invalid")
+    if MobileProfile.objects.filter(phone=canonical).exists():
+        raise MobileError(
+            "هذا الرقم مسجَّل بالفعل لحساب آخر.", status=409, code="phone_taken"
+        )
+    password = str(password or "")
+    if len(password) < MIN_PASSWORD_LENGTH:
+        raise MobileError(
+            f"كلمة المرور يجب أن تكون {MIN_PASSWORD_LENGTH} أحرف على الأقل.",
+            code="password_too_short",
+        )
+
+    name = (name or "").strip()[:150]
+    first, _, last = name.partition(" ")
+    wanted = (username or "").strip()[:150] or _username_for_phone(canonical)
+    if User.objects.filter(username__iexact=wanted).exists():
+        raise MobileError(
+            "اسم المستخدم مستخدم بالفعل.", status=409, code="username_taken"
+        )
+
+    user = User.objects.create_user(
+        username=wanted, password=password, first_name=first, last_name=last.strip()
+    )
+    user.groups.add(Group.objects.get_or_create(name=APP_GROUP)[0])
+    MobileProfile.objects.create(user=user, phone=canonical, mobile_only=True)
+    audit.record(
+        user=actor or user,
+        action=AuditEvent.USER_CREATED,
+        entity="user",
+        entity_id=user.pk,
+        description=f"{user.get_username()} · تطبيق · {display_phone(canonical)}",
+    )
+    return user
+
+
+@transaction.atomic
+def set_mobile_only(user, value, *, actor=None):
+    """Mark an account as the phone's alone, or give it the web back."""
+    profile = MobileProfile.for_user(user)
+    if profile is None:
+        raise MobileError(
+            "هذا الحساب بلا رقم هاتف، فلا يمكن ربطه بالتطبيق.",
+            code="no_phone",
+        )
+    profile.mobile_only = bool(value)
+    profile.save(update_fields=["mobile_only", "updated_at"])
+    audit.record(
+        user=actor or user,
+        action=AuditEvent.USER_UPDATED,
+        entity="user",
+        entity_id=user.pk,
+        description=f"{user.get_username()} · "
+        + ("تطبيق فقط" if value else "ويب وتطبيق"),
+    )
+    return profile
 
 
 @transaction.atomic

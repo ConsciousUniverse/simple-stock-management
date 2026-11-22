@@ -341,3 +341,52 @@ stored number is unchanged), approval/refusal, and the build-number decision
 including "a release without a build number is not an update".
 `android/app/src/test/…/VersionDecisionTest.kt` pins the app's own decision;
 a server-side test cannot see a client that installs a downgrade.
+
+## The phone is the whole account, and the app cannot be pointed elsewhere
+
+Two operator asks on `/users/`: an account for a warehouse worker who only has
+the phone, and no way to type a server address into the app.
+
+- **`MobileProfile.mobile_only`** is the flag, and `stock_manager/auth.py` is the
+  single backend that reads it: `WarehouseBackend` replaces django's
+  `ModelBackend` so the web form refuses an app-only account while the app admits
+  it (`authenticate(..., app_sign_in=True)`). Two backends would each answer for
+  one door and drift; the flag travels with the credential check.
+- **The refusal is generic on purpose.** Naming which numbers are app-only tells
+  an outsider which numbers to attack, so the sign-in page carries a standing
+  line instead («حساب عامل المخزن يعمل على تطبيق الهاتف فقط»). Do not "improve"
+  this into a per-account message.
+- **Creating the account and its phone is ONE step** (`mobile.create_app_user`):
+  a user row created first and given a phone later is an account that exists and
+  cannot sign in. The phone is canonicalised (`2010…`, no `+`) because that is
+  what the webhook and the app send; the display form adds the `+`.
+- **`/users/` gained only what the job needs**: a Door column (app only / web
+  and app / web only), Close/Reopen beside Edit, and a two-tab New user card
+  (App account / Web account). The tabs are `static/js/users.js` + `.sap-tabs`;
+  the JS keys panels off `data-panel`, so a third kind of account is one button
+  and one form.
+- **The last active manager cannot be closed** (`_is_last_manager`). The deployed
+  host has no shell, so that click is an unrecoverable lockout — the same reason
+  a manager cannot close their own account.
+- **`_toggle_active` rejects a non-numeric id before the query**: `filter(pk="abc")`
+  raises `ValueError` and a 500, and the id arrives from a form.
+
+### The app: logo, and an address that cannot be typed
+
+- Icons are generated from `stock_manager/static/img/logo-mark.png` (the raven —
+  **not** `company-logo.png`, which is the Orascom wordmark). Legacy
+  `mipmap-*/ic_launcher.png` are white rounded tiles with the mark;
+  `mipmap-anydpi-v26/ic_launcher.xml` is the adaptive icon (white background,
+  `drawable-*/ic_launcher_foreground.png`, plus `monochrome`); `drawable-*/app_logo.png`
+  is the mark on the sign-in screen.
+- **`Session.baseUrl` is `val = BuildConfig.DEFAULT_BASE_URL`** — no setter, no
+  stored copy, and `forgetStoredServer()` deletes the key an older build saved. A
+  field that could repoint the app was a way to send a warehouse password to
+  another host, and a phone that remembered a typo could not be fixed by the
+  person holding it.
+- `tests/test_android_sources.py` guards the two promises as text (no
+  `serverInput`/`textUri`, the `val baseUrl` line, the icon files, `versionCode >= 2`).
+- **Build 2 (1.1.0) is published** to `melsofany/warehouse-app-releases` as
+  release `v2` / `warehouse-2.apk`, sha256
+  `d2e5e1c317a699b12a534bc00d78af0f674759c6e7e6a0e728e65add07a1c1d5`, 5,726,658
+  bytes — verified by downloading the asset back and hashing it.

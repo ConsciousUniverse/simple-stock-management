@@ -1,5 +1,5 @@
 {% extends "base_app.html" %}
-{% load i18n %}
+{% load i18n %}{% load static %}
 
 {% block title %}{% trans "Users" %}{% endblock %}
 {% block crumb %}{% trans "Users" %}{% endblock %}
@@ -52,6 +52,15 @@
                 <span>{% trans "The account may sign in" %}</span>
             </label>
 
+            {% if editing.mobile_profile %}
+            <label class="sap-check sap-field--wide">
+                <input type="hidden" name="has_phone" value="1">
+                <input type="checkbox" name="mobile_only"
+                    {% if editing.mobile_profile.mobile_only %}checked{% endif %}>
+                <span>{% trans "App only: the web sign-in form refuses this account" %}</span>
+            </label>
+            {% endif %}
+
             <div class="sap-form-actions">
                 <button class="sap-btn sap-btn--emphasized" type="submit">{% trans "Save the user" %}</button>
             </div>
@@ -93,9 +102,51 @@
 <div class="sap-card">
     <div class="sap-card__header">
         <h2 class="sap-card__title">{% trans "New user" %}</h2>
+        <div class="sap-card__header-actions">
+            <span class="sap-muted">{% trans "A warehouse worker needs the phone only." %}</span>
+        </div>
     </div>
     <div class="sap-card__body">
-        <form method="post" action="/users/" class="sap-form-grid" id="createUserForm">
+        <div class="sap-tabs" role="tablist" id="newUserTabs">
+            <button class="sap-tab is-active" type="button" role="tab" data-panel="panelApp">
+                {% trans "App account" %}
+            </button>
+            <button class="sap-tab" type="button" role="tab" data-panel="panelWeb">
+                {% trans "Web account" %}
+            </button>
+        </div>
+
+        <form method="post" action="/users/" class="sap-form-grid" id="createAppUserForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="app-user">
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Name" %}</span>
+                <input class="sap-input" type="text" name="name" maxlength="150"
+                    placeholder="أحمد محمد">
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Phone the app signs in with" %}</span>
+                <input class="sap-input" type="tel" name="phone" dir="ltr" required
+                    placeholder="+201012345678" autocomplete="off">
+                <span class="sap-field__hint">{% trans "This number is the account. The app cannot change it." %}</span>
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Password" %}</span>
+                <input class="sap-input" type="password" name="password" autocomplete="new-password"
+                    minlength="{{ min_password_length }}" required>
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "User name (optional)" %}</span>
+                <input class="sap-input" type="text" name="username" autocomplete="off"
+                    placeholder="{% trans "left empty: taken from the phone" %}">
+                <span class="sap-field__hint">{% trans "Bookkeeping only: the app signs in with the phone." %}</span>
+            </label>
+            <div class="sap-form-actions">
+                <button class="sap-btn sap-btn--emphasized" type="submit">{% trans "Create the app account" %}</button>
+            </div>
+        </form>
+
+        <form method="post" action="/users/" class="sap-form-grid is-hidden" id="createWebUserForm">
             {% csrf_token %}
             <input type="hidden" name="action" value="create">
             <label class="sap-field">
@@ -206,6 +257,7 @@
                         <th>{% trans "Name" %}</th>
                         <th>{% trans "Role" %}</th>
                         <th>{% trans "Sign-in phone" %}</th>
+                        <th>{% trans "Door" %}</th>
                         <th>{% trans "Last sign-in" %}</th>
                         <th>{% trans "Status" %}</th>
                         <th>{% trans "Actions" %}</th>
@@ -228,6 +280,15 @@
                             {% endif %}
                             {% endwith %}
                         </td>
+                        <td>
+                            {% if row.is_app_only %}
+                            <span class="sap-pill sap-pill--info">{% trans "App only" %}</span>
+                            {% elif row.mobile_profile %}
+                            <span class="sap-pill sap-pill--neutral">{% trans "Web and app" %}</span>
+                            {% else %}
+                            <span class="sap-pill sap-pill--neutral">{% trans "Web only" %}</span>
+                            {% endif %}
+                        </td>
                         <td dir="ltr">{{ row.last_login|date:"Y-m-d H:i"|default:"—" }}</td>
                         <td>
                             {% if row.is_active %}
@@ -236,11 +297,25 @@
                             <span class="sap-pill sap-pill--neutral">{% trans "Inactive" %}</span>
                             {% endif %}
                         </td>
-                        <td><a class="sap-btn sap-btn--ghost sap-btn--sm" href="/users/?edit={{ row.pk }}">{% trans "Edit" %}</a></td>
+                        <td class="sap-actions">
+                            <a class="sap-btn sap-btn--ghost sap-btn--sm" href="/users/?edit={{ row.pk }}">{% trans "Edit" %}</a>
+                            {% if row.pk != request.user.pk %}
+                            <form method="post" action="/users/" class="sap-inline-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="toggle-active">
+                                <input type="hidden" name="user_id" value="{{ row.pk }}">
+                                {% if row.is_active %}
+                                <button class="sap-btn sap-btn--ghost sap-btn--sm" type="submit">{% trans "Close" %}</button>
+                                {% else %}
+                                <button class="sap-btn sap-btn--emphasized sap-btn--sm" type="submit">{% trans "Reopen" %}</button>
+                                {% endif %}
+                            </form>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="7" class="sap-empty">
+                        <td colspan="8" class="sap-empty">
                             <span class="sap-empty__title">{% trans "No accounts yet." %}</span>
                         </td>
                     </tr>
@@ -250,4 +325,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/users.js' %}"></script>
 {% endblock %}

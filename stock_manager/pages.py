@@ -82,6 +82,10 @@ def users_page(request):
     for account in users:
         # The reader knows "warehouse manager", not the group's internal name.
         account.role_names = [role_label(group.name) for group in account.groups.all()]
+        account.is_app_only = bool(
+            getattr(account, "mobile_profile", None)
+            and account.mobile_profile.mobile_only
+        )
     editing = None
     raw_edit = (request.GET.get("edit") or "").strip()
     if raw_edit.isdigit():
@@ -162,6 +166,82 @@ def _save_phone(request, action):
     return _redirect_users()
 
 
+def _create_app_user(request):
+    """An account that signs in from the phone, with its number in one step.
+
+    Creating the user and then hunting for their row to set a phone leaves
+    accounts that exist and cannot sign in; the phone IS the identity, so it is
+    required here.
+    """
+    try:
+        user = mobile.create_app_user(
+            phone=request.POST.get("phone") or "",
+            password=request.POST.get("password") or "",
+            name=request.POST.get("name") or "",
+            username=request.POST.get("username") or "",
+            actor=request.user,
+        )
+    except mobile.MobileError as exc:
+        messages.error(request, exc.message)
+        return _redirect_users()
+    messages.success(
+        request,
+        _("The app account %(name)s was created. They sign in with the phone number.")
+        % {"name": user.get_username()},
+    )
+    return _redirect_users()
+
+
+def _toggle_active(request):
+    """Close or reopen an account without opening the edit panel."""
+    raw_id = (request.POST.get("user_id") or "").strip()
+    user = User.objects.filter(pk=raw_id).first() if raw_id.isdigit() else None
+    if user is None:
+        messages.error(request, _("That user does not exist."))
+        return _redirect_users()
+    if user.pk == request.user.pk:
+        messages.error(request, _("You cannot close your own account."))
+        return _redirect_users()
+    # Closing the last manager would leave nobody able to reopen anyone, and
+    # there is no shell on the deployed host to undo it.
+    if user.is_active and _is_last_manager(user):
+        messages.error(request, _("This is the last warehouse manager."))
+        return _redirect_users()
+    user.is_active = not user.is_active
+    user.save(update_fields=["is_active"])
+    audit.record(
+        user=request.user,
+        action=(
+            AuditEvent.USER_UPDATED if user.is_active else AuditEvent.USER_DEACTIVATED
+        ),
+        entity="user",
+        entity_id=user.pk,
+        description=f"{user.get_username()} · "
+        + ("reopened" if user.is_active else "closed"),
+    )
+    messages.success(
+        request,
+        (
+            _("The account of %(name)s was reopened.")
+            if user.is_active
+            else _("The account of %(name)s was closed.")
+        )
+        % {"name": user.get_username()},
+    )
+    return _redirect_users()
+
+
+def _is_last_manager(user):
+    """True when this account is the only active warehouse manager left."""
+    if not user.groups.filter(name="managers").exists():
+        return False
+    return not (
+        User.objects.filter(groups__name="managers", is_active=True)
+        .exclude(pk=user.pk)
+        .exists()
+    )
+
+
 def _selected_groups(request):
     names = request.POST.getlist("groups")
     return list(Group.objects.filter(name__in=names))
@@ -172,6 +252,10 @@ def _save_user(request):
 
     if action in {"phone", "phone-request"}:
         return _save_phone(request, action)
+    if action == "app-user":
+        return _create_app_user(request)
+    if action == "toggle-active":
+        return _toggle_active(request)
     if action == "password":
         user = User.objects.filter(pk=request.POST.get("user_id")).first()
         password = request.POST.get("password") or ""
@@ -208,6 +292,15 @@ def _save_user(request):
         user.is_active = request.POST.get("is_active") == "on"
         user.save(update_fields=["first_name", "last_name", "email", "is_active"])
         user.groups.set(_selected_groups(request))
+        # Only an account with a phone can be app-only; without one the box is
+        # meaningless, and flipping it would lock a web user out for nothing.
+        if request.POST.get("has_phone") == "1":
+            try:
+                mobile.set_mobile_only(
+                    user, request.POST.get("mobile_only") == "on", actor=request.user
+                )
+            except mobile.MobileError as exc:
+                messages.error(request, exc.message)
         audit.record(
             user=request.user,
             action=(

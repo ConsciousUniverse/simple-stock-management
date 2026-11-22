@@ -31,6 +31,12 @@ msgstr "مدير المخزن هو من يكمل هذا."
 msgid "A warehouse manager publishes the download address below."
 msgstr "مدير المخزن هو من ينشر عنوان التنزيل أدناه."
 
+msgid "A warehouse worker needs the phone only."
+msgstr "عامل المخزن يحتاج التطبيق فقط."
+
+msgid "A warehouse worker's account signs in from the phone app only."
+msgstr "حساب عامل المخزن يعمل على تطبيق الهاتف فقط."
+
 msgid "API address"
 msgstr "عنوان الواجهة (API)"
 
@@ -112,6 +118,15 @@ msgstr "حدث خطأ غير متوقع أثناء استلام التوريد."
 msgid "Android app"
 msgstr "تطبيق الأندرويد"
 
+msgid "App account"
+msgstr "حساب تطبيق"
+
+msgid "App only"
+msgstr "تطبيق فقط"
+
+msgid "App only: the web sign-in form refuses this account"
+msgstr "تطبيق فقط: صفحة الدخول على الويب ترفض هذا الحساب"
+
 msgid "App release published"
 msgstr "نشر إصدار للتطبيق"
 
@@ -160,8 +175,14 @@ msgstr "طباعة الباركود"
 msgid "Book the delivery against the purchase order number; the quantities are added to the warehouse."
 msgstr "سجّل التوريد على رقم أمر الشراء؛ تُضاف الكميات إلى المخزن."
 
+msgid "Bookkeeping only: the app signs in with the phone."
+msgstr "للتنظيم فقط: التطبيق يسجّل الدخول بالرقم."
+
 msgid "Build number"
 msgstr "رقم البناء"
+
+msgid "Built into the app for support only: there is no field on the phone to change it, so a password cannot be sent to another server."
+msgstr "مثبَّت داخل التطبيق للدعم فقط: لا يوجد حقل في الهاتف لتغييره، فلا يمكن إرسال كلمة المرور إلى خادم آخر."
 
 msgid "By"
 msgstr "بواسطة"
@@ -280,6 +301,9 @@ msgstr "تعذّر تحديث الصنف."
 msgid "Create item"
 msgstr "إنشاء صنف"
 
+msgid "Create the app account"
+msgstr "إنشاء حساب التطبيق"
+
 msgid "Create the user"
 msgstr "إنشاء المستخدم"
 
@@ -393,6 +417,9 @@ msgstr "نوع الإذن"
 
 msgid "Documents"
 msgstr "الأذون"
+
+msgid "Door"
+msgstr "باب الدخول"
 
 msgid "Download"
 msgstr "تنزيل"
@@ -787,6 +814,9 @@ msgstr "لا يوجد ما ينتظر الصرف"
 msgid "Nothing is missing: every line has its document."
 msgstr "لا يوجد ناقص: كل بند له مستنده."
 
+msgid "Nothing to configure: the app is already tied to this server, and the phone cannot change that address."
+msgstr "لا شيء يُضبط: التطبيق مربوط بهذا الخادم، ولا يستطيع الهاتف تغيير هذا العنوان."
+
 msgid "Nothing was issued in this period."
 msgstr "لم يُصرف شيء في هذه الفترة."
 
@@ -1015,6 +1045,9 @@ msgstr "حذف"
 msgid "Remove line"
 msgstr "حذف السطر"
 
+msgid "Reopen"
+msgstr "إعادة فتح"
+
 msgid "Request items from the warehouse to build your site stock."
 msgstr "اطلب أصنافًا من المخزن لبناء مخزون موقعك."
 
@@ -1110,6 +1143,9 @@ msgstr "إرسال طلب النقل"
 
 msgid "Server address"
 msgstr "عنوان الخادم"
+
+msgid "Server address (fixed in the app)"
+msgstr "عنوان الخادم (مثبَّت في التطبيق)"
 
 msgid "Settings"
 msgstr "الإعدادات"
@@ -1285,6 +1321,15 @@ msgstr "هذا الإصدار منشور بالفعل."
 msgid "The account may sign in"
 msgstr "الحساب مسموح له بتسجيل الدخول"
 
+msgid "The account of %(name)s was closed."
+msgstr "أُغلق حساب %(name)s."
+
+msgid "The account of %(name)s was reopened."
+msgstr "أُعيد فتح حساب %(name)s."
+
+msgid "The app account %(name)s was created. They sign in with the phone number."
+msgstr "تم إنشاء حساب التطبيق %(name)s. يسجّل الدخول برقم الهاتف."
+
 msgid "The app cannot change a phone: it asks, a manager decides."
 msgstr "التطبيق لا يغيّر رقم الهاتف: يطلب، والمدير يقرر."
 
@@ -1387,6 +1432,12 @@ msgstr "المخزن في وضع الصيانة. حركة المخزون معط�
 msgid "This action cannot be undone. Continue?"
 msgstr "لا يمكن التراجع عن هذا الإجراء. هل تريد المتابعة؟"
 
+msgid "This is the last warehouse manager."
+msgstr "هذا آخر مدير مخزن."
+
+msgid "This number is the account. The app cannot change it."
+msgstr "هذا الرقم هو الحساب نفسه. التطبيق لا يستطيع تغييره."
+
 msgid "To"
 msgstr "إلى"
 
@@ -1471,6 +1522,9 @@ msgstr "إيقاف مستخدم"
 msgid "User name"
 msgstr "اسم المستخدم"
 
+msgid "User name (optional)"
+msgstr "اسم المستخدم (اختياري)"
+
 msgid "Username"
 msgstr "اسم المستخدم"
 
@@ -1534,6 +1588,15 @@ msgstr "مخزون المخزن"
 msgid "We could not sign you in."
 msgstr "تعذّر تسجيل الدخول."
 
+msgid "Web account"
+msgstr "حساب ويب"
+
+msgid "Web and app"
+msgstr "ويب وتطبيق"
+
+msgid "Web only"
+msgstr "ويب فقط"
+
 msgid "What the sites asked for, and what is still to dispatch"
 msgstr "ما طلبته المواقع وما زال في انتظار الصرف."
 
@@ -1548,6 +1611,9 @@ msgstr "إلى أين تتجه."
 
 msgid "Who may sign in, and what each person may do."
 msgstr "من يستطيع تسجيل الدخول، وماذا يستطيع كل شخص فعله."
+
+msgid "You cannot close your own account."
+msgstr "لا يمكنك إغلاق حسابك أنت."
 
 msgid "Your entry is saved for a warehouse manager to approve; the stock moves after approval."
 msgstr "يُحفظ إدخالك ليعتمده أمين المخزن؛ ولا يتحرك المخزون إلا بعد الاعتماد."
@@ -1578,6 +1644,9 @@ msgstr "حدث"
 
 msgid "items"
 msgstr "صنف"
+
+msgid "left empty: taken from the phone"
+msgstr "اتركه فارغًا ليُؤخذ من الرقم"
 
 msgid "of"
 msgstr "من"

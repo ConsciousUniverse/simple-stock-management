@@ -516,6 +516,10 @@ class MobileProfile(models.Model):
     # Canonical digits only (201012345678): the same person typing +20 101…
     # or 0101… must not become two accounts.
     phone = models.CharField(max_length=20, unique=True)
+    # An app account exists for the phone and nothing else: the person has no
+    # web login, so the web sign-in form refuses them by name instead of letting
+    # them into a page they cannot use. Set by a manager on /users/.
+    mobile_only = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

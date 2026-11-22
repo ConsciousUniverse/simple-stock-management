@@ -27,7 +27,7 @@ class LoginActivity : AppCompatActivity() {
         setContentView(binding.root)
         session = Session(this)
 
-        binding.serverInput.setText(session.baseUrl)
+        session.forgetStoredServer()
         binding.phoneInput.setText(session.phone)
         binding.signIn.setOnClickListener { signIn() }
         binding.forgotPhone.setOnClickListener {
@@ -43,19 +43,13 @@ class LoginActivity : AppCompatActivity() {
     private fun signIn() {
         val phone = binding.phoneInput.text?.toString()?.trim().orEmpty()
         val password = binding.passwordInput.text?.toString().orEmpty()
-        val server = binding.serverInput.text?.toString()?.trim().orEmpty()
 
         if (phone.isEmpty() || password.isEmpty()) {
             showError(getString(R.string.phone_and_password_required))
             return
         }
-        if (!server.startsWith("http")) {
-            showError(getString(R.string.server_address_invalid))
-            return
-        }
 
         setBusy(true)
-        session.baseUrl = server
         val api = session.api()
         Thread {
             val result = runCatching {

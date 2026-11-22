@@ -11,10 +11,20 @@
         android:orientation="vertical"
         android:padding="24dp">
 
+        <ImageView
+            android:id="@+id/logo"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="24dp"
+            android:contentDescription="@string/app_name"
+            android:src="@drawable/app_logo" />
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
             android:text="@string/app_name"
             android:textColor="@color/brand"
             android:textSize="30sp"
@@ -25,6 +35,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:layout_marginBottom="28dp"
+            android:gravity="center_horizontal"
             android:text="@string/sign_in_subtitle"
             android:textColor="@color/text_muted"
             android:textSize="14sp" />
@@ -108,21 +119,5 @@
                     android:text="@string/forgot_phone" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
-
-        <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:hint="@string/server_label">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/serverInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textUri"
-                android:maxLines="1"
-                android:textDirection="ltr" />
-        </com.google.android.material.textfield.TextInputLayout>
     </LinearLayout>
 </ScrollView>

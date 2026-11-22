@@ -7,12 +7,10 @@
     <string name="sign_in_subtitle">رقم هاتفك أو اسم المستخدم، وكلمة المرور التي أعطاها لك المدير.</string>
     <string name="phone_label">رقم الهاتف أو اسم المستخدم</string>
     <string name="password_label">كلمة المرور</string>
-    <string name="server_label">الخادم</string>
     <string name="sign_in">دخول</string>
     <string name="forgot_phone">رقمي تغيّر</string>
     <string name="forgot_phone_hint">لا يغيّر رقم الدخول إلا مدير المخزن. اطلب من المدير تغييره من النظام، ثم سجّل الدخول من جديد.</string>
     <string name="phone_and_password_required">أدخل رقم الهاتف أو اسم المستخدم، وكلمة المرور.</string>
-    <string name="server_address_invalid">عنوان الخادم يجب أن يبدأ بـ http:// أو https://</string>
     <string name="sign_in_failed">تعذّر تسجيل الدخول.</string>
 
     <!-- Profile -->

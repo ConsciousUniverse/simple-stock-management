@@ -169,7 +169,9 @@ else:
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTHENTICATION_BACKENDS = [
     "axes.backends.AxesStandaloneBackend",
-    "django.contrib.auth.backends.ModelBackend",
+    # Not django's ModelBackend: an app-only account must be refused on the web
+    # and admitted in the app, and only one backend can tell the doors apart.
+    "stock_manager.auth.WarehouseBackend",
 ]
 AUTH_PASSWORD_VALIDATORS = [
     {

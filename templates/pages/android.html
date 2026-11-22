@@ -49,7 +49,7 @@
         <ol class="sap-steps">
             <li>{% trans "Open the download link on the phone and install the file (allow installing apps from this source if the phone asks)." %}</li>
             <li>{% trans "Sign in with your phone number (or user name) and the password a manager gave you." %}</li>
-            <li>{% trans "The app reads the server address from the field below; it is already set for this deployment." %}</li>
+            <li>{% trans "Nothing to configure: the app is already tied to this server, and the phone cannot change that address." %}</li>
         </ol>
         {% else %}
         <div class="sap-empty">
@@ -62,14 +62,14 @@
 
 <div class="sap-card">
     <div class="sap-card__header">
-        <h2 class="sap-card__title">{% trans "Server address" %}</h2>
+        <h2 class="sap-card__title">{% trans "Server address (fixed in the app)" %}</h2>
     </div>
     <div class="sap-card__body">
         <label class="sap-field">
             <span class="sap-label">{% trans "API address" %}</span>
             <input class="sap-input" type="text" value="{{ api_root }}" readonly id="apiRoot"
                 onclick="this.select()">
-            <span class="sap-field__hint">{% trans "The app uses this address to reach the warehouse data." %}</span>
+            <span class="sap-field__hint">{% trans "Built into the app for support only: there is no field on the phone to change it, so a password cannot be sent to another server." %}</span>
         </label>
     </div>
 </div>

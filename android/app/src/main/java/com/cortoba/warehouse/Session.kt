@@ -3,7 +3,12 @@ package com.cortoba.warehouse
 import android.content.Context
 
 /**
- * What survives closing the app: the token and the server it belongs to.
+ * What survives closing the app: the token.
+ *
+ * The server address is NOT stored and NOT editable: it is the one this build
+ * was made for. A field that could point the app at another host was a way to
+ * send a warehouse password somewhere else, and a phone that remembers a typo
+ * cannot be fixed by the person holding it.
  *
  * The phone number is cached for the header only. It is never written back to
  * the server — the server refuses that, and the change is a manager's decision.
@@ -16,12 +21,7 @@ class Session(context: Context) {
         get() = prefs.getString("token", null)
         set(value) = prefs.edit().putString("token", value).apply()
 
-    var baseUrl: String
-        get() = prefs.getString("base_url", null) ?: BuildConfig.DEFAULT_BASE_URL
-        set(value) {
-            val normalised = if (value.endsWith("/")) value else "$value/"
-            prefs.edit().putString("base_url", normalised).apply()
-        }
+    val baseUrl: String = BuildConfig.DEFAULT_BASE_URL
 
     var phone: String
         get() = prefs.getString("phone", "").orEmpty()
@@ -37,8 +37,14 @@ class Session(context: Context) {
     fun api(): Api = Api(baseUrl)
 
     fun clear() {
-        // The server address is kept: a user signing out has not moved site.
         prefs.edit().remove("token").remove("phone").remove("display_name").apply()
+    }
+
+    /** Drop an address an older build saved; the field it came from is gone. */
+    fun forgetStoredServer() {
+        if (prefs.contains("base_url")) {
+            prefs.edit().remove("base_url").apply()
+        }
     }
 
     fun remember(profile: Profile) {

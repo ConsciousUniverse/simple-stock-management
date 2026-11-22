@@ -11,8 +11,8 @@ android {
         applicationId = "com.cortoba.warehouse"
         minSdk = 24
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
         // The deployment the app talks to. The sign-in screen lets the user
         // change it, so one build serves every site.
         buildConfigField("String", "DEFAULT_BASE_URL", "\"https://ssm-warehouse.onrender.com/\"")
