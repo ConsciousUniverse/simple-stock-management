@@ -1,8 +1,9 @@
 """Draw the Android launcher icons from the company logo the web app shows.
 
 One source, one brand. The launcher tile is the builder emblem cut out of the
-wordmark the web app already uses, in white on the wordmark's own blue; the
-sign-in screen keeps the full wordmark. Re-run after the logo changes:
+wordmark the web app already uses, kept in its own blue and grey on a white
+tile — recoloured white-on-blue the figure turned to mush at 48dp. The sign-in
+screen keeps the full wordmark. Re-run after the logo changes:
 
     ./.venv/bin/python scripts/make_app_icons.py
 
