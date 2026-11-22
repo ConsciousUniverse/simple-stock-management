@@ -55,6 +55,14 @@
         <span class="sap-tile__label">{% trans "Total value" %}</span>
         <span class="sap-tile__value" id="kpiValue">{{ report.totals.value_display }}</span>
     </div>
+    <div class="sap-tile">
+        <span class="sap-tile__label">{% trans "Company permits" %}</span>
+        <span class="sap-tile__value" id="kpiPermits">{{ report.totals.permits }}</span>
+    </div>
+    <div class="sap-tile {% if report.totals.uncovered_lines %}sap-tile--critical{% endif %}">
+        <span class="sap-tile__label">{% trans "Lines with no permit" %}</span>
+        <span class="sap-tile__value" id="kpiUncoveredLines">{{ report.totals.uncovered_lines }}</span>
+    </div>
 </div>
 
 <div class="sap-card">
@@ -79,6 +87,7 @@
                         <th>{% trans "Quantity" %}</th>
                         <th>{% trans "Unit" %}</th>
                         <th>{% trans "Value" %}</th>
+                        <th>{% trans "Company permit" %}</th>
                         <th>{% trans "Issued by" %}</th>
                         <th>{% trans "Approved by" %}</th>
                     </tr>
@@ -96,12 +105,19 @@
                         <td>{{ row.quantity }}</td>
                         <td>{{ row.unit|default:"—" }}</td>
                         <td>{{ row.value_display }}</td>
+                        <td>
+                            {% if row.permit_no %}
+                            <span class="sap-pill sap-pill--info" dir="ltr">{{ row.permit_no }}</span>
+                            {% else %}
+                            <span class="sap-muted">—</span>
+                            {% endif %}
+                        </td>
                         <td>{{ row.issued_by|default:"—" }}</td>
                         <td>{{ row.approved_by|default:"—" }}</td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="12" class="sap-empty">
+                        <td colspan="13" class="sap-empty">
                             <span class="sap-empty__title">{% trans "Nothing was issued in this period." %}</span>
                             <span class="sap-empty__text">{% trans "Change the dates or record an issue first." %}</span>
                         </td>
@@ -112,6 +128,108 @@
         </div>
     </div>
 </div>
+
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Company permits and the items each one covers" %}</h2>
+        <div class="sap-card__header-actions">
+            <span class="sap-muted">{% trans "One issue can be paid against several permits." %}</span>
+        </div>
+    </div>
+    <div class="sap-card__body sap-card__body--flush">
+        <div class="sap-tablewrap">
+            <table class="sap-table sap-table--dense" id="permitTable">
+                <thead>
+                    <tr>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "Document" %}</th>
+                        <th>{% trans "Permit number" %}</th>
+                        <th>{% trans "Amount" %}</th>
+                        <th>{% trans "Site / project" %}</th>
+                        <th class="sap-table__wide">{% trans "Items this permit covers" %}</th>
+                        <th>{% trans "Note" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for permit in report.permits %}
+                    <tr data-permit="{{ permit.permit_no }}">
+                        <td dir="ltr">{{ permit.date }}</td>
+                        <td>{{ permit.number }}</td>
+                        <td dir="ltr">{{ permit.permit_no }}</td>
+                        <td>{{ permit.amount_display }}</td>
+                        <td>{{ permit.destination|default:"—" }}</td>
+                        <td class="sap-table__wide">
+                            {% for line in permit.lines %}
+                            <span class="sap-permit-item">
+                                <span dir="ltr">{{ line.sku }}</span>
+                                × {{ line.quantity }}{% if line.unit %} {{ line.unit }}{% endif %}
+                            </span>
+                            {% empty %}
+                            <span class="sap-muted">{% trans "No item is ticked under this permit yet." %}</span>
+                            {% endfor %}
+                        </td>
+                        <td>{{ permit.note|default:"—" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="sap-empty">
+                            <span class="sap-empty__title">{% trans "No company permit is recorded for these issues yet." %}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if report.needs_permits %}
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Issues still missing a company permit" %}</h2>
+        <div class="sap-card__header-actions">
+            <span class="sap-muted">{% trans "Record the permits and tick the items each one covers." %}</span>
+        </div>
+    </div>
+    <div class="sap-card__body sap-card__body--flush">
+        <div class="sap-tablewrap">
+            <table class="sap-table sap-table--dense" id="needsPermits">
+                <thead>
+                    <tr>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "Document" %}</th>
+                        <th>{% trans "Type" %}</th>
+                        <th>{% trans "Site / project" %}</th>
+                        <th>{% trans "Lines" %}</th>
+                        <th>{% trans "Lines with no permit" %}</th>
+                        <th>{% trans "Recorded permits" %}</th>
+                        <th>{% trans "Action" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in report.needs_permits %}
+                    <tr>
+                        <td dir="ltr">{{ item.date }}</td>
+                        <td>{{ item.number }}</td>
+                        <td>{{ item.type_label }}</td>
+                        <td>{{ item.destination|default:"—" }}</td>
+                        <td>{{ item.lines }}</td>
+                        <td>{{ item.uncovered }}</td>
+                        <td dir="ltr">{{ item.permit_numbers|default:"—" }}</td>
+                        <td>
+                            <a class="sap-btn sap-btn--ghost sap-btn--sm"
+                                href="/issues/{{ item.id }}/permits/?next={{ report_back|urlencode }}">
+                                {% trans "Record the permits" %}
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <div class="sap-form-grid">
     <div class="sap-card">

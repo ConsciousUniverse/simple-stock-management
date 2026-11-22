@@ -2106,3 +2106,25 @@ body.sap-login {
     font-size: 0.8125rem;
     color: var(--sap-text-muted);
 }
+
+/* The company-permit page: a permit row carries its own item checklist, so the
+   ticks stay next to the number they belong to. */
+.sap-checklist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    max-height: 11rem;
+    overflow-y: auto;
+}
+.sap-checklist .sap-check {
+    margin: 0;
+    font-size: 0.85rem;
+}
+.sap-permit-item {
+    display: inline-block;
+    margin-inline-end: 0.6rem;
+    white-space: nowrap;
+}

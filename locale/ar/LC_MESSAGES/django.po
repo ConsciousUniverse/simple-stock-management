@@ -10,6 +10,9 @@ msgstr ""
 msgid "(.xlsx — the sheet is the source of truth)"
 msgstr "(‎.xlsx — الملف هو مصدر البيانات)"
 
+msgid "A document takes at most %(max)s company permits."
+msgstr "المستند يأخذ %(max)s إذن صرف كحد أقصى."
+
 msgid "A durable address, not a file on this server: the server's disk is wiped on every deploy."
 msgstr "عنوان دائم وليس ملفًّا على هذا الخادم: قرص الخادم يُمحى مع كل نشر."
 
@@ -94,6 +97,9 @@ msgstr "كل الأسباب"
 msgid "All sites"
 msgstr "كل المواقع"
 
+msgid "Amount"
+msgstr "المبلغ"
+
 msgid "An error occurred."
 msgstr "حدث خطأ."
 
@@ -139,6 +145,9 @@ msgstr "العودة إلى لوحة التحكم"
 msgid "Back to sign in"
 msgstr "العودة لتسجيل الدخول"
 
+msgid "Back to the report"
+msgstr "رجوع إلى التقرير"
+
 msgid "Barcode"
 msgstr "الباركود"
 
@@ -181,6 +190,9 @@ msgstr "تغيير كلمة السر"
 msgid "Choose a file"
 msgstr "اختر ملفًا"
 
+msgid "Choose a permit of this document for %(sku)s."
+msgstr "اختر إذنًا من أذون هذا المستند للبند %(sku)s."
+
 msgid "Choose the items"
 msgstr "اختر الأصناف"
 
@@ -207,6 +219,21 @@ msgstr "إغلاق"
 
 msgid "Company item code"
 msgstr "كود الصنف في نظام الشركة"
+
+msgid "Company permit"
+msgstr "إذن الصرف"
+
+msgid "Company permits"
+msgstr "أذون الصرف"
+
+msgid "Company permits and the items each one covers"
+msgstr "أذون الصرف والبنود التي يغطيها كل إذن"
+
+msgid "Company permits of the issue"
+msgstr "أذون صرف المستند"
+
+msgid "Company permits recorded on %(number)s."
+msgstr "تم تسجيل أذون الصرف على %(number)s."
 
 msgid "Company voucher number"
 msgstr "رقم إذن الشركة"
@@ -307,6 +334,9 @@ msgstr "الوصف (للصنف الجديد)"
 msgid "Details"
 msgstr "التفاصيل"
 
+msgid "Difference (permits − issue)"
+msgstr "الفرق (الأذون − الصرفية)"
+
 msgid "Dismiss notification"
 msgstr "إغلاق التنبيه"
 
@@ -393,6 +423,12 @@ msgstr "أدخل قيمة أكبر من صفر!"
 
 msgid "Enter the company voucher number."
 msgstr "أدخل رقم إذن الشركة."
+
+msgid "Enter the permit amount as a number."
+msgstr "أدخل مبلغ الإذن كرقم."
+
+msgid "Enter the permit number, or clear the row."
+msgstr "أدخل رقم الإذن أو افرغ السطر."
 
 msgid "Enter the purchase order number."
 msgstr "أدخل رقم أمر الشراء."
@@ -490,6 +526,9 @@ msgstr "صرف مخزون لموقع، أو تحويله لمشروع آخر، �
 msgid "Issue to site"
 msgstr "صرف لموقع"
 
+msgid "Issue value"
+msgstr "قيمة الصرفية"
+
 msgid "Issued by"
 msgstr "صرفه"
 
@@ -504,6 +543,9 @@ msgstr "الصرف من المخزن"
 
 msgid "Issues report"
 msgstr "الصرفيات"
+
+msgid "Issues still missing a company permit"
+msgstr "صرفيات بلا إذن صرف"
 
 msgid "Issuing stock is disabled while the warehouse is being maintained."
 msgstr "الصرف معطّل أثناء أعمال الصيانة على المخزن."
@@ -538,8 +580,14 @@ msgstr "كمية الموقع"
 msgid "Items"
 msgstr "الأصناف"
 
+msgid "Items of the issue"
+msgstr "بنود الصرفية"
+
 msgid "Items recorded for your site"
 msgstr "أصناف مسجَّلة لموقعك"
+
+msgid "Items this permit covers"
+msgstr "البنود التي يغطيها هذا الإذن"
 
 msgid "Key figures"
 msgstr "المؤشرات الرئيسية"
@@ -556,11 +604,17 @@ msgstr "الاسم الأخير"
 msgid "Last sign-in"
 msgstr "آخر دخول"
 
+msgid "Leave a row blank to ignore it."
+msgstr "اترك السطر فارغًا لتجاهله."
+
 msgid "Leave empty if the app is the only record"
 msgstr "اتركه فارغًا إذا كان التطبيق هو السجل الوحيد"
 
 msgid "License GPLv3"
 msgstr "رخصة GPLv3"
+
+msgid "Line %(line)s is ticked under more than one permit."
+msgstr "البند %(line)s معلَّم على أكثر من إذن."
 
 msgid "Line added."
 msgstr "تمت إضافة السطر."
@@ -573,6 +627,9 @@ msgstr "بنود ناقصة الورق"
 
 msgid "Lines to complete"
 msgstr "بنود تحتاج استكمال"
+
+msgid "Lines with no permit"
+msgstr "بنود بلا إذن"
 
 msgid "Loading..."
 msgstr "جارٍ التحميل..."
@@ -646,6 +703,9 @@ msgstr "لا توجد إضافات بعد."
 msgid "No build has been published yet."
 msgstr "لم يُنشر أي إصدار بعد."
 
+msgid "No company permit is recorded for these issues yet."
+msgstr "لا يوجد إذن صرف مسجّل لهذه الصرفيات بعد."
+
 msgid "No deliveries have been received yet."
 msgstr "لم يتم استلام أي توريدات بعد."
 
@@ -655,8 +715,14 @@ msgstr "لا توجد أحداث تطابق هذا التصفي."
 msgid "No issues yet."
 msgstr "لا توجد أذون صرف بعد."
 
+msgid "No item is ticked under this permit yet."
+msgstr "لم يُعلَّم أي بند على هذا الإذن بعد."
+
 msgid "No items match this search."
 msgstr "لا توجد أصناف مطابقة لهذا البحث."
+
+msgid "No permit"
+msgstr "بلا إذن"
 
 msgid "No records"
 msgstr "لا توجد سجلات"
@@ -682,6 +748,9 @@ msgstr "لا توجد أصناف بالمخزن"
 msgid "Not signed in"
 msgstr "غير مسجَّل الدخول"
 
+msgid "Note"
+msgstr "ملاحظة"
+
 msgid "Notes"
 msgstr "ملاحظات"
 
@@ -693,6 +762,12 @@ msgstr "لا يوجد ناقص: كل بند له مستنده."
 
 msgid "Nothing was issued in this period."
 msgstr "لم يُصرف شيء في هذه الفترة."
+
+msgid "One issue can be paid against more than one company permit. Record each permit number with its amount, then tick the items that permit covers — a line belongs to one permit."
+msgstr "الصرفية الواحدة قد تُسدد بأكثر من إذن صرف. سجّل رقم كل إذن ومبلغه، ثم علّم البنود التي يغطيها الإذن — والبند يتبع إذنًا واحدًا."
+
+msgid "One issue can be paid against several permits."
+msgstr "الصرفية الواحدة قد تُسدد بعدة أذون صرف."
 
 msgid "One row per line, not per document."
 msgstr "سطر لكل بند، لا لكل مستند."
@@ -711,6 +786,9 @@ msgstr "مدير المخزن وحده هو من يفتح هذه الصفحة."
 
 msgid "Only a warehouse manager can publish a build."
 msgstr "مدير المخزن وحده هو من ينشر إصدارًا."
+
+msgid "Only a warehouse manager can record company permits."
+msgstr "مدير المخزن وحده يسجّل أذون الصرف."
 
 msgid "Open"
 msgstr "فتح"
@@ -756,6 +834,24 @@ msgstr "في انتظار الاعتماد"
 
 msgid "Pending issues"
 msgstr "طلبات صرف معلّقة"
+
+msgid "Permit %(permit)s is already recorded on %(number)s."
+msgstr "الإذن %(permit)s مسجّل بالفعل على %(number)s."
+
+msgid "Permit %(permit)s is listed twice on this document."
+msgstr "الإذن %(permit)s مكرر على هذا المستند."
+
+msgid "Permit amount"
+msgstr "مبلغ الإذن"
+
+msgid "Permit number"
+msgstr "رقم الإذن"
+
+msgid "Permits and the items each one covers"
+msgstr "الأذون والبنود التي يغطيها كل إذن"
+
+msgid "Permits total"
+msgstr "إجمالي الأذون"
 
 msgid "Please confirm"
 msgstr "برجاء التأكيد"
@@ -844,6 +940,15 @@ msgstr "أحدث أذون الصرف"
 msgid "Recent receipts"
 msgstr "أحدث التوريدات"
 
+msgid "Record the permits"
+msgstr "تسجيل الأذون"
+
+msgid "Record the permits and tick the items each one covers."
+msgstr "سجّل الأذون وعلّم البنود التي يغطيها كل إذن."
+
+msgid "Recorded permits"
+msgstr "الأذون المسجّلة"
+
 msgid "Reference"
 msgstr "المرجع"
 
@@ -897,6 +1002,9 @@ msgstr "حفظ الإضافة"
 
 msgid "Save the issue"
 msgstr "حفظ الصرف"
+
+msgid "Save the permits"
+msgstr "حفظ الأذون"
 
 msgid "Save the user"
 msgstr "حفظ المستخدم"
@@ -1099,6 +1207,9 @@ msgstr "اسم المورد أو المشروع"
 msgid "Suppliers · Sites · Inventory"
 msgstr "الموردون · المواقع · المخزون"
 
+msgid "That permit number was just recorded elsewhere."
+msgstr "رقم الإذن هذا سُجّل للتوّ في موضع آخر."
+
 msgid "That user does not exist."
 msgstr "هذا المستخدم غير موجود."
 
@@ -1152,6 +1263,12 @@ msgstr "يجب أن تكون كلمة السر %(n)s أحرف على الأقل.
 
 msgid "The password was changed."
 msgstr "تم تغيير كلمة السر."
+
+msgid "The permit amount cannot be negative."
+msgstr "مبلغ الإذن لا يكون سالبًا."
+
+msgid "The permit number is too long."
+msgstr "رقم الإذن أطول من المسموح."
 
 msgid "The received quantity must be a whole number."
 msgstr "الكمية المستلمة يجب أن تكون رقمًا صحيحًا."
@@ -1380,6 +1497,9 @@ msgstr "طلب نقل معلّق"
 
 msgid "pending transfers"
 msgstr "طلبات نقل معلّقة"
+
+msgid "permits cleared"
+msgstr "أُزيلت الأذون"
 
 msgid "selected"
 msgstr "محدد"

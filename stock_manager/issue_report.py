@@ -59,7 +59,7 @@ def documents_in_range(date_from: date, date_to: date, *, direction=None, includ
     """Approved documents whose stock moved inside the window."""
     start = timezone.make_aware(datetime.combine(date_from, datetime.min.time()))
     end = timezone.make_aware(datetime.combine(date_to, datetime.max.time()))
-    queryset = StockDocument.objects.prefetch_related("lines__item").filter(
+    queryset = StockDocument.objects.prefetch_related("lines__item", "permits").filter(
         applied_at__gte=start, applied_at__lte=end
     )
     if not include_pending:
@@ -76,13 +76,53 @@ def build_report(date_from: date, date_to: date, *, doc_types=None):
         queryset = queryset.filter(doc_type__in=doc_types)
 
     rows = []
+    permits: list[dict] = []
+    needs_permits: list[dict] = []
     by_day: dict[str, dict] = {}
     by_site: dict[str, dict] = {}
     by_item: dict[str, dict] = {}
     for document in queryset:
         day = timezone.localtime(document.applied_at).date().isoformat()
         destination = _destination(document)
-        for line in document.lines.all():
+        lines = list(document.lines.all())
+        document_permits = list(document.permits.all())
+        permit_by_id = {permit.pk: permit for permit in document_permits}
+        permit_lines: dict[int, list] = {}
+        for line in lines:
+            if line.permit_id is not None:
+                permit_lines.setdefault(line.permit_id, []).append(line)
+        uncovered = [line for line in lines if line.permit_id is None]
+        if uncovered:
+            needs_permits.append(
+                {
+                    "id": document.pk,
+                    "date": day,
+                    "number": document.number,
+                    "destination": destination,
+                    "type_label": str(document.type_label),
+                    "lines": len(lines),
+                    "uncovered": len(uncovered),
+                    "permit_numbers": ", ".join(
+                        permit.permit_no for permit in document_permits
+                    ),
+                }
+            )
+        for permit in document_permits:
+            permits.append(
+                {
+                    "date": day,
+                    "number": document.number,
+                    "doc_type": document.doc_type,
+                    "type_label": str(document.type_label),
+                    "destination": destination,
+                    "permit_no": permit.permit_no,
+                    "amount": permit.amount,
+                    "amount_display": money(permit.amount),
+                    "note": permit.note,
+                    "lines": permit_lines.get(permit.pk, []),
+                }
+            )
+        for line in lines:
             unit_price = line.item.retail_price if line.item else Decimal("0.00")
             value = (unit_price or Decimal("0.00")) * line.quantity
             row = {
@@ -103,6 +143,11 @@ def build_report(date_from: date, date_to: date, *, doc_types=None):
                 "issued_by": document.created_by.username if document.created_by else "",
                 "approved_by": document.decided_by.username if document.decided_by else "",
                 "notes": document.notes,
+                "permit_no": (
+                    permit_by_id[line.permit_id].permit_no
+                    if line.permit_id in permit_by_id
+                    else ""
+                ),
             }
             rows.append(row)
             _add(by_day, day, row, label=day)
@@ -110,17 +155,25 @@ def build_report(date_from: date, date_to: date, *, doc_types=None):
             _add(by_item, line.sku, row, label=line.sku, extra=line.description)
 
     total_value = sum((row["value"] for row in rows), Decimal("0.00"))
+    permit_total = sum((permit["amount"] for permit in permits), Decimal("0.00"))
     totals = {
         "documents": len({row["number"] for row in rows}),
         "lines": len(rows),
         "quantity": sum(row["quantity"] for row in rows),
         "value": total_value,
         "value_display": money(total_value),
+        "permits": len(permits),
+        "permit_value": permit_total,
+        "permit_value_display": money(permit_total),
+        # A line with no permit is the gap the operator chases.
+        "uncovered_lines": sum(1 for row in rows if not row["permit_no"]),
     }
     return {
         "date_from": date_from,
         "date_to": date_to,
         "rows": rows,
+        "permits": permits,
+        "needs_permits": needs_permits,
         "totals": totals,
         "by_day": sorted(by_day.values(), key=lambda item: item["label"]),
         "by_site": sorted(by_site.values(), key=lambda item: -item["quantity"]),
@@ -197,6 +250,7 @@ def workbook_bytes(report) -> bytes:
             "Issued by",
             "Approved by",
             "Notes",
+            "Company permit",
         ],
         [
             [
@@ -215,10 +269,11 @@ def workbook_bytes(report) -> bytes:
                 row["issued_by"],
                 row["approved_by"],
                 row["notes"],
+                row.get("permit_no", ""),
             ]
             for row in report["rows"]
         ],
-        [12, 16, 26, 22, 22, 16, 18, 40, 10, 8, 12, 14, 14, 14, 30],
+        [12, 16, 26, 22, 22, 16, 18, 40, 10, 8, 12, 14, 14, 14, 30, 18],
     )
     detail.append([])
     detail.append(
@@ -243,6 +298,28 @@ def workbook_bytes(report) -> bytes:
             ],
             [26, 40, 8, 12, 10, 12, 14] if with_description else [26, 8, 12, 10, 12, 14],
         )
+
+    permit_sheet = workbook.create_sheet("Company permits")
+    write_sheet(
+        permit_sheet,
+        ["Date", "Document", "Company permit", "Amount", "Item code", "Description",
+         "Quantity", "Unit"],
+        [
+            [
+                permit["date"],
+                permit["number"],
+                permit["permit_no"],
+                float(permit["amount"]),
+                line.sku,
+                line.description,
+                line.quantity,
+                line.unit,
+            ]
+            for permit in report["permits"]
+            for line in permit["lines"]
+        ],
+        [12, 16, 18, 14, 18, 40, 10, 8],
+    )
 
     rollup("By day", "by_day", "Day")
     rollup("By site", "by_site", "Site / project")

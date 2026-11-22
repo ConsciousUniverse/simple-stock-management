@@ -303,6 +303,41 @@ class StockDocument(models.Model):
         return sum(line.quantity for line in self.lines.all())
 
 
+class DocumentPermit(models.Model):
+    """A company permit (إذن صرف) covering part of one document.
+
+    One issue is often paid against several company permits — the operator's
+    rule: an issue dated 1/7 may take permits 050340604, 0503537228 and
+    05245322, and each permit names the items it covers. A line therefore
+    belongs to at most one permit of its own document, and a permit belongs to
+    exactly one document.
+    """
+
+    document = models.ForeignKey(
+        StockDocument, on_delete=models.CASCADE, related_name="permits"
+    )
+    # The company's own paper: unique across every document, like a voucher.
+    permit_no = models.CharField(max_length=80, unique=True)
+    amount = models.DecimalField(max_digits=14, decimal_places=2, default=Decimal("0.00"))
+    note = models.CharField(max_length=200, blank=True, default="")
+    created_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("id",)
+        verbose_name = "Company permit"
+        verbose_name_plural = "Company permits"
+
+    def __str__(self):
+        return f"{self.permit_no} ({self.document.number})"
+
+    @property
+    def total_quantity(self):
+        return sum(line.quantity for line in self.lines.all())
+
+
 class StockDocumentLine(models.Model):
     document = models.ForeignKey(
         StockDocument, on_delete=models.CASCADE, related_name="lines"
@@ -316,6 +351,15 @@ class StockDocumentLine(models.Model):
     # Snapshot of the unit at booking time: changing the catalogue unit later
     # must not rewrite what a past document said was moved.
     unit = models.CharField(max_length=20, blank=True, default="")
+    # Which company permit covers this line, when the issue is split across
+    # several of them. Empty means the line is still undocumented.
+    permit = models.ForeignKey(
+        DocumentPermit,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="lines",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -25,6 +25,7 @@ from .views import (
     issues_page,
     decide_document,
     issues_report_page,
+    issue_permits_page,
     reconciliation_page,
     reconciliation_set_permit,
     reconciliation_set_receipt_permit,
@@ -99,6 +100,7 @@ urlpatterns = [
     path("receipts/", receipts_page, name="receipts_page"),
     path("issues/", issues_page, name="issues_page"),
     path("issues/report/", issues_report_page, name="issues_report"),
+    path("issues/<int:pk>/permits/", issue_permits_page, name="issue_permits"),
     path("reconciliation/", reconciliation_page, name="reconciliation_page"),
     path(
         "reconciliation/<int:pk>/permit",

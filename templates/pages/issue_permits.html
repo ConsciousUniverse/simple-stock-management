@@ -1,0 +1,188 @@
+{% extends "base_app.html" %}
+{% load i18n l10n %}
+
+{% block title %}{% trans "Company permits" %}{% endblock %}
+{% block crumb %}{% trans "Issues report" %}{% endblock %}
+{% block heading %}{% trans "Company permits of the issue" %}{% endblock %}
+{% block subheading %}
+{% trans "One issue can be paid against more than one company permit. Record each permit number with its amount, then tick the items that permit covers — a line belongs to one permit." %}
+{% endblock %}
+
+{% block actions %}
+<a class="sap-btn sap-btn--ghost" href="{{ back|default:'/issues/report/' }}">
+    <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-back"></use></svg>
+    {% trans "Back to the report" %}
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{{ document.number }}</h2>
+        <div class="sap-card__header-actions">
+            <span class="sap-muted">
+                <span dir="ltr">{{ document.applied_at|date:"Y-m-d" }}</span>
+                · {{ document.type_label }}
+                · {% if document.site %}{{ document.site.username }}{% else %}{{ document.counterparty|default:"—" }}{% endif %}
+            </span>
+        </div>
+    </div>
+</div>
+
+<div class="sap-tiles">
+    <div class="sap-tile sap-tile--neutral">
+        <span class="sap-tile__label">{% trans "Issue value" %}</span>
+        <span class="sap-tile__value" id="kpiIssueValue">{{ coverage.value_display }}</span>
+    </div>
+    <div class="sap-tile">
+        <span class="sap-tile__label">{% trans "Permits total" %}</span>
+        <span class="sap-tile__value" id="kpiPermitTotal">{{ coverage.permit_total_display }}</span>
+    </div>
+    <div class="sap-tile {% if coverage.difference %}sap-tile--critical{% else %}sap-tile--positive{% endif %}">
+        <span class="sap-tile__label">{% trans "Difference (permits − issue)" %}</span>
+        <span class="sap-tile__value" id="kpiPermitDifference">{{ coverage.difference_display }}</span>
+    </div>
+    <div class="sap-tile {% if coverage.uncovered_lines %}sap-tile--critical{% endif %}">
+        <span class="sap-tile__label">{% trans "Lines with no permit" %}</span>
+        <span class="sap-tile__value" id="kpiUncoveredLines">{{ coverage.uncovered_lines }}</span>
+    </div>
+</div>
+
+<form method="post" action="/issues/{{ document.pk }}/permits/" id="permitForm">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ back|default:'' }}">
+
+    <div class="sap-card">
+        <div class="sap-card__header">
+            <h2 class="sap-card__title">{% trans "Permits and the items each one covers" %}</h2>
+            <div class="sap-card__header-actions">
+                <span class="sap-muted">{% trans "Leave a row blank to ignore it." %}</span>
+            </div>
+        </div>
+        <div class="sap-card__body sap-card__body--flush">
+            <div class="sap-tablewrap">
+                <table class="sap-table sap-table--dense" id="permitRows">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Permit number" %}</th>
+                            <th>{% trans "Amount" %}</th>
+                            <th>{% trans "Note" %}</th>
+                            <th class="sap-table__wide">{% trans "Items this permit covers" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in rows %}
+                        <tr>
+                            <td>
+                                {% if is_manager %}
+                                <input class="sap-input" type="text" name="permit_no_{{ forloop.counter0 }}"
+                                    id="permitNo{{ forloop.counter0 }}" value="{{ row.permit_no }}"
+                                    placeholder="050340604">
+                                {% else %}
+                                <span dir="ltr">{{ row.permit_no|default:"—" }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if is_manager %}
+                                <input class="sap-input" type="number" step="0.01" min="0"
+                                    name="permit_amount_{{ forloop.counter0 }}"
+                                    id="permitAmount{{ forloop.counter0 }}"
+                                    value="{{ row.amount|unlocalize }}">
+                                {% else %}
+                                <span dir="ltr">{{ row.amount_display|default:"—" }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if is_manager %}
+                                <input class="sap-input" type="text" name="permit_note_{{ forloop.counter0 }}"
+                                    id="permitNote{{ forloop.counter0 }}" value="{{ row.note }}">
+                                {% else %}
+                                {{ row.note|default:"—" }}
+                                {% endif %}
+                            </td>
+                            <td class="sap-table__wide">
+                                <ul class="sap-checklist">
+                                    {% for entry in line_rows %}
+                                    <li>
+                                        {% if is_manager %}
+                                        <label class="sap-check">
+                                            <input type="checkbox" name="items_{{ forloop.parentloop.counter0 }}"
+                                                value="{{ entry.line.pk }}"
+                                                {% if row.permit_no and entry.permit_no == row.permit_no %}checked{% endif %}>
+                                            <span>
+                                                <span dir="ltr">{{ entry.line.sku }}</span>
+                                                — {{ entry.line.description }}
+                                                × {{ entry.line.quantity }}
+                                                {% if entry.line.unit %}{{ entry.line.unit }}{% endif %}
+                                            </span>
+                                        </label>
+                                        {% else %}
+                                        {% if row.permit_no and entry.permit_no == row.permit_no %}
+                                        <span>
+                                            <span dir="ltr">{{ entry.line.sku }}</span>
+                                            — {{ entry.line.description }}
+                                            × {{ entry.line.quantity }}
+                                        </span>
+                                        {% endif %}
+                                        {% endif %}
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if is_manager %}
+        <div class="sap-card__footer">
+            <div class="sap-form-actions">
+                <button class="sap-btn sap-btn--emphasized" type="submit">
+                    <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-check"></use></svg>
+                    {% trans "Save the permits" %}
+                </button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</form>
+
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Items of the issue" %}</h2>
+    </div>
+    <div class="sap-card__body sap-card__body--flush">
+        <div class="sap-tablewrap">
+            <table class="sap-table sap-table--dense" id="permitLines">
+                <thead>
+                    <tr>
+                        <th>{% trans "Item code" %}</th>
+                        <th class="sap-table__wide">{% trans "Description" %}</th>
+                        <th>{% trans "Quantity" %}</th>
+                        <th>{% trans "Value" %}</th>
+                        <th>{% trans "Company permit" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in line_rows %}
+                    <tr data-permit="{{ entry.permit_no }}">
+                        <td dir="ltr">{{ entry.line.sku }}</td>
+                        <td class="sap-table__wide">{{ entry.line.description }}</td>
+                        <td>{{ entry.line.quantity }}{% if entry.line.unit %} {{ entry.line.unit }}{% endif %}</td>
+                        <td dir="ltr">{{ entry.value }}</td>
+                        <td>
+                            {% if entry.permit_no %}
+                            <span class="sap-pill sap-pill--info" dir="ltr">{{ entry.permit_no }}</span>
+                            {% else %}
+                            <span class="sap-pill sap-pill--critical">{% trans "No permit" %}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

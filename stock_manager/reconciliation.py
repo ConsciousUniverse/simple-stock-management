@@ -16,7 +16,9 @@ Four reasons, one per gap:
     — the goods are on the shelf with nothing in the system saying so.
 ``permit_missing``
     The document moved stock but carries no company voucher number, so it cannot
-    be matched to the company's own paper.
+    be matched to the company's own paper. When the issue is split across
+    company permits (``DocumentPermit``), the line is documented as soon as a
+    permit covers it — only the lines no permit covers stay on this page.
 ``receipt_without_permit``
     Goods were delivered against a purchase order and booked straight onto the
     shelf by the receipts screen — which writes no stock document at all — and
@@ -166,7 +168,7 @@ def _document_rows(date_from, date_to, site) -> list[MissingLine]:
     """Documents that moved stock (or claim to) without complete paperwork."""
     queryset = (
         StockDocument.objects.select_related("site")
-        .prefetch_related("lines")
+        .prefetch_related("lines", "permits")
         .exclude(status=StockDocument.REJECTED)
     )
     if date_from:
@@ -182,6 +184,10 @@ def _document_rows(date_from, date_to, site) -> list[MissingLine]:
         if not reason:
             continue
         for line in document.lines.all():
+            # A line the company permit covers is documented, even when the
+            # document as a whole is split across several permits.
+            if reason == PERMIT_MISSING and line.permit_id is not None:
+                continue
             rows.append(
                 MissingLine(
                     reason=reason,

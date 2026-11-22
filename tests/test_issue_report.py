@@ -151,7 +151,13 @@ class TestWorkbook:
             BytesIO(issue_report.workbook_bytes(issue_report.build_report(today, today)))
         )
 
-        assert workbook.sheetnames == ["Issues", "By day", "By site", "By item"]
+        assert workbook.sheetnames == [
+            "Issues",
+            "Company permits",
+            "By day",
+            "By site",
+            "By item",
+        ]
         sheet = workbook["Issues"]
         assert sheet["A1"].value == "Date"
         assert sheet["B2"].value == StockDocument.objects.get().number

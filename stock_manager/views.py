@@ -25,6 +25,7 @@ from .permissions import is_warehouse_manager
 from . import documents as stock_documents
 from . import issue_report
 from . import reconciliation
+from . import permits as company_permits
 from .barcodes import BarcodeError, render_barcode_svg
 from .ui_strings import js_messages
 from .serializers import ItemSerializer, ShopItemSerializer, TransferItemSerializer
@@ -1155,8 +1156,117 @@ def issues_report_page(request):
     return render(
         request,
         "pages/issue_report.html",
-        {"report": report, "date_from": date_from, "date_to": date_to},
+        {
+            "report": report,
+            "date_from": date_from,
+            "date_to": date_to,
+            # The permits page returns here, so the operator keeps the window
+            # they were reading instead of landing on a default one.
+            "report_back": (
+                f"/issues/report/?from={date_from:%Y-%m-%d}&to={date_to:%Y-%m-%d}"
+            ),
+        },
     )
+
+
+PERMIT_BLANK_ROWS = 2
+
+
+def _permits_context(document, *, is_manager, rows=None, assignments=None):
+    """Everything the permits page shows, from the database or a failed save."""
+    lines = list(document.lines.select_related("item").all())
+
+    if rows is None:
+        rows = [
+            {
+                "permit_no": permit.permit_no,
+                "amount": permit.amount,
+                "amount_display": company_permits.format_amount(permit.amount),
+                "note": permit.note,
+            }
+            for permit in document.permits.all()
+        ]
+        assignments = {
+            str(line.pk): line.permit.permit_no
+            for line in lines
+            if line.permit_id is not None
+        }
+
+    # Two blank rows are always offered so a second permit can be added without
+    # a script; saving them offers the next pair.
+    rows = list(rows) + [
+        {"permit_no": "", "amount": "", "amount_display": "", "note": ""}
+    ] * PERMIT_BLANK_ROWS
+
+    return {
+        "document": document,
+        "rows": rows,
+        "line_rows": [
+            {
+                "line": line,
+                "value": company_permits.format_amount(
+                    company_permits.line_value(line)
+                ),
+                "permit_no": assignments.get(str(line.pk), ""),
+            }
+            for line in lines
+        ],
+        "coverage": company_permits.coverage(document),
+        "is_manager": is_manager,
+    }
+
+
+@login_required
+def issue_permits_page(request, pk):
+    """The company permits of one issue, and the items each one covers."""
+    document = get_object_or_404(StockDocument, pk=pk)
+    manager = is_warehouse_manager(request.user)
+    self_url = f"/issues/{document.pk}/permits/"
+
+    back = request.POST.get("next") or request.GET.get("next") or ""
+    if not url_has_allowed_host_and_scheme(
+        back, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        back = ""
+
+    if request.method != "POST":
+        return render(
+            request,
+            "pages/issue_permits.html",
+            {
+                **_permits_context(document, is_manager=manager),
+                "back": back or "/issues/report/",
+            },
+        )
+
+    if not manager:
+        messages.error(
+            request, _("Only a warehouse manager can record company permits.")
+        )
+        return HttpResponseRedirect(back or self_url)
+
+    line_ids = {str(line.pk) for line in document.lines.all()}
+    try:
+        rows, assignments = company_permits.parse_form(request.POST, line_ids)
+        company_permits.save_permits(document, rows, assignments, user=request.user)
+    except company_permits.PermitError as exc:
+        # Re-render what was typed: losing three permit numbers to a validation
+        # error is how an operator stops using the page.
+        context = _permits_context(
+            document,
+            is_manager=manager,
+            rows=company_permits.submitted_rows(request.POST),
+            assignments=company_permits.submitted_items(request.POST, line_ids),
+        )
+        context["back"] = back or "/issues/report/"
+        messages.error(request, str(exc))
+        return render(request, "pages/issue_permits.html", context)
+
+    messages.success(
+        request,
+        _("Company permits recorded on %(number)s.") % {"number": document.number},
+    )
+    return HttpResponseRedirect(back or self_url)
 
 
 RECONCILIATION_PAGE_SIZE = 100

@@ -228,3 +228,56 @@ document is listed **until it is completed from the list**, then it disappears.
   (row listed → voucher saved → banner «Voucher recorded on …» → row gone, count
   16 → 15) and the Arabic RTL layout was checked by setting the
   `django_language` cookie, since the language switcher is a POST form.
+
+## Company permits (إذن صرف): one issue, several permits, each with its items
+
+The operator's case: an issue dated 1/7 is paid against **three** company
+permits (050340604, 0503537228, 05245322) and the report must say **which items
+each permit covers**. A company permit is not a second kind of document — it is
+a way of covering part of an issue.
+
+- **`DocumentPermit`** (document FK, `permit_no`, `amount`, `note`) plus
+  `StockDocumentLine.permit` (`SET_NULL`). A line belongs to **one** permit, so
+  the paper trail is a simple FK, not a join table. The permit table sits
+  **before** `StockDocumentLine` in `models.py` because the line references it.
+- **A permit number is unique across documents** (unique index) and checked in
+  code first so the operator gets a sentence naming the other document instead of
+  a raw integrity error. The check is the message; the index is the referee —
+  the mutation check showed the save still refuses with the check removed,
+  because the database refuses it.
+- **`stock_manager/permits.py` is the one rule set**: `parse_form` (indexed
+  fields `permit_no_<i>` / `permit_amount_<i>` / `items_<i>`, so a permit and its
+  items stay together even with a blank row in the middle), `save_permits`
+  (update existing rows in place, delete only the rows the operator removed —
+  **never delete-and-reinsert**, the lines point at these rows),
+  `line_value`/`coverage` (issue value, permits total, difference, uncovered
+  lines, `documented`).
+- **A comma is a thousands separator or nothing.** The first cut stripped every
+  comma, so the Arabic-localised `1250,50` became **125050.00** — a silent 100×
+  inflation. `THOUSANDS` accepts `1,250.50` and refuses `1250,50`.
+- **A localised number breaks a number input, and the browser then posts an empty
+  field.** `{{ row.amount }}` renders `1250,50` in Arabic; `<input type=
+  "number">` rejects it and comes back blank, so a plain save **zeroed every
+  amount** (found in the browser, not by the tests). The input value must be
+  `|unlocalize`; display text uses `format_amount` (`1,250.50` in both
+  languages, because an accountant compares this page with the company's paper).
+  The guard reads the rendered value back and posts it again — a unit test that
+  posts a literal string cannot see this.
+- **The report gains a «إذن الصرف» column per line, a permits card (number,
+  amount, items, note) and a «صرفيات بلا إذن صرف» table** whose links carry the
+  report window as `?next=` (URL-encoded, or the `to` date is lost). The Excel
+  export gains a **Company permits** sheet with one row per permit-item, so the
+  workbook can be filtered by permit like the page.
+- **`permit_missing` in `reconciliation.py` is now per line**: a line the permit
+  covers is documented even while the document is split across several permits.
+  An issue with **no** permit at all keeps behaving exactly as before, and a
+  document voucher (`external_ref`) still documents every line.
+- **The difference between the permits total and the issue value is shown, not
+  chased.** It is a reconciliation question for the accountant, not a missing
+  paper: treating it as a gap would list documents whose paper is complete.
+- Tests: `tests/test_document_permits.py` (26) + `tests/e2e/test_permits.py` (3,
+  real browser). The guards were each verified to fail with the behaviour
+  removed: the per-line permit filter, the cross-document check (the index still
+  refuses it — that is the point), the Arabic round-trip save, and the e2e
+  round-trip in Arabic (`'' == '1250.50'` — the browser really does empty the
+  field).
