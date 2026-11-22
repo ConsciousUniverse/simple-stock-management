@@ -7,6 +7,9 @@
          downloaded and then silently not installed. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- The label scanner, and the photograph of the signed voucher. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
         android:allowBackup="false"
@@ -30,6 +33,21 @@
             android:name=".MainActivity"
             android:exported="false"
             android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".NewDocumentActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ReviewActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".DocumentsActivity"
+            android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
         <provider

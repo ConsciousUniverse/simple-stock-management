@@ -2,9 +2,13 @@ package com.cortoba.warehouse
 
 import org.json.JSONObject
 import java.io.BufferedReader
+import java.io.File
 import java.io.InputStreamReader
+import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.URLEncoder
+import java.util.UUID
 
 /**
  * A refusal the server sent, with the sentence it sent with it.
@@ -77,6 +81,90 @@ class Api(private val baseUrl: String) {
         return JSONObject(text).optString("message")
     }
 
+    /**
+     * What a scanned label is: its description and — the point of the lookup —
+     * the unit the catalogue counts it in.
+     */
+    fun lookupItem(token: String, code: String): ItemInfo {
+        val encoded = URLEncoder.encode(code, "UTF-8")
+        val (_, text) = request("api/mobile/items/lookup/?code=$encoded", "GET", null, token)
+        return parseItem(JSONObject(text).getJSONObject("item"))
+    }
+
+    /** Send the finished document, with its photographed voucher. */
+    fun createDocument(token: String, draft: DocumentDraft): SubmittedDocument {
+        val photo = draft.photoPath?.let { File(it) }
+        val (_, text) = multipart(
+            path = "api/mobile/documents/",
+            token = token,
+            fields = draft.fields(),
+            file = photo,
+            fileField = "photo",
+            mimeType = "image/jpeg",
+        )
+        return parseDocument(JSONObject(text).getJSONObject("document"))
+    }
+
+    /** The documents this user sent, newest first, with their outcome. */
+    fun documents(token: String): List<SubmittedDocument> =
+        parseDocuments(request("api/mobile/documents/", "GET", null, token).second)
+
+    /**
+     * A multipart body written by hand: the photograph and the fields it
+     * belongs to must arrive in one request, or a document could be saved
+     * without the paper behind it.
+     */
+    private fun multipart(
+        path: String,
+        token: String,
+        fields: Map<String, String>,
+        file: File?,
+        fileField: String,
+        mimeType: String,
+    ): Pair<Int, String> {
+        val boundary = "----warehouse-${UUID.randomUUID()}"
+        val connection = (URL(root + path).openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"
+            connectTimeout = 20_000
+            // A photograph on a site connection is slower than a JSON call.
+            readTimeout = 60_000
+            setRequestProperty("Accept", "application/json")
+            setRequestProperty("Authorization", "Bearer $token")
+            setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
+            doOutput = true
+        }
+
+        fun OutputStream.text(value: String) = write(value.toByteArray(Charsets.UTF_8))
+
+        connection.outputStream.use { output ->
+            fields.forEach { (name, value) ->
+                output.text("--$boundary\r\n")
+                output.text("Content-Disposition: form-data; name=\"$name\"\r\n\r\n")
+                output.text(value)
+                output.text("\r\n")
+            }
+            if (file != null && file.exists()) {
+                output.text("--$boundary\r\n")
+                output.text(
+                    "Content-Disposition: form-data; name=\"$fileField\"; filename=\"${file.name}\"\r\n"
+                )
+                output.text("Content-Type: $mimeType\r\n\r\n")
+                file.inputStream().use { it.copyTo(output) }
+                output.text("\r\n")
+            }
+            output.text("--$boundary--\r\n")
+        }
+
+        val status = connection.responseCode
+        val stream = if (status in 200..299) connection.inputStream else connection.errorStream
+        val text = stream?.use { input ->
+            BufferedReader(InputStreamReader(input, Charsets.UTF_8)).readText()
+        } ?: ""
+        connection.disconnect()
+        if (status !in 200..299) throw refusal(status, text)
+        return status to text
+    }
+
     private fun request(
         path: String,
         method: String,
@@ -86,7 +174,7 @@ class Api(private val baseUrl: String) {
         val connection = (URL(root + path).openConnection() as HttpURLConnection).apply {
             requestMethod = method
             connectTimeout = 15_000
-            readTimeout = 20_000
+            readTimeout = 30_000
             setRequestProperty("Accept", "application/json")
             if (token != null) setRequestProperty("Authorization", "Bearer $token")
             if (body != null) {

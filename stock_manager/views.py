@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth.views import LoginView
 from django.core.exceptions import NON_FIELD_ERRORS
 from django.utils.translation import gettext_lazy as _lazy
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.core.paginator import Paginator
 from django.contrib import messages
@@ -970,7 +970,25 @@ def _document_from_form(request, doc_type, *, pending=None):
         source=StockDocument.WEB,
         # Only a warehouse manager may move stock without approval.
         pending=not is_warehouse_manager(request.user) if pending is None else pending,
+        # The same paper the phone records: the date on it, where the goods go
+        # and who signed it. Typed on the web, these were previously lost.
+        document_date=_form_date(request.POST.get("document_date")),
+        location=request.POST.get("location", ""),
+        engineer_name=request.POST.get("engineer_name", ""),
     )
+
+
+def _form_date(raw):
+    """The date on the voucher, or None when the form left it empty."""
+    from datetime import date
+
+    text = (raw or "").strip()
+    if not text:
+        return None
+    try:
+        return date.fromisoformat(text)
+    except ValueError:
+        return None
 
 
 @ensure_csrf_cookie
@@ -1029,6 +1047,11 @@ def receipts_page(request):
             "recent": StockDocument.objects.select_related("site", "created_by")
             .prefetch_related("lines")
             .filter(direction=StockDocument.IN)[:RECENT_DOCUMENTS],
+            "pending": StockDocument.objects.select_related("site", "created_by")
+            .prefetch_related("lines")
+            .filter(status=StockDocument.PENDING, direction=StockDocument.IN),
+            "pending_title": _("Additions waiting for approval"),
+            "back_url": "/receipts/",
             "is_manager": is_warehouse_manager(request.user),
             "form_title": _("New addition"),
             "form_hint": _("Stock goes IN"),
@@ -1069,7 +1092,9 @@ def issues_page(request):
             ],
             "pending": StockDocument.objects.select_related("site", "created_by")
             .prefetch_related("lines")
-            .filter(status=StockDocument.PENDING),
+            .filter(status=StockDocument.PENDING, direction=StockDocument.OUT),
+            "pending_title": _("Waiting for approval"),
+            "back_url": "/issues/",
             "recent": StockDocument.objects.select_related(
                 "site", "created_by", "decided_by"
             )
@@ -1119,6 +1144,56 @@ def decide_document(request, pk, action):
     except stock_documents.DocumentError as exc:
         messages.error(request, str(exc))
     return HttpResponseRedirect(request.POST.get("next") or "/issues/")
+
+
+
+
+@login_required
+def document_detail(request, pk):
+    """The paper behind a document: what the site wrote, and what it moved.
+
+    A manager deciding on a document needs the voucher itself — the date on it,
+    where the goods go, who signed it and the photograph — not just a list of
+    quantities. Everything the phone sent is shown here, and approve/reject post
+    to the same view the lists use, so there is one decision path.
+    """
+    document = (
+        StockDocument.objects.select_related("site", "created_by", "decided_by")
+        .prefetch_related("lines")
+        .filter(pk=pk)
+        .first()
+    )
+    if document is None:
+        messages.error(request, _("Document not found."))
+        return HttpResponseRedirect("/issues/")
+    return render(
+        request,
+        "pages/document_detail.html",
+        {
+            "document": document,
+            "lines": document.lines.select_related("item").all(),
+            "has_photo": bool(document.photo),
+            "is_manager": is_warehouse_manager(request.user),
+            "back_url": request.GET.get("next")
+            or ("/receipts/" if document.direction == StockDocument.IN else "/issues/"),
+        },
+    )
+
+
+@login_required
+def document_photo(request, pk):
+    """The photographed voucher, straight from the database.
+
+    Not a file under MEDIA_ROOT: Render wipes the disk on every deploy, so a
+    stored path becomes a broken image within a week.
+    """
+    document = StockDocument.objects.filter(pk=pk).only("photo", "photo_type").first()
+    if document is None or not document.photo:
+        raise Http404("No photo")
+    response = HttpResponse(bytes(document.photo), content_type=document.photo_type or "image/jpeg")
+    response["Cache-Control"] = "private, max-age=3600"
+    return response
+
 
 
 def _announce(request, document):

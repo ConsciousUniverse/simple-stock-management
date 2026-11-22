@@ -44,6 +44,22 @@
                 </span>
             </label>
             <label class="sap-field">
+                <span class="sap-label">{% trans "Document date" %}</span>
+                <input class="sap-input" type="date" name="document_date">
+                <span class="sap-field__hint">
+                    {% trans "The date written on the paper, not today's date." %}
+                </span>
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Used at / installed at" %}</span>
+                <input class="sap-input" type="text" name="location" maxlength="200"
+                    placeholder="{% trans 'Where the goods go' %}">
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Signed by (engineer)" %}</span>
+                <input class="sap-input" type="text" name="engineer_name" maxlength="120">
+            </label>
+            <label class="sap-field">
                 <span class="sap-label">{% trans "Notes" %}</span>
                 <input class="sap-input" type="text" name="notes">
             </label>

@@ -275,6 +275,28 @@ class StockDocument(models.Model):
     decision_note = models.TextField(blank=True, default="")
     applied_at = models.DateTimeField(null=True, blank=True)
 
+    # --- the paper the site hands over -------------------------------------
+    # These four describe the signed voucher that arrives from site, and they
+    # are what a warehouse manager reads before approving. ``document_date`` is
+    # the date ON the paper, which is not the moment it was typed in: a permit
+    # signed last week is entered today.
+    document_date = models.DateField(null=True, blank=True)
+    # Where the goods go (مكان الاستخدام / التركيب) — free text, because sites
+    # are named in the paper ("مبنى B — الدور الثالث") more often than in a list.
+    location = models.CharField(max_length=200, blank=True, default="")
+    # The engineer who signed the request (اسم المهندس).
+    engineer_name = models.CharField(max_length=120, blank=True, default="")
+
+    # The photographed voucher lives IN the database on purpose. Render's disk
+    # is wiped by every deploy, so a file under MEDIA_ROOT is a broken image
+    # within a week — the same reason the APK is not stored here. A phone photo
+    # is compressed by the app before it is sent; ``MAX_PHOTO_BYTES`` refuses
+    # anything that is not.
+    photo = models.BinaryField(null=True, blank=True, editable=False)
+    photo_type = models.CharField(max_length=60, blank=True, default="")
+    photo_name = models.CharField(max_length=120, blank=True, default="")
+    photo_uploaded_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         ordering = ("-created_at", "-id")
         verbose_name = "Stock document"
@@ -291,6 +313,11 @@ class StockDocument(models.Model):
     def type_label(self):
         """The document type in the interface language."""
         return _lazy(self.get_doc_type_display())
+
+    @property
+    def status_label(self):
+        """The status in the interface language (the raw choice label is English)."""
+        return _lazy(self.get_status_display())
 
     @property
     def is_incoming(self):

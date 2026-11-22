@@ -1,5 +1,52 @@
 # Release Notes
 
+## v6.1.0 — 2026-11-22
+
+The warehouse app can now carry a signed paper voucher end to end: the operator
+fills in the paper's header, photographs the sheet, scans every item, reviews the
+document, and sends it. Nothing moves in the balance until a warehouse manager
+approves it on the web.
+
+**Android app 1.3.0 (build 4)** — sign in with a user name or phone number and a
+password, then:
+
+1. **Issue (صرف)** or **Add (إضافة)** — the two directions of the same sheet.
+2. **Date, document number, where it will be used, the engineer who signed** —
+   the header of the paper, typed once.
+3. **Photograph the document** — the signed sheet itself, attached to the
+   document and stored in the database (not on the server's disk, which a
+   deployment wipes).
+4. **Scan each item's barcode** — the label resolves to the catalogue article,
+   and the line carries **the catalogue's unit**, not one typed on the phone.
+   Scanning the same label twice raises the quantity instead of adding a line.
+5. **Review page** — the header, the photograph and every line with its unit,
+   then one button: صرف or إضافة.
+6. **My documents** — what happened to each one: waiting, approved, or rejected
+   with the manager's note.
+
+**Web**
+
+- **`/issues/` and `/receipts/` now carry their own approval queue** — each page
+  lists the documents waiting on it (issues on Issues, additions on Additions)
+  with Review / Approve / Reject beside each row.
+- **A document review page** (`/documents/<id>/`) shows the voucher fields, the
+  photographed sheet, the lines with their units and the stock on hand, and
+  approves or rejects with a note. Approval moves the stock exactly once; the
+  same voucher number cannot move it twice.
+- **The unit of measure is the catalogue's.** The phone reports the code and the
+  quantity; the server decides the unit, so a line can never disagree with the
+  article it names.
+- **A scanned code is forgiving**: `cbl 3x25`, `CBL 3X25` and `CBL-3X25` all
+  find the same article, while an unknown code is refused by name instead of
+  being created silently.
+- Arabic translations for the whole flow.
+
+**Tests** — 33 new server tests for the mobile document flow (submission,
+photograph, unit, voucher booked once, pending moves nothing, approval moves the
+stock, rejection, review page access, queue links) and 15 new Android unit tests
+for the draft rules and the server payloads. 764 server tests pass.
+
+
 ## v5.3.0-beta — 2026-07-06
 
 This release adds a full automated test suite, fixes a batch of functional

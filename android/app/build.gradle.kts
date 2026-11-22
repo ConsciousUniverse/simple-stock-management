@@ -11,8 +11,8 @@ android {
         applicationId = "com.cortoba.warehouse"
         minSdk = 24
         targetSdk = 34
-        versionCode = 3
-        versionName = "1.2.0"
+        versionCode = 4
+        versionName = "1.3.0"
         // The deployment the app talks to. There is no field on the phone to
         // change it: one build serves the site it was made for, and a wrong
         // address cannot be typed in by mistake.
@@ -70,6 +70,11 @@ dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    // Scanning the item label. The embedded ZXing activity is a whole scanner
+    // (preview, torch, permission) with one line of glue here — writing a
+    // CameraX + ML Kit scanner by hand is a lot of code to keep working on
+    // phones we cannot test.
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")

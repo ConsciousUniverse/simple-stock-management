@@ -17,6 +17,7 @@ Two rules this module exists to enforce:
 
 from __future__ import annotations
 
+import re
 from decimal import Decimal
 
 from django.db import IntegrityError, transaction
@@ -49,6 +50,13 @@ COUNTERPARTY_REQUIRED = (
 )
 
 MAX_NUMBER_ATTEMPTS = 5
+
+#: A photographed voucher: big enough for a readable A4 sheet, small enough
+#: that a phone on a bad line is not stuck for minutes. The app compresses
+#: before sending; this is the server's own ceiling, so a hand-rolled client
+#: cannot fill the database with camera originals.
+MAX_PHOTO_BYTES = 6 * 1024 * 1024
+PHOTO_TYPES = ("image/jpeg", "image/jpg", "image/png", "image/webp", "image/heic")
 
 
 # Offered as suggestions in the unit box. Free text is allowed: the catalogue
@@ -105,6 +113,52 @@ def parse_lines(raw_lines) -> list[tuple[str, int, str, str]]:
     return [(sku, qty, desc, unit) for sku, (qty, desc, unit) in merged.items()]
 
 
+def find_item_by_code(code: str) -> Item | None:
+    """The item a scanned label points at.
+
+    A label carries the SKU (``barcodes.py``), but a scanner may add spaces or
+    change the case, and an operator may type the code by hand. The exact key
+    is tried first; failing that, spaces/dashes/underscores are ignored on both
+    sides — ``CBL 3X25`` and ``CBL-3X25`` are the same article — with the scan
+    bounded by a prefix so a lookup never walks the whole catalogue.
+    """
+    raw = (code or "").strip()
+    if not raw:
+        return None
+    item = Item.objects.filter(pk=raw).first()
+    if item is not None:
+        return item
+    item = Item.objects.filter(sku__iexact=raw).first()
+    if item is not None:
+        return item
+
+    def loose(value):
+        return re.sub(r"[\s\-_]", "", value or "").upper()
+
+    wanted = loose(raw)
+    head = loose(raw.split()[0].split("-")[0])[:6]
+    if not wanted or not head.isalnum():
+        return None
+    for candidate in Item.objects.filter(sku__istartswith=head)[:500]:
+        if loose(candidate.sku) == wanted:
+            return candidate
+    return None
+
+
+def check_photo(data, content_type: str = "", name: str = ""):
+    """Refuse a voucher photo that cannot be read later, and say why."""
+    if not data:
+        raise DocumentError("صوّر المستند أولًا: لا يمكن اعتماد مستند بلا صورته.")
+    if len(data) > MAX_PHOTO_BYTES:
+        raise DocumentError(
+            "صورة المستند أكبر من المسموح (٦ ميجابايت). صوّرها بدقة أقل."
+        )
+    kind = (content_type or "").split(";")[0].strip().lower()
+    if kind and kind not in PHOTO_TYPES:
+        raise DocumentError("صيغة صورة المستند غير مدعومة (JPG أو PNG).")
+    return data
+
+
 def _next_number(doc_type: str) -> str:
     prefix = "RCV" if direction_of(doc_type) == IN else "ISS"
     year = timezone.localdate().year
@@ -135,6 +189,12 @@ def create_document(
     created_by=None,
     source: str = StockDocument.WEB,
     pending: bool | None = None,
+    document_date=None,
+    location: str = "",
+    engineer_name: str = "",
+    photo=None,
+    photo_type: str = "",
+    photo_name: str = "",
 ) -> StockDocument:
     """Create a document and, when it is a web entry, apply it immediately.
 
@@ -147,8 +207,12 @@ def create_document(
     counterparty = (counterparty or "").strip()
     reference = (reference or "").strip()
     external_ref = (external_ref or "").strip() or None
+    location = (location or "").strip()[:200]
+    engineer_name = (engineer_name or "").strip()[:120]
 
-    if doc_type in SITE_TYPES and site is None:
+    # A site account OR a written location: the voucher names the place, and
+    # requiring a registered account would refuse a real permit typed by hand.
+    if doc_type in SITE_TYPES and site is None and not location:
         raise DocumentError("Choose the site for this document.")
     if doc_type in COUNTERPARTY_REQUIRED and not counterparty:
         raise DocumentError("Enter the supplier or project name.")
@@ -177,6 +241,25 @@ def create_document(
             created_by=created_by,
             source=source,
             pending=pending,
+        )
+        if photo:
+            document.photo = photo
+            document.photo_type = (photo_type or "image/jpeg")[:60]
+            document.photo_name = (photo_name or "voucher.jpg")[:120]
+            document.photo_uploaded_at = timezone.now()
+        document.document_date = document_date
+        document.location = location
+        document.engineer_name = engineer_name
+        document.save(
+            update_fields=[
+                "photo",
+                "photo_type",
+                "photo_name",
+                "photo_uploaded_at",
+                "document_date",
+                "location",
+                "engineer_name",
+            ]
         )
         for sku, quantity, description, unit in parsed:
             item = _item_for_line(sku)

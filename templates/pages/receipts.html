@@ -11,6 +11,8 @@
 {% block content %}
 {% include "partials/document_form.html" %}
 
+{% include "partials/pending_documents.html" %}
+
 <div class="sap-card">
     <div class="sap-card__header">
         <h2 class="sap-card__title">{% trans "Recent additions" %}</h2>
@@ -39,7 +41,7 @@
                 <tbody>
                     {% for document in recent %}
                     <tr>
-                        <td>{{ document.number }}</td>
+                        <td><a href="/documents/{{ document.id }}/">{{ document.number }}</a></td>
                         <td>{{ document.type_label }}</td>
                         <td>{% if document.site %}{{ document.site.username }}{% else %}{{ document.counterparty }}{% endif %}</td>
                         <td>{{ document.reference|default:"—" }}</td>

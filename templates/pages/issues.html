@@ -11,75 +11,7 @@
 {% block content %}
 {% include "partials/document_form.html" %}
 
-{% if pending %}
-<div class="sap-card" id="approvals">
-    <div class="sap-card__header">
-        <h2 class="sap-card__title">{% trans "Waiting for approval" %}</h2>
-        <div class="sap-card__header-actions">
-            <span class="sap-pill sap-pill--info">{{ pending|length }}</span>
-        </div>
-    </div>
-    <div class="sap-card__body sap-card__body--flush">
-        <div class="sap-tablewrap">
-            <table class="sap-table">
-                <thead>
-                    <tr>
-                        <th>{% trans "Document" %}</th>
-                        <th>{% trans "Type" %}</th>
-                        <th>{% trans "Site / project" %}</th>
-                        <th>{% trans "Items" %}</th>
-                        <th>{% trans "Quantity" %}</th>
-                        <th>{% trans "Submitted by" %}</th>
-                        <th>{% trans "Date" %}</th>
-                        <th>{% trans "Decision" %}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for document in pending %}
-                    <tr>
-                        <td>{{ document.number }}</td>
-                        <td>{{ document.type_label }}</td>
-                        <td>{% if document.site %}{{ document.site.username }}{% else %}{{ document.counterparty }}{% endif %}</td>
-                        <td>
-                            {% for line in document.lines.all %}
-                            <span class="sap-pill sap-pill--neutral">{{ line.sku }} × {{ line.quantity }}{% if line.unit %} {{ line.unit }}{% endif %}</span>
-                            {% endfor %}
-                        </td>
-                        <td>{{ document.total_quantity }}</td>
-                        <td>{{ document.created_by.username|default:"—" }}</td>
-                        <td dir="ltr">{{ document.created_at|date:"Y-m-d H:i" }}</td>
-                        <td>
-                            {% if is_manager %}
-                            <div class="sap-inline-actions">
-                                <form method="post" action="/issues/{{ document.id }}/approve/">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="next" value="/issues/">
-                                    <button class="sap-btn sap-btn--positive sap-btn--sm" type="submit">
-                                        <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-check"></use></svg>
-                                        {% trans "Approve" %}
-                                    </button>
-                                </form>
-                                <form method="post" action="/issues/{{ document.id }}/reject/">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="next" value="/issues/">
-                                    <button class="sap-btn sap-btn--negative sap-btn--sm" type="submit">
-                                        <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-x-circle"></use></svg>
-                                        {% trans "Reject" %}
-                                    </button>
-                                </form>
-                            </div>
-                            {% else %}
-                            <span class="sap-muted">{% trans "Only a warehouse manager can approve documents." %}</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-{% endif %}
+{% include "partials/pending_documents.html" %}
 
 <div class="sap-card">
     <div class="sap-card__header">
@@ -109,7 +41,7 @@
                 <tbody>
                     {% for document in recent %}
                     <tr>
-                        <td>{{ document.number }}</td>
+                        <td><a href="/documents/{{ document.id }}/">{{ document.number }}</a></td>
                         <td>{{ document.type_label }}</td>
                         <td>{% if document.site %}{{ document.site.username }}{% else %}{{ document.counterparty }}{% endif %}</td>
                         <td>{{ document.lines.all|length }}</td>

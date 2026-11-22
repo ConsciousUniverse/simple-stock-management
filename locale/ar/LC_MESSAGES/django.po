@@ -103,6 +103,9 @@ msgstr "الإضافة"
 msgid "Additions to the warehouse"
 msgstr "إضافة إلى المخزن"
 
+msgid "Additions waiting for approval"
+msgstr "إضافات بانتظار الاعتماد"
+
 msgid "Adjust your search or add a new item code."
 msgstr "عدّل البحث أو أضف كود صنف جديد."
 
@@ -157,6 +160,9 @@ msgstr "تطبيق"
 msgid "Approve"
 msgstr "اعتماد"
 
+msgid "Approve and move the stock"
+msgstr "اعتماد وترحيل الرصيد"
+
 msgid "Approved"
 msgstr "معتمد"
 
@@ -180,6 +186,9 @@ msgstr "تلقائي"
 
 msgid "Awaiting dispatch"
 msgstr "في انتظار الصرف"
+
+msgid "Back"
+msgstr "رجوع"
 
 msgid "Back to dashboard"
 msgstr "العودة إلى لوحة التحكم"
@@ -277,6 +286,9 @@ msgstr "إغلاق"
 msgid "Closed"
 msgstr "مغلق"
 
+msgid "Code"
+msgstr "الكود"
+
 msgid "Company item code"
 msgstr "كود الصنف في نظام الشركة"
 
@@ -370,8 +382,14 @@ msgstr "التاريخ"
 msgid "Day"
 msgstr "اليوم"
 
+msgid "Decided by"
+msgstr "اعتمده"
+
 msgid "Decision"
 msgstr "القرار"
+
+msgid "Decision note"
+msgstr "ملاحظة القرار"
 
 msgid "Delete"
 msgstr "حذف"
@@ -438,6 +456,9 @@ msgstr "اعتماد مستند"
 
 msgid "Document created"
 msgstr "إنشاء مستند"
+
+msgid "Document date"
+msgstr "تاريخ المستند"
 
 msgid "Document not found."
 msgstr "الإذن غير موجود."
@@ -556,6 +577,9 @@ msgstr "مثال: 01012345678"
 msgid "From"
 msgstr "من"
 
+msgid "From the Android app"
+msgstr "من تطبيق الأندرويد"
+
 msgid "From then on the app updates itself: this link is only needed for a new phone."
 msgstr "من بعد كده التطبيق بيحدّث نفسه: اللينك ده للموبايل الجديد بس."
 
@@ -588,6 +612,9 @@ msgstr "استيراد"
 
 msgid "Import from Excel"
 msgstr "استيراد من Excel"
+
+msgid "In stock now"
+msgstr "الرصيد الحالي"
 
 msgid "Inactive"
 msgstr "غير نشط"
@@ -880,6 +907,9 @@ msgstr "غير مسجَّل الدخول"
 msgid "Note"
 msgstr "ملاحظة"
 
+msgid "Note (optional)"
+msgstr "ملاحظة (اختياري)"
+
 msgid "Notes"
 msgstr "ملاحظات"
 
@@ -924,6 +954,9 @@ msgstr "مدير المخزن وحده يسجّل أذون الصرف."
 
 msgid "Open"
 msgstr "فتح"
+
+msgid "Open full size"
+msgstr "فتح بالحجم الكامل"
 
 msgid "Open the download link on the phone and install the file (allow installing apps from this source if the phone asks)."
 msgstr "افتح رابط التنزيل على الهاتف ونصّب الملف (واسمح بتثبيت التطبيقات من هذا المصدر إذا طلب الهاتف)."
@@ -1005,6 +1038,12 @@ msgstr "طلبات تغيير رقم الهاتف"
 
 msgid "Phone the app signs in with"
 msgstr "رقم الهاتف الذي يدخل به التطبيق"
+
+msgid "Photo"
+msgstr "صورة"
+
+msgid "Photographed document"
+msgstr "المستند المصوَّر"
 
 msgid "Please confirm"
 msgstr "برجاء التأكيد"
@@ -1168,6 +1207,9 @@ msgstr "سعر البيع يجب أن يكون رقمًا صالحًا بحد أ
 msgid "Return from site to warehouse"
 msgstr "ارتجاع من الموقع إلى المخزن"
 
+msgid "Review"
+msgstr "مراجعة"
+
 msgid "Role"
 msgstr "الدور"
 
@@ -1300,6 +1342,9 @@ msgstr "تغيّر رقم الدخول"
 msgid "Sign-in refused"
 msgstr "رفض تسجيل الدخول"
 
+msgid "Signed by (engineer)"
+msgstr "اسم المهندس الذي وقّع"
+
 msgid "Signed in"
 msgstr "تسجيل دخول"
 
@@ -1390,6 +1435,9 @@ msgstr "حركة المخزون متاحة"
 msgid "Stock overview"
 msgstr "نظرة عامة على المخزون"
 
+msgid "Submitted at"
+msgstr "وقت الإرسال"
+
 msgid "Submitted by"
 msgstr "قدّمه"
 
@@ -1474,6 +1522,9 @@ msgstr "البصمة يجب أن تكون 64 حرفًا سادس عشريًا."
 msgid "The company voucher number is too long."
 msgstr "رقم إذن الشركة أطول من المسموح."
 
+msgid "The date written on the paper, not today's date."
+msgstr "التاريخ المكتوب على الورقة، وليس تاريخ اليوم."
+
 msgid "The download address must start with https:// or with /."
 msgstr "يجب أن يبدأ عنوان التنزيل بـ https:// أو بـ /."
 
@@ -1522,6 +1573,9 @@ msgstr "تم تغيير رقم %(name)s إلى %(phone)s."
 msgid "The phones compare this number with their own: it must grow with every build."
 msgstr "تقارن الهواتف هذا الرقم برقمها: يجب أن يزيد مع كل بناء."
 
+msgid "The photographed document"
+msgstr "صورة المستند"
+
 msgid "The received quantity must be a whole number."
 msgstr "الكمية المستلمة يجب أن تكون رقمًا صحيحًا."
 
@@ -1566,6 +1620,9 @@ msgstr "تم إنشاء المستخدم."
 
 msgid "The user was saved."
 msgstr "تم حفظ المستخدم."
+
+msgid "The voucher"
+msgstr "بيانات المستند"
 
 msgid "The warehouse is in maintenance mode. Stock movements are disabled."
 msgstr "المخزن في وضع الصيانة. حركة المخزون معطّلة."
@@ -1654,6 +1711,9 @@ msgstr "رفع بيانات المخزون"
 msgid "Use your new password the next time you sign in."
 msgstr "استخدم كلمة المرور الجديدة في المرة القادمة."
 
+msgid "Used at / installed at"
+msgstr "مكان الاستخدام / التركيب"
+
 msgid "User"
 msgstr "المستخدم"
 
@@ -1692,6 +1752,9 @@ msgstr "الإذن %(permit)s مسجّل بالفعل على توريد %(po)s."
 
 msgid "Voucher %(permit)s was just booked on another document."
 msgstr "الإذن %(permit)s سُجّل للتوّ على مستند آخر."
+
+msgid "Voucher number"
+msgstr "رقم المستند"
 
 msgid "Voucher recorded on %(number)s."
 msgstr "تم تسجيل الإذن على %(number)s."
@@ -1752,6 +1815,9 @@ msgstr "ما يحتفظ به المخزن، وما يحتفظ به كل موقع
 
 msgid "When"
 msgstr "التاريخ والوقت"
+
+msgid "Where the goods go"
+msgstr "أين ستُستخدم البضاعة"
 
 msgid "Where to go next"
 msgstr "إلى أين تتجه."

@@ -40,6 +40,15 @@ class MainActivity : AppCompatActivity() {
         askForNotificationPermission()
         UpdateWorker.schedule(this)
 
+        binding.newIssue.setOnClickListener {
+            openDocument(DocumentDirection.OUT)
+        }
+        binding.newAddition.setOnClickListener {
+            openDocument(DocumentDirection.IN)
+        }
+        binding.myDocuments.setOnClickListener {
+            startActivity(Intent(this, DocumentsActivity::class.java))
+        }
         binding.signOut.setOnClickListener { signOut() }
         binding.requestPhoneChange.setOnClickListener { askForNewPhone() }
         binding.checkUpdates.setOnClickListener { checkForUpdate(showWhenCurrent = true) }
@@ -53,6 +62,16 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleIntent(intent)
+    }
+
+    private fun openDocument(direction: DocumentDirection) {
+        // A fresh sheet each time: yesterday's draft must not appear in today's
+        // document, and a half-filled one must not be sent by accident.
+        DraftHolder.draft = null
+        startActivity(
+            Intent(this, NewDocumentActivity::class.java)
+                .putExtra(NewDocumentActivity.EXTRA_DIRECTION, direction.wire)
+        )
     }
 
     private fun handleIntent(intent: Intent?) {

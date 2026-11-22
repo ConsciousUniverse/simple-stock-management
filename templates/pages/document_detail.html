@@ -1,0 +1,179 @@
+{% extends "base_app.html" %}
+{% load i18n %}
+
+{% block title %}{{ document.number }}{% endblock %}
+{% block crumb %}<a href="{{ back_url }}">{% if document.direction == "in" %}{% trans "Additions" %}{% else %}{% trans "Issues" %}{% endif %}</a>{% endblock %}
+{% block heading %}{{ document.number }}{% endblock %}
+{% block subheading %}
+{{ document.type_label }} · {{ document.status_label }}
+{% endblock %}
+
+{% block content %}
+
+<div class="sap-tiles">
+    <div class="sap-tile">
+        <span class="sap-tile__label">{% trans "Document date" %}</span>
+        <span class="sap-tile__value sap-tile__value--text" dir="ltr">
+            {% if document.document_date %}{{ document.document_date|date:"Y-m-d" }}{% else %}—{% endif %}
+        </span>
+    </div>
+    <div class="sap-tile">
+        <span class="sap-tile__label">{% trans "Items" %}</span>
+        <span class="sap-tile__value">{{ lines|length }}</span>
+    </div>
+    <div class="sap-tile">
+        <span class="sap-tile__label">{% trans "Quantity" %}</span>
+        <span class="sap-tile__value">{{ document.total_quantity }}</span>
+    </div>
+    <div class="sap-tile">
+        <span class="sap-tile__label">{% trans "Status" %}</span>
+        <span class="sap-tile__value sap-tile__value--text">
+            {% if document.status == "approved" %}
+            <span class="sap-pill sap-pill--positive">{{ document.status_label }}</span>
+            {% elif document.status == "pending" %}
+            <span class="sap-pill sap-pill--info">{{ document.status_label }}</span>
+            {% else %}
+            <span class="sap-pill sap-pill--critical">{{ document.status_label }}</span>
+            {% endif %}
+        </span>
+    </div>
+</div>
+
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "The voucher" %}</h2>
+        <div class="sap-card__header-actions">
+            {% if document.source == "mobile" %}
+            <span class="sap-pill sap-pill--neutral">{% trans "From the Android app" %}</span>
+            {% endif %}
+        </div>
+    </div>
+    <div class="sap-card__body">
+        <dl class="sap-defs">
+            <dt>{% trans "Voucher number" %}</dt>
+            <dd dir="ltr">{{ document.external_ref|default:"—" }}</dd>
+
+            <dt>{% trans "Used at / installed at" %}</dt>
+            <dd>{{ document.location|default:"—" }}</dd>
+
+            <dt>{% trans "Signed by (engineer)" %}</dt>
+            <dd>{{ document.engineer_name|default:"—" }}</dd>
+
+            {% if document.site or document.counterparty %}
+            <dt>{% trans "Site" %}</dt>
+            <dd>{% if document.site %}{{ document.site.username }}{% else %}{{ document.counterparty }}{% endif %}</dd>
+            {% endif %}
+
+            <dt>{% trans "Submitted by" %}</dt>
+            <dd>{{ document.created_by.username|default:"—" }}</dd>
+
+            <dt>{% trans "Submitted at" %}</dt>
+            <dd dir="ltr">{{ document.created_at|date:"Y-m-d H:i" }}</dd>
+
+            {% if document.decided_by %}
+            <dt>{% trans "Decided by" %}</dt>
+            <dd>{{ document.decided_by.username }} · <span dir="ltr">{{ document.decided_at|date:"Y-m-d H:i" }}</span></dd>
+            {% endif %}
+
+            {% if document.notes %}
+            <dt>{% trans "Notes" %}</dt>
+            <dd>{{ document.notes }}</dd>
+            {% endif %}
+
+            {% if document.decision_note %}
+            <dt>{% trans "Decision note" %}</dt>
+            <dd>{{ document.decision_note }}</dd>
+            {% endif %}
+        </dl>
+    </div>
+</div>
+
+{% if has_photo %}
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "The photographed document" %}</h2>
+        <div class="sap-card__header-actions">
+            <a class="sap-btn sap-btn--ghost sap-btn--sm" href="/documents/{{ document.id }}/photo/" target="_blank" rel="noopener">
+                {% trans "Open full size" %}
+            </a>
+        </div>
+    </div>
+    <div class="sap-card__body">
+        <a href="/documents/{{ document.id }}/photo/" target="_blank" rel="noopener">
+            <img class="sap-voucher" src="/documents/{{ document.id }}/photo/" alt="{% trans 'Photographed document' %}">
+        </a>
+    </div>
+</div>
+{% endif %}
+
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Items" %}</h2>
+    </div>
+    <div class="sap-card__body sap-card__body--flush">
+        <div class="sap-tablewrap">
+            <table class="sap-table">
+                <thead>
+                    <tr>
+                        <th>{% trans "Code" %}</th>
+                        <th>{% trans "Description" %}</th>
+                        <th>{% trans "Quantity" %}</th>
+                        <th>{% trans "Unit" %}</th>
+                        <th>{% trans "In stock now" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for line in lines %}
+                    <tr>
+                        <td dir="ltr">{{ line.sku }}</td>
+                        <td>{{ line.description }}</td>
+                        <td>{{ line.quantity }}</td>
+                        <td>{{ line.unit|default:"—" }}</td>
+                        <td>
+                            {% if line.item %}{{ line.item.quantity }}{% else %}<span class="sap-muted">—</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if document.status == "pending" %}
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Decision" %}</h2>
+    </div>
+    <div class="sap-card__body">
+        {% if is_manager %}
+        <form method="post" action="/issues/{{ document.id }}/approve/" class="sap-form">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="/documents/{{ document.id }}/">
+            <div class="sap-field">
+                <label for="note">{% trans "Note (optional)" %}</label>
+                <input id="note" name="note" type="text" maxlength="200">
+            </div>
+            <div class="sap-inline-actions">
+                <button class="sap-btn sap-btn--positive" type="submit">
+                    <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-check"></use></svg>
+                    {% trans "Approve and move the stock" %}
+                </button>
+                <button class="sap-btn sap-btn--negative" type="submit"
+                        formaction="/issues/{{ document.id }}/reject/">
+                    <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-x-circle"></use></svg>
+                    {% trans "Reject" %}
+                </button>
+            </div>
+        </form>
+        {% else %}
+        <p class="sap-muted">{% trans "Only a warehouse manager can approve documents." %}</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<div class="sap-inline-actions">
+    <a class="sap-btn sap-btn--ghost" href="{{ back_url }}">{% trans "Back" %}</a>
+</div>
+{% endblock %}

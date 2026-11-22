@@ -24,6 +24,8 @@ from .views import (
     receipts_page,
     issues_page,
     decide_document,
+    document_detail,
+    document_photo,
     issues_report_page,
     issue_permits_page,
     reconciliation_page,
@@ -107,6 +109,18 @@ urlpatterns = [
         mobile_api.PhoneChangeRequestView.as_view(),
         name="mobile_phone_change_request",
     ),
+    # The warehouse flow on the phone: a scanned label, then the signed voucher
+    # with its items. Nothing moves until a manager approves it on the web.
+    path(
+        "api/mobile/items/lookup/",
+        mobile_api.ItemLookupView.as_view(),
+        name="mobile_item_lookup",
+    ),
+    path(
+        "api/mobile/documents/",
+        mobile_api.DocumentsView.as_view(),
+        name="mobile_documents",
+    ),
     path("audit/", audit_page, name="audit_page"),
     # One page per job: the warehouse, additions, issues, and the issues report.
     path("stock/", stock_page, name="stock_page"),
@@ -131,6 +145,13 @@ urlpatterns = [
         name="reconciliation_export",
     ),
     path("issues/<int:pk>/<str:action>/", decide_document, name="decide_document"),
+    # The paper behind a document: header, lines and the photographed voucher.
+    path("documents/<int:pk>/", document_detail, name="document_detail"),
+    path(
+        "documents/<int:pk>/photo/",
+        document_photo,
+        name="document_photo",
+    ),
     path("api/issue/", issue_to_site, name="issue_to_site"),
 ]
 
