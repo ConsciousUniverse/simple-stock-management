@@ -296,9 +296,23 @@
                             {% else %}
                             <span class="sap-pill sap-pill--neutral">{% trans "Inactive" %}</span>
                             {% endif %}
+                            {% if row.lock.locked %}
+                            <span class="sap-pill sap-pill--critical"
+                                title="{% blocktrans with failures=row.lock.failures limit=row.lock.limit %}Locked after {{ failures }} failed attempts (limit {{ limit }}){% endblocktrans %}">
+                                {% trans "Locked" %}
+                            </span>
+                            {% endif %}
                         </td>
                         <td class="sap-actions">
                             <a class="sap-btn sap-btn--ghost sap-btn--sm" href="/users/?edit={{ row.pk }}">{% trans "Edit" %}</a>
+                            {% if row.lock.locked %}
+                            <form method="post" action="/users/" class="sap-inline-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="unlock">
+                                <input type="hidden" name="user_id" value="{{ row.pk }}">
+                                <button class="sap-btn sap-btn--emphasized sap-btn--sm" type="submit">{% trans "Clear the lockout" %}</button>
+                            </form>
+                            {% endif %}
                             {% if row.pk != request.user.pk %}
                             <form method="post" action="/users/" class="sap-inline-form">
                                 {% csrf_token %}

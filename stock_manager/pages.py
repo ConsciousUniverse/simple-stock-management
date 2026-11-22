@@ -21,7 +21,7 @@ from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy as _lazy
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from . import audit, mobile
+from . import audit, lockout, mobile
 from .models import AppRelease, AuditEvent, Item, PhoneChangeRequest
 from .phones import display_phone
 from .permissions import is_warehouse_manager
@@ -79,6 +79,7 @@ def users_page(request):
             "-is_active", "username"
         )
     )
+    lock_states = lockout.states([account.get_username() for account in users])
     for account in users:
         # The reader knows "warehouse manager", not the group's internal name.
         account.role_names = [role_label(group.name) for group in account.groups.all()]
@@ -86,6 +87,9 @@ def users_page(request):
             getattr(account, "mobile_profile", None)
             and account.mobile_profile.mobile_only
         )
+        # A correct password can still be refused while a lockout is running.
+        # That is not an error in the account, and the page has to say so.
+        account.lock = lock_states[account.get_username()]
     editing = None
     raw_edit = (request.GET.get("edit") or "").strip()
     if raw_edit.isdigit():
@@ -192,6 +196,29 @@ def _create_app_user(request):
     return _redirect_users()
 
 
+def _unlock_user(request):
+    """Clear a lockout. The lockout page tells the person to ask for exactly this."""
+    raw_id = (request.POST.get("user_id") or "").strip()
+    user = User.objects.filter(pk=raw_id).first() if raw_id.isdigit() else None
+    if user is None:
+        messages.error(request, _("That user does not exist."))
+        return _redirect_users()
+    removed = lockout.clear(user.get_username())
+    audit.record(
+        user=request.user,
+        action=AuditEvent.USER_UNLOCKED,
+        entity="user",
+        entity_id=user.pk,
+        description=f"{user.get_username()} · {removed} failed attempts cleared",
+    )
+    messages.success(
+        request,
+        _("The sign-in lockout of %(name)s was cleared. They can sign in now.")
+        % {"name": user.get_username()},
+    )
+    return _redirect_users()
+
+
 def _toggle_active(request):
     """Close or reopen an account without opening the edit panel."""
     raw_id = (request.POST.get("user_id") or "").strip()
@@ -256,6 +283,8 @@ def _save_user(request):
         return _create_app_user(request)
     if action == "toggle-active":
         return _toggle_active(request)
+    if action == "unlock":
+        return _unlock_user(request)
     if action == "password":
         user = User.objects.filter(pk=request.POST.get("user_id")).first()
         password = request.POST.get("password") or ""

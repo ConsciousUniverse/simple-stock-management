@@ -113,13 +113,23 @@ def _record_logout(sender, request, user, **kwargs):
     )
 
 
+#: The reason the backend attached to the request, in the words of the trail.
+REFUSAL_REASONS = {
+    "app_only": "app-only account, web sign-in refused",
+    "inactive": "account is closed",
+}
+
+
 @receiver(user_login_failed)
 def _record_failed_login(sender, credentials, request=None, **kwargs):
     # The password is never touched: the trail records attempts, not secrets.
     username = str((credentials or {}).get("username") or "")[:150]
+    # A refusal for a RIGHT password has a reason, and the reason is the whole
+    # answer to "why can't this person sign in?" — one row, with it.
+    reason = REFUSAL_REASONS.get(getattr(request, "login_refusal", None))
     record(
         action=AuditEvent.LOGIN_FAILED,
         entity="user",
         entity_id=username,
-        description=username,
+        description=f"{username} · {reason}" if reason else username,
     )

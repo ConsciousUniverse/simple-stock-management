@@ -241,6 +241,9 @@ msgstr "مسح"
 msgid "Clear the filters"
 msgstr "مسح الفلاتر"
 
+msgid "Clear the lockout"
+msgstr "فتح القفل"
+
 msgid "Close"
 msgstr "إغلاق"
 
@@ -681,6 +684,12 @@ msgstr "بنود بلا إذن"
 
 msgid "Loading..."
 msgstr "جارٍ التحميل..."
+
+msgid "Locked"
+msgstr "مقفول"
+
+msgid "Locked after %(failures)s failed attempts (limit %(limit)s)"
+msgstr "مقفول بعد %(failures)s محاولة فاشلة (الحد %(limit)s)"
 
 msgid "Log On"
 msgstr "تسجيل الدخول"
@@ -1204,6 +1213,9 @@ msgstr "تسجيل الدخول"
 msgid "Sign-in is paused for this username."
 msgstr "تسجيل الدخول موقوف مؤقتًا لهذا المستخدم."
 
+msgid "Sign-in lockout cleared"
+msgstr "فتح قفل الدخول"
+
 msgid "Sign-in phone"
 msgstr "رقم الدخول"
 
@@ -1447,6 +1459,9 @@ msgstr "السيرفر مش قادر يوصل GitHub خالص. التطبيق ب
 msgid "The server reads the newest build from %(repo)s every ten minutes. Publishing a release there is the whole step: nothing has to be typed on this page, and every phone is offered the new build on its next start."
 msgstr "السيرفر يقرأ آخر بناء من %(repo)s كل عشر دقائق. نشر إصدار جديد هناك هو كل المطلوب: مفيش حاجة تتكتب في الصفحة دي، وكل موبايل بيتعرض عليه البناء الجديد عند أول تشغيل."
 
+msgid "The sign-in lockout of %(name)s was cleared. They can sign in now."
+msgstr "اتفتح قفل الدخول للحساب %(name)s. يقدر يدخل دلوقتي."
+
 msgid "The stock leaves the warehouse and moves to the site."
 msgstr "سيخرج المخزون من المخزن إلى الموقع."
 
@@ -1464,6 +1479,12 @@ msgstr "تم حفظ المستخدم."
 
 msgid "The warehouse is in maintenance mode. Stock movements are disabled."
 msgstr "المخزن في وضع الصيانة. حركة المخزون معطّلة."
+
+msgid "This account is closed. Ask a warehouse manager to reopen it."
+msgstr "الحساب ده مغلق. اطلب من مدير المخزن إعادة فتحه."
+
+msgid "This account signs in from the phone app only. Open the app, or ask a warehouse manager to allow web sign-in for it."
+msgstr "الحساب ده بيدخل من تطبيق الموبايل بس. افتح التطبيق، أو اطلب من مدير المخزن يسمح له بالدخول من الويب."
 
 msgid "This action cannot be undone. Continue?"
 msgstr "لا يمكن التراجع عن هذا الإجراء. هل تريد المتابعة؟"

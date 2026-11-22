@@ -1,5 +1,9 @@
 import logging
+
 from django.conf import settings
+from django.contrib.auth.views import LoginView
+from django.core.exceptions import NON_FIELD_ERRORS
+from django.utils.translation import gettext_lazy as _lazy
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.core.paginator import Paginator
@@ -7,6 +11,8 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
+
+from .auth import REFUSAL_APP_ONLY, REFUSAL_INACTIVE
 from .models import (
     Admin,
     AppRelease,
@@ -1475,3 +1481,27 @@ def _serialize_document(document):
             for line in document.lines.all()
         ],
     }
+
+
+#: The sign-in page names the refusal — but only when the password was RIGHT.
+#: A wrong password still gets the form's ordinary message, so the page never
+#: tells an outsider which accounts exist or how they may sign in.
+#: Each message is ONE literal: the translation collector reads source text, and
+#: a string split over two lines produces a msgid nobody can match.
+REFUSAL_MESSAGES = {
+    REFUSAL_APP_ONLY: _lazy("This account signs in from the phone app only. Open the app, or ask a warehouse manager to allow web sign-in for it."),
+    REFUSAL_INACTIVE: _lazy("This account is closed. Ask a warehouse manager to reopen it."),
+}
+
+
+class WarehouseLoginView(LoginView):
+    """The ordinary sign-in form, plus the reason when the credentials were right."""
+
+    def form_invalid(self, form):
+        message = REFUSAL_MESSAGES.get(getattr(self.request, "login_refusal", None))
+        if message:
+            # The credentials were CORRECT, so "enter a correct username and
+            # password" is simply untrue — it is replaced, not added to.
+            form.errors.pop(NON_FIELD_ERRORS, None)
+            form.add_error(None, message)
+        return super().form_invalid(form)

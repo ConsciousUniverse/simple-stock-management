@@ -6,7 +6,7 @@ from django.views.generic import RedirectView
 
 from ssm.health import healthz
 from stock_manager.pages import AuditedPasswordChangeView
-from stock_manager.views import switch_language
+from stock_manager.views import WarehouseLoginView, switch_language
 
 urlpatterns = [
     # Language switch (POST {"language": "ar", "next": "/"}).
@@ -41,6 +41,9 @@ urlpatterns += [
         AuditedPasswordChangeView.as_view(),
         name="password_change",
     ),
+    # Before the include: the sign-in form has to name the reason when the
+    # password was right and the account still cannot come in through this door.
+    path("accounts/login/", WarehouseLoginView.as_view(), name="login"),
     path("accounts/", include("django.contrib.auth.urls")),
     path("api/auth/", include("rest_framework.urls")),
 ]

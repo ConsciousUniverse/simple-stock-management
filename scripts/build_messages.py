@@ -27,6 +27,17 @@ ARABIC = {
     "The update arrives by itself": "التحديث يصل تلقائيًا",
     "Read from GitHub releases": "مقروء من إصدارات GitHub",
     "Read from GitHub": "مقروء من GitHub",
+    # --- why a sign-in was refused, and how a manager clears it -----------
+    "This account signs in from the phone app only. Open the app, or ask a warehouse manager to allow web sign-in for it.": "الحساب ده بيدخل من تطبيق الموبايل بس. افتح التطبيق، أو اطلب من مدير المخزن يسمح له بالدخول من الويب.",
+    "This account is closed. Ask a warehouse manager to reopen it.":
+        "الحساب ده مغلق. اطلب من مدير المخزن إعادة فتحه.",
+    "Locked": "مقفول",
+    "Locked after %(failures)s failed attempts (limit %(limit)s)":
+        "مقفول بعد %(failures)s محاولة فاشلة (الحد %(limit)s)",
+    "Clear the lockout": "فتح القفل",
+    "The sign-in lockout of %(name)s was cleared. They can sign in now.":
+        "اتفتح قفل الدخول للحساب %(name)s. يقدر يدخل دلوقتي.",
+    "Sign-in lockout cleared": "فتح قفل الدخول",
     "The server reads the newest build from %(repo)s every ten minutes. Publishing a release there is the whole step: nothing has to be typed on this page, and every phone is offered the new build on its next start.":
         "السيرفر يقرأ آخر بناء من %(repo)s كل عشر دقائق. نشر إصدار جديد هناك هو كل المطلوب: مفيش حاجة تتكتب في الصفحة دي، وكل موبايل بيتعرض عليه البناء الجديد عند أول تشغيل.",
     "Size": "الحجم",

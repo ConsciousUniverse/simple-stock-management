@@ -391,6 +391,35 @@ the phone, and no way to type a server address into the app.
   `d2e5e1c317a699b12a534bc00d78af0f674759c6e7e6a0e728e65add07a1c1d5`, 5,726,658
   bytes — verified by downloading the asset back and hashing it.
 
+## Two doors, and a refusal that says which one
+
+A sign-in can be refused for three different reasons that used to produce one
+line: a wrong password, an account that is **app-only** (the web form refuses it
+by design), and an account that is **closed**. Someone wrote "I cannot sign in"
+and nothing on the page answered it.
+
+- **The reason is named only after the password checks out.** `WarehouseBackend`
+  sets `request.login_refusal`, and `WarehouseLoginView.form_invalid` replaces
+  the "enter a correct username and password" line with it. A wrong password
+  still gets the generic message, so the page never tells an outsider which
+  accounts exist or which door they use.
+- **A closed account is not a wrong password.** `ModelBackend` refuses both with
+  `None`; the backend re-checks the password itself before saying "closed", so
+  the answer goes to the person who owns the account.
+- **The lockout page promised a reset that did not exist.** `axes` locks a
+  username after `AXES_FAILURE_LIMIT` failures, and `registration/lockout.html`
+  said "ask the system administrator to reset it" — with no reset in the product.
+  `stock_manager/lockout.py` is now the one rule: `states()` (ONE query for the
+  page), `state()`, `clear()`. `/users/` shows a «مقفول» pill and a «فتح القفل»
+  button, and clearing is audited (`user_unlocked`).
+- **A lockout is not an error in the account.** The password may be perfect and
+  the person still cannot get in; that is exactly what the badge says.
+- **Build lazy strings with their own name.** `views.py` already had
+  `gettext as _`; a second `from ... import gettext_lazy as _` was shadowed, so
+  the refusal dict was evaluated ONCE under English and the Arabic page showed
+  English for every request. Use `_lazy` and assert the rendered text (a test
+  now does).
+
 ## The update is read from where the builds are, not typed into a page
 
 `/api/mobile/version/` used to answer from the `AppRelease` table, so shipping a

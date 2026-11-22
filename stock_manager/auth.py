@@ -15,21 +15,60 @@ which is why one backend can answer for both doors without a global flag: the
 flag travels with the credential check, not with the process.
 """
 
+from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
+
+#: Why the web form refused someone whose password was RIGHT. The sign-in page
+#: shows these; a wrong password never produces one, so nothing is revealed to
+#: anyone who does not already know the password.
+REFUSAL_APP_ONLY = "app_only"
+REFUSAL_INACTIVE = "inactive"
+
+
+def _refuse(request, reason):
+    if request is not None:
+        request.login_refusal = reason
 
 
 class WarehouseBackend(ModelBackend):
-    """The project's password backend: one refusal, for the app-only accounts."""
+    """The project's password backend: one refusal, for the app-only accounts.
+
+    A refusal is only *named* after the password checks out: telling an outsider
+    which numbers have accounts is exactly what the generic message prevents.
+    """
 
     def authenticate(self, request, username=None, password=None, app_sign_in=False, **kwargs):
         user = super().authenticate(request, username, password, **kwargs)
-        if user is None:
-            return None
-        if app_sign_in:
+        if user is not None:
+            if app_sign_in:
+                return user
+            if self._is_app_only(user):
+                # ``user_login_failed`` records the attempt; the reason travels
+                # on the request so the trail carries it instead of a guess.
+                _refuse(request, REFUSAL_APP_ONLY)
+                return None
             return user
-        if self._is_app_only(user):
+
+        # ``super()`` also refuses a CLOSED account, and a closed account is not
+        # a wrong password. Check only after the password matches, so the answer
+        # is given to the person who owns the account and to nobody else.
+        candidate = self._find_user(username)
+        if (
+            candidate is not None
+            and not candidate.is_active
+            and candidate.check_password(password or "")
+        ):
+            _refuse(request, REFUSAL_INACTIVE)
+        return None
+
+    @staticmethod
+    def _find_user(username):
+        if not username:
             return None
-        return user
+        try:
+            return get_user_model()._default_manager.get_by_natural_key(username)
+        except get_user_model().DoesNotExist:
+            return None
 
     @staticmethod
     def _is_app_only(user):

@@ -400,6 +400,7 @@ class AuditEvent(models.Model):
     USER_CREATED = "user_created"
     USER_UPDATED = "user_updated"
     USER_DEACTIVATED = "user_deactivated"
+    USER_UNLOCKED = "user_unlocked"
     SETTINGS_CHANGED = "settings_changed"
     RELEASE_PUBLISHED = "release_published"
     PHONE_CHANGED = "phone_changed"
@@ -461,6 +462,7 @@ class AuditEvent(models.Model):
         USER_CREATED: "users",
         USER_UPDATED: "users",
         USER_DEACTIVATED: "users",
+        USER_UNLOCKED: "users",
         SETTINGS_CHANGED: "settings",
         RELEASE_PUBLISHED: "app",
         PHONE_CHANGED: "users",
