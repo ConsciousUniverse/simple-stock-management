@@ -517,6 +517,12 @@ msgstr "الاسم الأول"
 msgid "From"
 msgstr "من"
 
+msgid "GitHub answered with something unexpected. The app is offered the last build this server has seen."
+msgstr "GitHub ردّ بردّ غير متوقع. التطبيق بيتعرض عليه آخر بناء شافه السيرفر."
+
+msgid "GitHub refused the request for now (its hourly limit). The app is offered the last build this server has seen; nothing is lost and it will catch up by itself."
+msgstr "GitHub رفض الطلب مؤقتًا (حد الاستخدام في الساعة). التطبيق بيتعرض عليه آخر بناء شافه السيرفر؛ مفيش حاجة ضاعت والسيرفر هيلحق نفسه لوحده."
+
 msgid "Hello"
 msgstr "أهلًا"
 
@@ -979,6 +985,9 @@ msgstr "الكمية"
 msgid "Quantity on hand"
 msgstr "الكمية المتاحة"
 
+msgid "Read from GitHub"
+msgstr "مقروء من GitHub"
+
 msgid "Read from GitHub releases"
 msgstr "مقروء من إصدارات GitHub"
 
@@ -1431,6 +1440,9 @@ msgstr "سيتم سحب الطلب؛ لن تُنقل أي كمية."
 
 msgid "The request of %(name)s was refused."
 msgstr "تم رفض طلب %(name)s."
+
+msgid "The server could not reach GitHub at all. The app is offered the last build this server has seen."
+msgstr "السيرفر مش قادر يوصل GitHub خالص. التطبيق بيتعرض عليه آخر بناء شافه السيرفر."
 
 msgid "The server reads the newest build from %(repo)s every ten minutes. Publishing a release there is the whole step: nothing has to be typed on this page, and every phone is offered the new build on its next start."
 msgstr "السيرفر يقرأ آخر بناء من %(repo)s كل عشر دقائق. نشر إصدار جديد هناك هو كل المطلوب: مفيش حاجة تتكتب في الصفحة دي، وكل موبايل بيتعرض عليه البناء الجديد عند أول تشغيل."

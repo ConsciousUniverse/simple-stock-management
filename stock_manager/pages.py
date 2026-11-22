@@ -449,6 +449,7 @@ def android_page(request):
             "latest": releases.as_row(releases.select_release()),
             "auto": releases.as_row(published),
             "auto_failed": published is None,
+            "auto_error": releases.last_error(),
             "release_repo": releases.RELEASES_REPO,
             "build_count": AppRelease.objects.count() + (1 if published else 0),
             "releases": AppRelease.objects.select_related("created_by")[:20],

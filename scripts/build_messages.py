@@ -26,6 +26,7 @@ ARABIC = {
     # --- the update arrives from GitHub, not from this page ---------------
     "The update arrives by itself": "التحديث يصل تلقائيًا",
     "Read from GitHub releases": "مقروء من إصدارات GitHub",
+    "Read from GitHub": "مقروء من GitHub",
     "The server reads the newest build from %(repo)s every ten minutes. Publishing a release there is the whole step: nothing has to be typed on this page, and every phone is offered the new build on its next start.":
         "السيرفر يقرأ آخر بناء من %(repo)s كل عشر دقائق. نشر إصدار جديد هناك هو كل المطلوب: مفيش حاجة تتكتب في الصفحة دي، وكل موبايل بيتعرض عليه البناء الجديد عند أول تشغيل.",
     "Size": "الحجم",
@@ -34,6 +35,12 @@ ARABIC = {
     "The release list could not be read just now.": "تعذّر قراءة قائمة الإصدارات حاليًا.",
     "The app is being offered the build recorded below instead. This is not an error in the build: the server could not reach GitHub.":
         "التطبيق بيتعرض عليه البناء المسجّل تحت بدلًا منه. ده مش خطأ في البناء: السيرفر مش قادر يوصل GitHub.",
+    "GitHub refused the request for now (its hourly limit). The app is offered the last build this server has seen; nothing is lost and it will catch up by itself.":
+        "GitHub رفض الطلب مؤقتًا (حد الاستخدام في الساعة). التطبيق بيتعرض عليه آخر بناء شافه السيرفر؛ مفيش حاجة ضاعت والسيرفر هيلحق نفسه لوحده.",
+    "The server could not reach GitHub at all. The app is offered the last build this server has seen.":
+        "السيرفر مش قادر يوصل GitHub خالص. التطبيق بيتعرض عليه آخر بناء شافه السيرفر.",
+    "GitHub answered with something unexpected. The app is offered the last build this server has seen.":
+        "GitHub ردّ بردّ غير متوقع. التطبيق بيتعرض عليه آخر بناء شافه السيرفر.",
     "Record a build by hand (fallback)": "تسجيل بناء يدويًا (احتياطي)",
     "Not needed while the list above is readable. Use it to pin a build that is not on GitHub yet, or to keep the phones on an older one.":
         "مش مطلوب طالما القائمة فوق مقروءة. استخدمه لتثبيت بناء لسه مش على GitHub، أو لتثبيت الموبايلات على بناء أقدم.",

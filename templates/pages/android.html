@@ -61,7 +61,15 @@
             <svg class="sap-icon" aria-hidden="true"><use href="#i-alert"></use></svg>
             <div>
                 <span class="sap-msgstrip__title">{% trans "The release list could not be read just now." %}</span>
-                <span>{% trans "The app is being offered the build recorded below instead. This is not an error in the build: the server could not reach GitHub." %}</span>
+                <span>
+                    {% if auto_error == "rate_limited" %}
+                    {% trans "GitHub refused the request for now (its hourly limit). The app is offered the last build this server has seen; nothing is lost and it will catch up by itself." %}
+                    {% elif auto_error == "unreachable" %}
+                    {% trans "The server could not reach GitHub at all. The app is offered the last build this server has seen." %}
+                    {% else %}
+                    {% trans "GitHub answered with something unexpected. The app is offered the last build this server has seen." %}
+                    {% endif %}
+                </span>
             </div>
         </div>
         {% endif %}
@@ -136,6 +144,9 @@
                     <tr>
                         <td>
                             {{ release.version }}
+                            {% if release.source == "github" %}
+                            <span class="sap-pill sap-pill--neutral">{% trans "Read from GitHub" %}</span>
+                            {% endif %}
                             {% if release.is_current %}
                             <span class="sap-pill sap-pill--positive">{% trans "Current" %}</span>
                             {% endif %}

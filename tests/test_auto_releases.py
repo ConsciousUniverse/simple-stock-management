@@ -116,16 +116,23 @@ class TestChoosingTheRelease:
         assert chosen["downloadUrl"].endswith("warehouse-latest.apk")
 
 
+@pytest.mark.django_db
 class TestWhenGithubCannotBeReached:
+    """A failed read falls back to the mirror, which lives in the database."""
     def test_a_failure_returns_none_and_does_not_raise(self):
         with patch.object(
-            releases, "_fetch_releases", side_effect=OSError("network down")
+            releases,
+            "_fetch_releases",
+            side_effect=releases.ReleaseFetchError(releases.ERROR_UNREACHABLE),
         ):
             assert releases.latest_release() is None
+        assert releases.last_error() == releases.ERROR_UNREACHABLE
 
     def test_a_failure_is_remembered_so_a_hundred_phones_do_not_retry(self):
         with patch.object(
-            releases, "_fetch_releases", side_effect=OSError("network down")
+            releases,
+            "_fetch_releases",
+            side_effect=releases.ReleaseFetchError(releases.ERROR_UNREACHABLE),
         ) as fetch:
             releases.latest_release()
             releases.latest_release()
@@ -172,7 +179,11 @@ class TestWhatTheAppIsTold:
             download_url="https://example.test/app.apk",
             mandatory=True,
         )
-        with patch.object(releases, "_fetch_releases", side_effect=OSError("down")):
+        with patch.object(
+            releases,
+            "_fetch_releases",
+            side_effect=releases.ReleaseFetchError(releases.ERROR_UNREACHABLE),
+        ):
             from stock_manager import mobile
 
             told = mobile.version_payload(1)
@@ -208,10 +219,9 @@ class TestWhatTheAppIsTold:
         with patch.object(releases, "_fetch_releases", return_value=[]):
             from stock_manager import mobile
 
-            assert mobile.version_payload(1) == {
-                "updateAvailable": False,
-                "latest": None,
-            }
+            told = mobile.version_payload(1)
+            assert told["updateAvailable"] is False
+            assert told["latest"] is None
 
 
 @pytest.mark.django_db
@@ -231,10 +241,91 @@ class TestTheAndroidPage:
 
     def test_the_page_says_so_when_the_list_cannot_be_read(self, client, manager):
         client.force_login(manager)
-        with patch.object(releases, "_fetch_releases", side_effect=OSError("down")):
+        with patch.object(
+            releases,
+            "_fetch_releases",
+            side_effect=releases.ReleaseFetchError(releases.ERROR_UNREACHABLE),
+        ):
             page = client.get("/android/")
 
         body = page.content.decode()
         assert "autoReleaseUnavailable" in body
         # and it still tells the reader which build the phones are offered
         assert "No build has been published yet." in body
+
+
+@pytest.mark.django_db
+class TestAFailureIsNotAnAbsence:
+    """`there is no update` and `the list could not be read` are opposites."""
+
+    def test_a_rate_limited_answer_is_not_read_as_an_empty_list(self):
+        with patch.object(
+            releases,
+            "_fetch_releases",
+            side_effect=releases.ReleaseFetchError(releases.ERROR_RATE_LIMITED),
+        ):
+            assert releases.latest_release() is None
+        assert releases.last_error() == releases.ERROR_RATE_LIMITED
+
+    def test_an_error_object_is_a_failure_not_an_empty_list(self):
+        # GitHub answers an error with {"message": ...}; a list-only reader that
+        # treated it as [] would tell every phone there is nothing to install.
+        def not_a_list():
+            raise releases.ReleaseFetchError(releases.ERROR_BAD_RESPONSE, "API rate limit")
+
+        with patch.object(releases, "_fetch_releases", side_effect=not_a_list):
+            releases.latest_release()
+
+        assert releases.last_error() == releases.ERROR_BAD_RESPONSE
+
+    def test_a_defect_in_the_reader_still_answers_from_the_mirror(self):
+        from stock_manager.models import AppRelease
+
+        AppRelease.objects.create(
+            version="1.1.0",
+            version_code=2,
+            download_url="https://example.test/app.apk",
+            source=AppRelease.SOURCE_GITHUB,
+        )
+        with patch.object(releases, "_fetch_releases", side_effect=RuntimeError("bug")):
+            chosen = releases.latest_release()
+
+        assert chosen["versionCode"] == 2
+        assert chosen["source"] == "cache"
+
+    def test_a_successful_read_is_mirrored_and_serves_an_outage(self):
+        from stock_manager.models import AppRelease
+
+        payload = [release("v2", assets=[apk("warehouse-2.apk")])]
+        with patch.object(releases, "_fetch_releases", return_value=payload):
+            releases.latest_release()
+
+        row = AppRelease.objects.get(version_code=2)
+        assert row.source == AppRelease.SOURCE_GITHUB
+
+        releases.clear_cache()
+        with patch.object(
+            releases,
+            "_fetch_releases",
+            side_effect=releases.ReleaseFetchError(releases.ERROR_UNREACHABLE),
+        ):
+            from stock_manager import mobile
+
+            told = mobile.version_payload(1)
+
+        # The outage must not read as "nothing to install".
+        assert told["updateAvailable"] is True
+        assert told["latest"]["versionCode"] == 2
+        assert told["releaseSource"] == "cache"
+        assert told["releaseError"] == releases.ERROR_UNREACHABLE
+
+    def test_a_mirrored_row_is_never_a_manual_pin(self):
+        from stock_manager.models import AppRelease
+
+        AppRelease.objects.create(
+            version="9.9.9",
+            version_code=99,
+            download_url="https://example.test/app.apk",
+            source=AppRelease.SOURCE_GITHUB,
+        )
+        assert AppRelease.latest_manual() is None

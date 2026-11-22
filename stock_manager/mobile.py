@@ -216,7 +216,11 @@ def version_payload(installed_code=None):
 
     release = releases.select_release()
     if release is None:
-        return {"updateAvailable": False, "latest": None}
+        return {
+            "updateAvailable": False,
+            "latest": None,
+            "releaseError": releases.last_error(),
+        }
 
     code = installed_code if isinstance(installed_code, int) else None
     latest_code = release["versionCode"]
@@ -235,7 +239,16 @@ def version_payload(installed_code=None):
         "updateAvailable": update,
         "current": bool(code is not None and latest_code == code),
     }
-    return {"updateAvailable": update, "latest": latest, "installedVersionCode": code}
+    return {
+        "updateAvailable": update,
+        "latest": latest,
+        "installedVersionCode": code,
+        # Which of the three the build came from, and why a live read failed:
+        # "there is no update" and "the list could not be read" are opposite
+        # answers and support must be able to tell them apart.
+        "releaseSource": release["source"],
+        "releaseError": releases.last_error(),
+    }
 
 
 # --------------------------------------------------------------------------

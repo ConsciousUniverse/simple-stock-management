@@ -629,6 +629,12 @@ class AppRelease(models.Model):
     which survives deploys and can be checked.
     """
 
+    #: Where the row came from: a person typed it, or the server read it from
+    #: the published releases. The page labels them, and only a manual row can
+    #: be a deliberate pin.
+    SOURCE_MANUAL = "manual"
+    SOURCE_GITHUB = "github"
+
     version = models.CharField(max_length=40, unique=True)
     # The app compares THIS number with its own BuildConfig.VERSION_CODE. A
     # version string ("5.3.0") cannot be ordered reliably, and the update
@@ -641,6 +647,7 @@ class AppRelease(models.Model):
     # operator installs it (a broken client that talks to a changed API).
     mandatory = models.BooleanField(default=False)
     notes = models.TextField(blank=True, default="")
+    source = models.CharField(max_length=20, default=SOURCE_MANUAL)
     is_current = models.BooleanField(default=True)
     created_by = models.ForeignKey(
         User,
@@ -666,6 +673,19 @@ class AppRelease(models.Model):
             AppRelease.objects.filter(is_current=True).exclude(pk=self.pk).update(
                 is_current=False
             )
+
+    @staticmethod
+    def latest_manual():
+        """The newest build a person recorded, ignoring the published mirror.
+
+        A row recorded before build numbers existed cannot be compared, but it
+        must still be visible — the same rule as ``latest()``.
+        """
+        manual = AppRelease.objects.exclude(source=AppRelease.SOURCE_GITHUB)
+        numbered = manual.filter(version_code__isnull=False).order_by("-version_code").first()
+        if numbered is not None:
+            return numbered
+        return manual.filter(is_current=True).first() or manual.first()
 
     @staticmethod
     def latest():

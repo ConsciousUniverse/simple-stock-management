@@ -5,15 +5,17 @@ a file written here disappears and the download link rots without a word. The
 builds live as assets on a GitHub release, and this module reads that list — so
 publishing a release IS publishing the update, with nothing to type into a page.
 
-Two promises the code has to keep:
+Three promises the code has to keep:
 
-* **Nothing breaks when GitHub cannot be reached.** A warehouse phone asking
-  "is there an update?" must get an answer even during an outage, so the manual
-  ``AppRelease`` row stays as a fallback and a failed fetch is remembered for a
-  short while instead of being retried by every phone.
+* **Nothing breaks when GitHub cannot be reached.** A phone asking "is there an
+  update?" must get an answer during an outage, so every successful read is
+  mirrored into ``AppRelease`` and served from there when the next read fails.
+* **A failure is not "there is no update".** The two are opposite answers, and
+  reporting the first as the second is how a published build goes uninstalled.
+  ``last_error()`` names what happened, and the page shows it.
 * **A build with no number is not silently dropped.** The app decides with
   ``versionCode``; a release whose tag carries no number cannot be compared, so
-  it is returned as-is (with ``versionCode`` None) and the page shows it, rather
+  it is returned as-is (with ``versionCode`` None) and shown on the page, rather
   than pretending nothing was published.
 """
 
@@ -43,9 +45,25 @@ FAILURE_SECONDS = 60
 
 TIMEOUT_SECONDS = 5
 
+#: What went wrong, in words the page can show. The distinction matters: a rate
+#: limit clears by itself, an unreachable host is a network fault, and a body
+#: that is not a list means GitHub answered with an error message.
+ERROR_RATE_LIMITED = "rate_limited"
+ERROR_UNREACHABLE = "unreachable"
+ERROR_BAD_RESPONSE = "bad_response"
+
 _BUILD_WORD = re.compile(r"\bbuild\s+(\d+)\b", re.IGNORECASE)
 _TRAILING_NUMBER = re.compile(r"[vV](\d+)$|[-_ ](\d+)$")
-_cache = {"at": 0.0, "value": None, "ok": False}
+_cache = {"at": 0.0, "value": None, "ok": False, "error": None}
+
+
+class ReleaseFetchError(Exception):
+    """The release list could not be read, and why."""
+
+    def __init__(self, kind, detail=""):
+        super().__init__(f"{kind}: {detail}" if detail else kind)
+        self.kind = kind
+        self.detail = detail
 
 
 def parse_version_code(text):
@@ -85,9 +103,26 @@ def _headers():
 def _fetch_releases():
     url = f"https://api.github.com/repos/{RELEASES_REPO}/releases?per_page=20"
     request = urllib.request.Request(url, headers=_headers())
-    with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
-        payload = json.loads(response.read().decode("utf-8"))
-    return payload if isinstance(payload, list) else []
+    try:
+        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
+            body = response.read().decode("utf-8")
+    except urllib.error.HTTPError as exc:
+        # 403/429 is the anonymous hourly limit; the rest is GitHub refusing.
+        kind = ERROR_RATE_LIMITED if exc.code in (403, 429) else ERROR_BAD_RESPONSE
+        raise ReleaseFetchError(kind, f"HTTP {exc.code}") from exc
+    except (urllib.error.URLError, OSError) as exc:
+        raise ReleaseFetchError(ERROR_UNREACHABLE, str(exc)) from exc
+
+    try:
+        payload = json.loads(body)
+    except ValueError as exc:
+        raise ReleaseFetchError(ERROR_BAD_RESPONSE, "not JSON") from exc
+    if not isinstance(payload, list):
+        # GitHub answers an error with an OBJECT; reading that as "no releases"
+        # would tell every phone there is nothing to install.
+        message = payload.get("message") if isinstance(payload, dict) else ""
+        raise ReleaseFetchError(ERROR_BAD_RESPONSE, str(message)[:120])
+    return payload
 
 
 def _apk_asset(release):
@@ -104,7 +139,7 @@ def _sha256_of(asset):
     return ""
 
 
-def _as_release(release):
+def _as_release(release, source="github"):
     """One GitHub release as the shape the app and the page both read."""
     asset = _apk_asset(release)
     code = (
@@ -121,8 +156,75 @@ def _as_release(release):
         "sha256": _sha256_of(asset or {}),
         "sizeBytes": (asset or {}).get("size"),
         "publishedAt": release.get("published_at") or "",
-        "source": "github",
+        "source": source,
     }
+
+
+def remember_release(value):
+    """Mirror a build into the database, so an outage cannot erase it.
+
+    Best-effort on purpose: a phone asking about an update must not fail because
+    the bookkeeping failed. The next successful read writes it again.
+    """
+    from stock_manager.models import AppRelease
+
+    if not value or not value.get("versionCode"):
+        return
+    try:
+        AppRelease.objects.update_or_create(
+            version_code=value["versionCode"],
+            defaults={
+                "version": value["versionName"] or str(value["versionCode"]),
+                "download_url": value["downloadUrl"],
+                "sha256": value["sha256"],
+                "size_bytes": value["sizeBytes"],
+                "notes": value["notes"],
+                "source": AppRelease.SOURCE_GITHUB,
+            },
+        )
+    except Exception as exc:  # noqa: BLE001 - bookkeeping never fails a request
+        logger.warning("The app release could not be mirrored: %s", exc)
+
+
+def _mirrored_release():
+    """The newest build this server has seen, from the mirror table."""
+    from stock_manager.models import AppRelease
+
+    row = (
+        AppRelease.objects.filter(
+            source=AppRelease.SOURCE_GITHUB, version_code__isnull=False
+        )
+        .order_by("-version_code")
+        .first()
+    )
+    if row is None:
+        return None
+    return {
+        "versionName": row.version,
+        "versionCode": row.version_code,
+        "downloadUrl": row.download_url,
+        "notes": row.notes,
+        "mandatory": False,
+        "sha256": row.sha256 or "",
+        "sizeBytes": row.size_bytes,
+        "publishedAt": row.created_at.isoformat(),
+        "source": "cache",
+    }
+
+
+def _serve_mirror(now, kind):
+    try:
+        mirrored = _mirrored_release()
+    except Exception as exc:  # noqa: BLE001 - the endpoint must still answer
+        logger.warning("The mirrored app release could not be read: %s", exc)
+        mirrored = None
+    _cache.update({"at": now, "value": mirrored, "ok": False, "error": kind})
+    return mirrored
+
+
+def last_error():
+    """Why the last read failed, or None when it did not."""
+    return _cache["error"]
 
 
 def latest_release(force=False):
@@ -135,10 +237,14 @@ def latest_release(force=False):
 
     try:
         raw = _fetch_releases()
-    except (urllib.error.URLError, urllib.error.HTTPError, OSError, ValueError) as exc:
+    except ReleaseFetchError as exc:
         logger.warning("App releases could not be read from %s: %s", RELEASES_REPO, exc)
-        _cache.update({"at": now, "value": None, "ok": False})
-        return None
+        return _serve_mirror(now, exc.kind)
+    except Exception as exc:  # noqa: BLE001 - a public endpoint must answer
+        # A defect in the reader is still not "there is no update": fall back to
+        # the mirror and say the read failed, rather than answering 500.
+        logger.exception("Reading the app releases failed: %s", exc)
+        return _serve_mirror(now, ERROR_BAD_RESPONSE)
 
     usable = [
         release
@@ -158,14 +264,16 @@ def latest_release(force=False):
     else:
         value = None
 
-    _cache.update({"at": now, "value": value, "ok": True})
+    if value:
+        remember_release(value)
+    _cache.update({"at": now, "value": value, "ok": True, "error": None})
     return value
 
 
 def _manual_release():
     from stock_manager.models import AppRelease
 
-    row = AppRelease.latest()
+    row = AppRelease.latest_manual()
     if row is None:
         return None
     return {
@@ -218,4 +326,4 @@ def as_row(release):
 
 def clear_cache():
     """For tests, and for the page's refresh button."""
-    _cache.update({"at": 0.0, "value": None, "ok": False})
+    _cache.update({"at": 0.0, "value": None, "ok": False, "error": None})
