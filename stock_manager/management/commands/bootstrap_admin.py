@@ -15,6 +15,8 @@ import os
 from django.contrib.auth.models import Group, User
 from django.core.management.base import BaseCommand
 
+from ...bootstrap_account import ensure_seed_account
+
 ROLE_GROUPS = ("managers", "shop_users", "receive_mail")
 
 
@@ -31,6 +33,10 @@ class Command(BaseCommand):
         email = os.getenv("DJANGO_SUPERUSER_EMAIL", "")
 
         self._reset_when_asked()
+
+        # A first manager account, so a fresh install (or one whose only
+        # manager is locked out) has a way in. Never overwrites an account.
+        ensure_seed_account(self.stdout.write)
 
         if not username or not password:
             self.stdout.write(

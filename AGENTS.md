@@ -422,6 +422,13 @@ and nothing on the page answered it.
   — and does nothing at all when the variables are unset. Anyone who can set
   those can already set `DATABASE_URL`, so it grants nothing new; the reset is
   audited (`user_reset`).
+- **A bootstrap account, so the first door is never locked.** `bootstrap_admin`
+  (in the build command) creates `sysadmin` in `managers` from a **PBKDF2 hash**
+  in `stock_manager/bootstrap_account.py` — the plaintext is not in the repo, and
+  changing the password from `/users/` replaces the hash and makes the entry
+  inert. It only ever CREATES: an existing account is never touched, so a
+  redeploy cannot reset a password set in the UI. Remove the module once the
+  owner has their own account.
 - **Build lazy strings with their own name.** `views.py` already had
   `gettext as _`; a second `from ... import gettext_lazy as _` was shadowed, so
   the refusal dict was evaluated ONCE under English and the Arabic page showed
