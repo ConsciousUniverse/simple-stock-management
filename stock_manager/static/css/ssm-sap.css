@@ -972,6 +972,29 @@ img {
 }
 
 /* Numbered instructions (installing the Android build). */
+/* A term/definition list: what the server discovered, label beside value. */
+.sap-deflist {
+    display: grid;
+    /* Value beside its label, not at the far edge of the card: a label and a
+       number at opposite ends of a row cannot be read as one fact. */
+    grid-template-columns: max-content max-content;
+    justify-content: start;
+    gap: 0.35rem 1.5rem;
+    margin: 0.75rem 0 0;
+    font-size: 0.8125rem;
+}
+
+.sap-deflist dt {
+    color: var(--sap-text-muted);
+}
+
+.sap-deflist dd {
+    margin: 0;
+    color: var(--sap-text);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
 .sap-steps {
     margin: 0.5rem 0 0;
     padding-inline-start: 1.35rem;

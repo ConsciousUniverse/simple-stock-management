@@ -23,6 +23,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 LOCALE_DIR = BASE_DIR / "locale" / "ar" / "LC_MESSAGES"
 
 ARABIC = {
+    # --- the update arrives from GitHub, not from this page ---------------
+    "The update arrives by itself": "التحديث يصل تلقائيًا",
+    "Read from GitHub releases": "مقروء من إصدارات GitHub",
+    "The server reads the newest build from %(repo)s every ten minutes. Publishing a release there is the whole step: nothing has to be typed on this page, and every phone is offered the new build on its next start.":
+        "السيرفر يقرأ آخر بناء من %(repo)s كل عشر دقائق. نشر إصدار جديد هناك هو كل المطلوب: مفيش حاجة تتكتب في الصفحة دي، وكل موبايل بيتعرض عليه البناء الجديد عند أول تشغيل.",
+    "Size": "الحجم",
+    "Checksum (SHA-256)": "البصمة (SHA-256)",
+    "Download": "التحميل",
+    "The release list could not be read just now.": "تعذّر قراءة قائمة الإصدارات حاليًا.",
+    "The app is being offered the build recorded below instead. This is not an error in the build: the server could not reach GitHub.":
+        "التطبيق بيتعرض عليه البناء المسجّل تحت بدلًا منه. ده مش خطأ في البناء: السيرفر مش قادر يوصل GitHub.",
+    "Record a build by hand (fallback)": "تسجيل بناء يدويًا (احتياطي)",
+    "Not needed while the list above is readable. Use it to pin a build that is not on GitHub yet, or to keep the phones on an older one.":
+        "مش مطلوب طالما القائمة فوق مقروءة. استخدمه لتثبيت بناء لسه مش على GitHub، أو لتثبيت الموبايلات على بناء أقدم.",
     # --- who may sign in where ------------------------------------------
     "This is the last warehouse manager.": "هذا آخر مدير مخزن.",
     "A warehouse worker's account signs in from the phone app only.": "حساب عامل المخزن يعمل على تطبيق الهاتف فقط.",

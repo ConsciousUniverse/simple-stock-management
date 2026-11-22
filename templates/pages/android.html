@@ -24,7 +24,47 @@
     {% endif %}
     <div class="sap-tile sap-tile--neutral">
         <span class="sap-tile__label">{% trans "Published builds" %}</span>
-        <span class="sap-tile__value">{{ releases|length }}</span>
+        <span class="sap-tile__value">{{ build_count }}</span>
+    </div>
+</div>
+
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "The update arrives by itself" %}</h2>
+        {% if auto %}
+        <div class="sap-card__header-actions">
+            <span class="sap-pill sap-pill--positive">{% trans "Read from GitHub releases" %}</span>
+        </div>
+        {% endif %}
+    </div>
+    <div class="sap-card__body">
+        {% if auto %}
+        <p class="sap-muted" id="autoReleaseSource">
+            {% blocktrans with repo=release_repo %}The server reads the newest build from {{ repo }} every ten minutes. Publishing a release there is the whole step: nothing has to be typed on this page, and every phone is offered the new build on its next start.{% endblocktrans %}
+        </p>
+        <dl class="sap-deflist">
+            <dt>{% trans "Version" %}</dt>
+            <dd id="autoVersion">{{ auto.version }}</dd>
+            <dt>{% trans "Build number" %}</dt>
+            <dd id="autoVersionCode" dir="ltr">{{ auto.version_code|default:"—" }}</dd>
+            <dt>{% trans "Published" %}</dt>
+            <dd id="autoPublishedAt">{{ auto.published_at|default:"—" }}</dd>
+            <dt>{% trans "Size" %}</dt>
+            <dd id="autoSize" dir="ltr">{% if auto.size_bytes %}{{ auto.size_bytes }}{% else %}—{% endif %}</dd>
+            <dt>{% trans "Checksum (SHA-256)" %}</dt>
+            <dd id="autoSha" dir="ltr" style="word-break: break-all">{{ auto.sha256|default:"—" }}</dd>
+            <dt>{% trans "Download" %}</dt>
+            <dd><a href="{{ auto.download_url }}" target="_blank" rel="noopener">{{ auto.download_url }}</a></dd>
+        </dl>
+        {% else %}
+        <div class="sap-msgstrip sap-msgstrip--warning" role="status" id="autoReleaseUnavailable">
+            <svg class="sap-icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+            <div>
+                <span class="sap-msgstrip__title">{% trans "The release list could not be read just now." %}</span>
+                <span>{% trans "The app is being offered the build recorded below instead. This is not an error in the build: the server could not reach GitHub." %}</span>
+            </div>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -123,9 +163,12 @@
 {% if is_manager %}
 <div class="sap-card">
     <div class="sap-card__header">
-        <h2 class="sap-card__title">{% trans "Publish a build" %}</h2>
+        <h2 class="sap-card__title">{% trans "Record a build by hand (fallback)" %}</h2>
     </div>
     <div class="sap-card__body">
+        <p class="sap-muted">
+            {% trans "Not needed while the list above is readable. Use it to pin a build that is not on GitHub yet, or to keep the phones on an older one." %}
+        </p>
         <form method="post" action="/android/" class="sap-form-grid" id="publishReleaseForm">
             {% csrf_token %}
             <label class="sap-field">

@@ -20,6 +20,22 @@ WAREHOUSE_HEADER = ["SKU", "Description", "Retail Price", "Quantity"]
 SHOP_HEADER = ["Shop User", "SKU", "Description", "Retail Price", "Quantity"]
 
 
+@pytest.fixture(autouse=True)
+def no_live_release_list(monkeypatch):
+    """No test reaches GitHub: the app's release list is stubbed to empty.
+
+    The version endpoint reads the published builds over the network, so a suite
+    without this stub would depend on GitHub being up — and would be slow,
+    flaky, and rate-limited. A test that wants releases patches this itself.
+    """
+    from stock_manager import releases
+
+    releases.clear_cache()
+    monkeypatch.setattr(releases, "_fetch_releases", lambda: [])
+    yield
+    releases.clear_cache()
+
+
 @pytest.fixture
 def groups(db):
     return {

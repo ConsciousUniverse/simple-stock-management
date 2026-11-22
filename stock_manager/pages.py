@@ -437,11 +437,20 @@ def android_page(request):
             messages.success(request, _("The build was published."))
         return _redirect_android()
 
+    from stock_manager import releases
+
+    published = releases.latest_release()
     return render(
         request,
         "pages/android.html",
         {
-            "latest": AppRelease.latest(),
+            # What the phones are offered, and where it came from: the page must
+            # not show a build the app is not told about, or the reverse.
+            "latest": releases.as_row(releases.select_release()),
+            "auto": releases.as_row(published),
+            "auto_failed": published is None,
+            "release_repo": releases.RELEASES_REPO,
+            "build_count": AppRelease.objects.count() + (1 if published else 0),
             "releases": AppRelease.objects.select_related("created_by")[:20],
             "api_root": request.build_absolute_uri("/") + "api/",
         },

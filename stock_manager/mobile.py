@@ -20,7 +20,6 @@ from django.utils import timezone
 
 from . import audit
 from .models import (
-    AppRelease,
     AuditEvent,
     MobileProfile,
     MobileSession,
@@ -207,27 +206,35 @@ def logout(session):
 
 
 def version_payload(installed_code=None):
-    """What the app needs to decide whether to offer (or force) an update."""
-    release = AppRelease.latest()
+    """What the app needs to decide whether to offer (or force) an update.
+
+    The build comes from the releases the APK is published to (``releases.py``),
+    so shipping a build needs no second step here; the manual row is the answer
+    when that list cannot be read.
+    """
+    from stock_manager import releases
+
+    release = releases.select_release()
     if release is None:
         return {"updateAvailable": False, "latest": None}
 
-    latest = {
-        "versionName": release.version,
-        "versionCode": release.version_code,
-        "downloadUrl": release.download_url,
-        "notes": release.notes,
-        "mandatory": bool(release.mandatory),
-        "sha256": release.sha256 or "",
-        "sizeBytes": release.size_bytes,
-        "publishedAt": release.created_at.isoformat(),
-    }
     code = installed_code if isinstance(installed_code, int) else None
-    # A release published before version_code existed cannot be compared; the
-    # app then simply has nothing to offer rather than a guess.
-    update = bool(code is not None and release.version_code and release.version_code > code)
-    latest["updateAvailable"] = update
-    latest["current"] = bool(code is not None and release.version_code == code)
+    latest_code = release["versionCode"]
+    # A build published without a number cannot be compared; the app then has
+    # nothing to offer rather than a guess.
+    update = bool(code is not None and latest_code and latest_code > code)
+    latest = {
+        "versionName": release["versionName"],
+        "versionCode": latest_code,
+        "downloadUrl": release["downloadUrl"],
+        "notes": release["notes"],
+        "mandatory": bool(release["mandatory"]),
+        "sha256": release["sha256"],
+        "sizeBytes": release["sizeBytes"],
+        "publishedAt": release["publishedAt"],
+        "updateAvailable": update,
+        "current": bool(code is not None and latest_code == code),
+    }
     return {"updateAvailable": update, "latest": latest, "installedVersionCode": code}
 
 

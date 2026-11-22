@@ -390,3 +390,37 @@ the phone, and no way to type a server address into the app.
   release `v2` / `warehouse-2.apk`, sha256
   `d2e5e1c317a699b12a534bc00d78af0f674759c6e7e6a0e728e65add07a1c1d5`, 5,726,658
   bytes — verified by downloading the asset back and hashing it.
+
+## The update is read from where the builds are, not typed into a page
+
+`/api/mobile/version/` used to answer from the `AppRelease` table, so shipping a
+build had **two** steps: publish the release, then remember to record it on
+`/android/`. Forgetting the second left every phone on the old build while the
+new one sat published and unreachable — and nothing anywhere said so.
+
+- **`stock_manager/releases.py`** reads the release list (`APP_RELEASES_REPO`,
+  default `melsofany/warehouse-app-releases`) and returns the newest build **by
+  version code**. Publishing a GitHub release IS publishing the update.
+- **The number is parsed, not guessed**: `parse_version_code` takes `v2`,
+  `warehouse-2.apk` and `Warehouse 1.1.0 (build 2)` as 2, and refuses `1.1.0` —
+  a dotted version cannot be ordered, and a wrong number either offers an update
+  that is not newer or hides one that is. A release with no readable number is
+  still SHOWN on the page (with `versionCode: null`) and never offered.
+- **Drafts and pre-releases are never offered**, and a release with no `.apk`
+  asset is not a build.
+- **The manual row survives as the fallback**, because a phone asking "is there
+  an update?" must get an answer during a GitHub outage. A manual row with a
+  HIGHER code wins (an explicit pin forward); an older one never hides the
+  published build.
+- **One request per ten minutes, shared by every phone** (`CACHE_SECONDS`);
+  a failure is remembered for 60s so an outage does not turn into a retry storm.
+  The fetch is anonymous (the releases repo is public) and `GITHUB_RELEASES_TOKEN`
+  only raises the hourly limit.
+- **`tests/conftest.py` stubs the fetch for the whole suite** (`no_live_release_list`):
+  without it every test that touches the version endpoint would depend on GitHub
+  being up. A test that wants releases patches it deliberately.
+- The `/android/` page now shows the build the server actually discovered
+  (version, build number, date, size, SHA-256, link) with a card saying the
+  update arrives by itself, and the manual form is labelled a fallback. A page
+  that shows one build while the app is told about another is the same defect
+  class as a log naming an engine that is not running.

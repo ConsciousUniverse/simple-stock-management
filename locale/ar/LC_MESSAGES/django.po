@@ -799,6 +799,9 @@ msgstr "بلا رقم إذن"
 msgid "No warehouse items found"
 msgstr "لا توجد أصناف بالمخزن"
 
+msgid "Not needed while the list above is readable. Use it to pin a build that is not on GitHub yet, or to keep the phones on an older one."
+msgstr "مش مطلوب طالما القائمة فوق مقروءة. استخدمه لتثبيت بناء لسه مش على GitHub، أو لتثبيت الموبايلات على بناء أقدم."
+
 msgid "Not signed in"
 msgstr "غير مسجَّل الدخول"
 
@@ -976,6 +979,9 @@ msgstr "الكمية"
 msgid "Quantity on hand"
 msgstr "الكمية المتاحة"
 
+msgid "Read from GitHub releases"
+msgstr "مقروء من إصدارات GitHub"
+
 msgid "Reason"
 msgstr "السبب"
 
@@ -1008,6 +1014,9 @@ msgstr "أحدث أذون الصرف"
 
 msgid "Recent receipts"
 msgstr "أحدث التوريدات"
+
+msgid "Record a build by hand (fallback)"
+msgstr "تسجيل بناء يدويًا (احتياطي)"
 
 msgid "Record the permits"
 msgstr "تسجيل الأذون"
@@ -1243,6 +1252,9 @@ msgstr "المواقع"
 msgid "Sites stock"
 msgstr "مخزون المواقع"
 
+msgid "Size"
+msgstr "الحجم"
+
 msgid "Something went wrong."
 msgstr "حدث خطأ ما."
 
@@ -1336,6 +1348,9 @@ msgstr "التطبيق لا يغيّر رقم الهاتف: يطلب، والم�
 msgid "The app cannot change this number; only a manager can, here."
 msgstr "التطبيق لا يغيّر هذا الرقم؛ يغيّره المدير من هنا فقط."
 
+msgid "The app is being offered the build recorded below instead. This is not an error in the build: the server could not reach GitHub."
+msgstr "التطبيق بيتعرض عليه البناء المسجّل تحت بدلًا منه. ده مش خطأ في البناء: السيرفر مش قادر يوصل GitHub."
+
 msgid "The app reads the server address from the field below; it is already set for this deployment."
 msgstr "يقرأ التطبيق عنوان الخادم من الحقل أدناه، وهو مضبوط لهذا النشر بالفعل."
 
@@ -1408,17 +1423,26 @@ msgstr "الكمية المستلمة يجب أن تكون رقمًا صحيحً
 msgid "The received quantity must be greater than zero."
 msgstr "الكمية المستلمة يجب أن تكون أكبر من صفر."
 
+msgid "The release list could not be read just now."
+msgstr "تعذّر قراءة قائمة الإصدارات حاليًا."
+
 msgid "The request is withdrawn; no stock moves."
 msgstr "سيتم سحب الطلب؛ لن تُنقل أي كمية."
 
 msgid "The request of %(name)s was refused."
 msgstr "تم رفض طلب %(name)s."
 
+msgid "The server reads the newest build from %(repo)s every ten minutes. Publishing a release there is the whole step: nothing has to be typed on this page, and every phone is offered the new build on its next start."
+msgstr "السيرفر يقرأ آخر بناء من %(repo)s كل عشر دقائق. نشر إصدار جديد هناك هو كل المطلوب: مفيش حاجة تتكتب في الصفحة دي، وكل موبايل بيتعرض عليه البناء الجديد عند أول تشغيل."
+
 msgid "The stock leaves the warehouse and moves to the site."
 msgstr "سيخرج المخزون من المخزن إلى الموقع."
 
 msgid "The system is configured to delete all warehouse and site data that is not included in this upload."
 msgstr "النظام مُهيَّأ لحذف كل بيانات المخزن والمواقع غير المدرجة في هذا الملف."
+
+msgid "The update arrives by itself"
+msgstr "التحديث يصل تلقائيًا"
 
 msgid "The user was created."
 msgstr "تم إنشاء المستخدم."
