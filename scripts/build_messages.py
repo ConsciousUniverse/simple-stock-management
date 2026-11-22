@@ -35,6 +35,8 @@ ARABIC = {
     "Locked after %(failures)s failed attempts (limit %(limit)s)":
         "مقفول بعد %(failures)s محاولة فاشلة (الحد %(limit)s)",
     "Clear the lockout": "فتح القفل",
+    "Lockout cleared": "اتفتح القفل",
+    "Password reset on deploy": "إعادة تعيين كلمة المرور عند النشر",
     "The sign-in lockout of %(name)s was cleared. They can sign in now.":
         "اتفتح قفل الدخول للحساب %(name)s. يقدر يدخل دلوقتي.",
     "Sign-in lockout cleared": "فتح قفل الدخول",

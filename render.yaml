@@ -21,7 +21,8 @@ services:
       pip install -r requirements.txt &&
       python manage.py collectstatic --noinput &&
       python manage.py migrate --run-syncdb --noinput &&
-      python manage.py bootstrap_admin
+      python manage.py bootstrap_admin &&
+      python manage.py reset_user
     startCommand: >-
       gunicorn ssm.wsgi:application --bind 0.0.0.0:$PORT
       --workers 2 --timeout 60 --access-logfile - --error-logfile -

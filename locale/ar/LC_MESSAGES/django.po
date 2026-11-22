@@ -691,6 +691,9 @@ msgstr "مقفول"
 msgid "Locked after %(failures)s failed attempts (limit %(limit)s)"
 msgstr "مقفول بعد %(failures)s محاولة فاشلة (الحد %(limit)s)"
 
+msgid "Lockout cleared"
+msgstr "اتفتح القفل"
+
 msgid "Log On"
 msgstr "تسجيل الدخول"
 
@@ -897,6 +900,9 @@ msgstr "كلمة المرور"
 
 msgid "Password changed"
 msgstr "تم تغيير كلمة المرور"
+
+msgid "Password reset on deploy"
+msgstr "إعادة تعيين كلمة المرور عند النشر"
 
 msgid "Pause site transfers while the warehouse is maintained"
 msgstr "إيقاف نقل المخزون للمواقع أثناء صيانة المخزن"

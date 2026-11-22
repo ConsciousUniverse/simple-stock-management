@@ -401,6 +401,7 @@ class AuditEvent(models.Model):
     USER_UPDATED = "user_updated"
     USER_DEACTIVATED = "user_deactivated"
     USER_UNLOCKED = "user_unlocked"
+    USER_RESET = "user_reset"
     SETTINGS_CHANGED = "settings_changed"
     RELEASE_PUBLISHED = "release_published"
     PHONE_CHANGED = "phone_changed"
@@ -428,6 +429,8 @@ class AuditEvent(models.Model):
         (USER_DEACTIVATED, _lazy("User deactivated")),
         (SETTINGS_CHANGED, _lazy("Settings changed")),
         (RELEASE_PUBLISHED, _lazy("App release published")),
+        (USER_UNLOCKED, _lazy("Lockout cleared")),
+        (USER_RESET, _lazy("Password reset on deploy")),
         (PHONE_CHANGED, _lazy("Sign-in phone changed")),
         (PHONE_REQUESTED, _lazy("Phone change requested")),
         (PHONE_REQUEST_DECIDED, _lazy("Phone change decided")),
@@ -463,6 +466,7 @@ class AuditEvent(models.Model):
         USER_UPDATED: "users",
         USER_DEACTIVATED: "users",
         USER_UNLOCKED: "users",
+        USER_RESET: "users",
         SETTINGS_CHANGED: "settings",
         RELEASE_PUBLISHED: "app",
         PHONE_CHANGED: "users",

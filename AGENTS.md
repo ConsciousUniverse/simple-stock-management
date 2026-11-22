@@ -414,6 +414,14 @@ and nothing on the page answered it.
   button, and clearing is audited (`user_unlocked`).
 - **A lockout is not an error in the account.** The password may be perfect and
   the person still cannot get in; that is exactly what the badge says.
+- **The way back in is a deploy variable.** Accounts are created from `/users/`,
+  which is the door that is shut when the last manager is locked out or has
+  forgotten the password. `reset_user` (also called from `bootstrap_admin`, the
+  command already in the build) resets ONE account from `RESET_USER_USERNAME` /
+  `RESET_USER_PASSWORD`, reopens it, puts it in `managers` and clears its lockout
+  — and does nothing at all when the variables are unset. Anyone who can set
+  those can already set `DATABASE_URL`, so it grants nothing new; the reset is
+  audited (`user_reset`).
 - **Build lazy strings with their own name.** `views.py` already had
   `gettext as _`; a second `from ... import gettext_lazy as _` was shadowed, so
   the refusal dict was evaluated ONCE under English and the Arabic page showed

@@ -3,6 +3,11 @@
 Idempotent: an existing user is never modified, so a redeploy cannot reset a
 password that was changed in the UI. Without the ``DJANGO_SUPERUSER_*``
 variables the command only makes sure the role groups exist.
+
+It also runs ``reset_user`` when ``RESET_USER_*`` is set. That is the way back
+in when the last manager is locked out or has forgotten the password — and it
+hangs off THIS command on purpose: this is the one already in the deploy's
+build command, so the owner only has to set two variables and redeploy.
 """
 
 import os
@@ -24,6 +29,8 @@ class Command(BaseCommand):
         username = os.getenv("DJANGO_SUPERUSER_USERNAME")
         password = os.getenv("DJANGO_SUPERUSER_PASSWORD")
         email = os.getenv("DJANGO_SUPERUSER_EMAIL", "")
+
+        self._reset_when_asked()
 
         if not username or not password:
             self.stdout.write(
@@ -50,3 +57,12 @@ class Command(BaseCommand):
         # The dashboard gates the warehouse controls on the 'managers' group,
         # not on is_superuser, so an administrator needs the membership too.
         user.groups.add(groups["managers"])
+
+    @staticmethod
+    def _reset_when_asked():
+        """``RESET_USER_*`` is one implementation, shared with ``reset_user``."""
+        if not (os.getenv("RESET_USER_USERNAME") and os.getenv("RESET_USER_PASSWORD")):
+            return
+        from django.core.management import call_command
+
+        call_command("reset_user")
