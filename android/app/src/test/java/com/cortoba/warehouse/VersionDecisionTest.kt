@@ -103,7 +103,7 @@ class VersionDecisionTest {
                "versionCode": 1,
                "downloadUrl": "https://github.com/melsofany/warehouse-app-releases/releases/download/v1/warehouse-1.apk",
                "notes": "", "mandatory": false,
-               "sha256": "b7a17c7d359ab4304b955e94d4c42a39f5a58059d3997c963ce79a0740ac5844",
+               "sha256": "519eda7a9a20e9adaa30987ae152bbb8ccf6aa4cb86628ff6f3a5779a7673c87",
                "sizeBytes": 5096181, "publishedAt": "2026-11-22T01:59:05.953386+00:00",
                "updateAvailable": true, "current": false}, "installedVersionCode": 0}"""
         )!!
@@ -112,7 +112,7 @@ class VersionDecisionTest {
         assertEquals("1.0.0", info.versionName)
         assertEquals(5096181L, info.sizeBytes)
         assertEquals(
-            "b7a17c7d359ab4304b955e94d4c42a39f5a58059d3997c963ce79a0740ac5844",
+            "519eda7a9a20e9adaa30987ae152bbb8ccf6aa4cb86628ff6f3a5779a7673c87",
             info.sha256,
         )
         assertTrue(info.isNewerThan(0))
