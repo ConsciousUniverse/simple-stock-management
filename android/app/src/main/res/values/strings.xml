@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Warehouse</string>
+
+    <!-- Sign in -->
+    <string name="sign_in_title">Sign in</string>
+    <string name="sign_in_subtitle">Your phone number or user name, and the password a manager gave you.</string>
+    <string name="phone_label">Phone number or user name</string>
+    <string name="password_label">Password</string>
+    <string name="server_label">Server</string>
+    <string name="sign_in">Sign in</string>
+    <string name="forgot_phone">My number changed</string>
+    <string name="forgot_phone_hint">Only a warehouse manager can change the number you sign in with. Ask the manager to change it from the system, then sign in again.</string>
+    <string name="phone_and_password_required">Enter the phone number and the password.</string>
+    <string name="server_address_invalid">The server address must start with http:// or https://</string>
+    <string name="sign_in_failed">Could not sign in.</string>
+
+    <!-- Profile -->
+    <string name="profile_title">My account</string>
+    <string name="role">Role</string>
+    <string name="sign_out">Sign out</string>
+    <string name="refresh">Refresh</string>
+    <string name="phone_locked_hint">This number is the one you sign in with, and it cannot be changed here. Ask a warehouse manager to change it in the system.</string>
+    <string name="no_phone">No phone</string>
+    <string name="request_phone_change">Request a new number</string>
+    <string name="request_phone_change_explained">The request goes to a warehouse manager. The number changes only after the manager approves it in the system.</string>
+    <string name="new_phone_hint">New phone number</string>
+    <string name="new_phone_reason">Reason (optional)</string>
+    <string name="send_request">Send the request</string>
+    <string name="cancel">Cancel</string>
+    <string name="request_sent">The request was sent to a warehouse manager.</string>
+    <string name="pending_phone_change">A request for %1$s is waiting for the manager.</string>
+
+    <!-- Roles -->
+    <string name="role_manager">Warehouse manager</string>
+    <string name="role_shop">Shop user</string>
+    <string name="role_receive">Receiving</string>
+    <string name="role_user">User</string>
+
+    <!-- Updates -->
+    <string name="check_updates">Check for updates</string>
+    <string name="update_channel_name">App updates</string>
+    <string name="update_channel_description">A new version of the warehouse app</string>
+    <string name="update_available_title">A new version is available</string>
+    <string name="update_available_body">Version %1$s can be installed now.</string>
+    <string name="update_mandatory_note">This update is mandatory: the app keeps working only after it is installed.</string>
+    <string name="update_now">Update now</string>
+    <string name="later">Later</string>
+    <string name="downloading_update">Downloading the update…</string>
+    <string name="checksum_mismatch">The downloaded file does not match the published checksum. It was deleted; try again.</string>
+    <string name="allow_install_explained">Allow this app to install apps, then press Update again.</string>
+    <string name="already_current">You are on the latest version (%1$s).</string>
+    <string name="update_check_failed">Could not reach the server to check for updates.</string>
+</resources>

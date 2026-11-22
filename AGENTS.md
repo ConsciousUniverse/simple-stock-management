@@ -281,3 +281,63 @@ a way of covering part of an issue.
   refuses it — that is the point), the Arabic round-trip save, and the e2e
   round-trip in Arabic (`'' == '1250.50'` — the browser really does empty the
   field).
+
+## The phone app (android/) — number or user name, and updates that arrive
+
+The warehouse is operated from phones, so the app is not a nice-to-have: it is
+the second face of the same API (`/api/mobile/*`). Three rules live in
+`stock_manager/mobile.py` and nowhere else.
+
+### The number is the manager's, the password is the user's
+
+- `canonical_phone` (`stock_manager/phones.py`) folds every spelling of one
+  number — `+20 101…`, `0020101…`, `0101…`, and the copy-pasted form that
+  carries an invisible bidi mark (U+2066…) — to `2010…`. Two accounts must never
+  be creatable for one number, so the fold is used on **write** as well.
+- `login()` accepts a **phone number or a user name** (`resolve_user`). The
+  number is tried first; a number that belongs to nobody falls through to the
+  user name, so a numeric user name still works. The PHONE stays the identity
+  either way — signing in with a user name does not create a second identity.
+- The app cannot write the number. `POST /api/mobile/phone-change-requests/`
+  only records a `PhoneChangeRequest`; a payload containing `phone` is refused
+  with `403 phone_locked`. The manager approves on `/users/`, which is also the
+  only place the number is written (`mobile.set_phone`).
+
+### The update decision is a number comparison, made by the app
+
+- `AppRelease.latest()` returns the **highest `version_code`**, not the row
+  flagged current. The old version returned the current row, so publishing an
+  older build **hid the newer one** — a phone on the older build was told there
+  was nothing to install.
+- Publishing refuses a build number that does not grow. The message names the
+  number, because "the update did nothing" is otherwise indistinguishable from
+  "the phones never saw it".
+- The app decides, not the server's wording: `Update.parseVersionResponse`
+  returns null when there is no build number or no address, and `isNewerThan`
+  refuses an equal or lower build. A response claiming an update for the build
+  the phone already has must not open a dialog forever.
+- The APK is downloaded, its **SHA-256 compared with the published one**, and
+  only then handed to the installer through a `FileProvider`. A mismatch is
+  deleted and reported; installing it would be installing something else.
+- `UpdateWorker` repeats the check every six hours so a phone in a drawer is
+  told about a mandatory build; the dialog has no "later" for `mandatory`.
+
+### The APK is hosted, never stored
+
+Render's disk is wiped on every deploy, so `/android/` stores the **address**,
+the checksum and the size — never the file. The current builds live in
+`melsofany/warehouse-app-releases` (public, releases only).
+
+`android/app/keystore/warehouse-release.jks` is **committed on purpose**:
+Android refuses an update signed by a different key, so a per-machine debug key
+would force every phone to uninstall before each update. Bump `versionCode` on
+every build — a build with the same number is never offered.
+
+### Test what a phone does, not what the server says
+
+`tests/test_mobile_app.py` drives the HTTP API: every spelling of a number
+resolving to one account, the lock (a `phone` in the payload is refused and the
+stored number is unchanged), approval/refusal, and the build-number decision
+including "a release without a build number is not an update".
+`android/app/src/test/…/VersionDecisionTest.kt` pins the app's own decision;
+a server-side test cannot see a client that installs a downgrade.

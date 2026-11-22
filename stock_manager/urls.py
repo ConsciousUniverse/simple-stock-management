@@ -34,6 +34,7 @@ from .views import (
     decide_stock_document_api,
 )
 from stock_manager.pages import android_page, audit_page, labels_page, users_page
+from stock_manager import mobile_api
 from django.conf.urls.static import static
 from django.conf import settings
 
@@ -94,6 +95,18 @@ urlpatterns = [
     path("labels/", labels_page, name="print_labels"),
     path("users/", users_page, name="users_page"),
     path("android/", android_page, name="android_page"),
+    # The Android app's API. `version/` is public on purpose: the app asks
+    # before it has signed in, and a build that cannot check for an update is
+    # exactly the build that never gets replaced.
+    path("api/mobile/version/", mobile_api.VersionView.as_view(), name="mobile_version"),
+    path("api/mobile/login/", mobile_api.LoginView.as_view(), name="mobile_login"),
+    path("api/mobile/logout/", mobile_api.LogoutView.as_view(), name="mobile_logout"),
+    path("api/mobile/me/", mobile_api.MeView.as_view(), name="mobile_me"),
+    path(
+        "api/mobile/phone-change-requests/",
+        mobile_api.PhoneChangeRequestView.as_view(),
+        name="mobile_phone_change_request",
+    ),
     path("audit/", audit_page, name="audit_page"),
     # One page per job: the warehouse, additions, issues, and the issues report.
     path("stock/", stock_page, name="stock_page"),

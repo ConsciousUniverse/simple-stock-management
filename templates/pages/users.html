@@ -70,6 +70,22 @@
                 <button class="sap-btn sap-btn--ghost" type="submit">{% trans "Change the password" %}</button>
             </div>
         </form>
+
+        <form method="post" action="/users/" class="sap-form-grid sap-form-grid--tight" id="phoneForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="phone">
+            <input type="hidden" name="user_id" value="{{ editing.pk }}">
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Phone the app signs in with" %}</span>
+                <input class="sap-input" type="tel" name="phone" dir="ltr"
+                    placeholder="+201012345678"
+                    value="{% if editing.mobile_profile %}+{{ editing.mobile_profile.phone }}{% endif %}">
+                <span class="sap-field__hint">{% trans "The app cannot change this number; only a manager can, here." %}</span>
+            </label>
+            <div class="sap-form-actions">
+                <button class="sap-btn sap-btn--ghost" type="submit">{% trans "Save the phone" %}</button>
+            </div>
+        </form>
     </div>
 </div>
 {% endif %}
@@ -123,6 +139,59 @@
 
 <div class="sap-card">
     <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Phone change requests" %}</h2>
+        <div class="sap-card__header-actions">
+            <span class="sap-muted">{% trans "The app cannot change a phone: it asks, a manager decides." %}</span>
+        </div>
+    </div>
+    <div class="sap-card__body sap-card__body--flush">
+        <div class="sap-tablewrap">
+            <table class="sap-table sap-table--dense" id="phoneRequests">
+                <thead>
+                    <tr>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "User name" %}</th>
+                        <th>{% trans "Current phone" %}</th>
+                        <th>{% trans "Requested phone" %}</th>
+                        <th>{% trans "Reason" %}</th>
+                        <th>{% trans "Decision" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in phone_requests %}
+                    <tr>
+                        <td dir="ltr">{{ item.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>{{ item.user.get_username }}</td>
+                        <td dir="ltr">{{ item.current_phone|default:"—" }}</td>
+                        <td dir="ltr">{{ item.requested_phone }}</td>
+                        <td>{{ item.reason|default:"—" }}</td>
+                        <td>
+                            <form method="post" action="/users/" class="sap-inline-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="phone-request">
+                                <input type="hidden" name="request_id" value="{{ item.pk }}">
+                                <button class="sap-btn sap-btn--emphasized sap-btn--sm" type="submit"
+                                    name="decision" value="approve">{% trans "Approve" %}</button>
+                                <button class="sap-btn sap-btn--ghost sap-btn--sm" type="submit"
+                                    name="decision" value="reject">{% trans "Refuse" %}</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="sap-empty">
+                            <span class="sap-empty__title">{% trans "No pending request." %}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="sap-card">
+    <div class="sap-card__header">
         <h2 class="sap-card__title">{% trans "Accounts" %}</h2>
         <div class="sap-card__header-actions">
             <span class="sap-muted">{{ users|length }} {% trans "accounts" %}</span>
@@ -136,6 +205,7 @@
                         <th>{% trans "User name" %}</th>
                         <th>{% trans "Name" %}</th>
                         <th>{% trans "Role" %}</th>
+                        <th>{% trans "Sign-in phone" %}</th>
                         <th>{% trans "Last sign-in" %}</th>
                         <th>{% trans "Status" %}</th>
                         <th>{% trans "Actions" %}</th>
@@ -149,6 +219,15 @@
                         <td>
                             {% for name in row.role_names %}{{ name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
                         </td>
+                        <td>
+                            {% with profile=row.mobile_profile %}
+                            {% if profile %}
+                            <span dir="ltr">{{ profile.phone }}</span>
+                            {% else %}
+                            <span class="sap-muted">{% trans "No phone" %}</span>
+                            {% endif %}
+                            {% endwith %}
+                        </td>
                         <td dir="ltr">{{ row.last_login|date:"Y-m-d H:i"|default:"—" }}</td>
                         <td>
                             {% if row.is_active %}
@@ -161,7 +240,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="sap-empty">
+                        <td colspan="7" class="sap-empty">
                             <span class="sap-empty__title">{% trans "No accounts yet." %}</span>
                         </td>
                     </tr>

@@ -5,6 +5,8 @@ from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from django.core.validators import MinValueValidator
 from django.utils.translation import gettext_lazy as _lazy
 
+from .phones import canonical_phone
+
 # Override the __str__ method of the User model to return the username
 User.add_to_class("__str__", lambda self: self.username)
 
@@ -400,6 +402,9 @@ class AuditEvent(models.Model):
     USER_DEACTIVATED = "user_deactivated"
     SETTINGS_CHANGED = "settings_changed"
     RELEASE_PUBLISHED = "release_published"
+    PHONE_CHANGED = "phone_changed"
+    PHONE_REQUESTED = "phone_requested"
+    PHONE_REQUEST_DECIDED = "phone_request_decided"
 
     ACTION_CHOICES = (
         (LOGIN, _lazy("Signed in")),
@@ -422,6 +427,9 @@ class AuditEvent(models.Model):
         (USER_DEACTIVATED, _lazy("User deactivated")),
         (SETTINGS_CHANGED, _lazy("Settings changed")),
         (RELEASE_PUBLISHED, _lazy("App release published")),
+        (PHONE_CHANGED, _lazy("Sign-in phone changed")),
+        (PHONE_REQUESTED, _lazy("Phone change requested")),
+        (PHONE_REQUEST_DECIDED, _lazy("Phone change decided")),
     )
 
     # Grouping for the log's filter: which part of the app an action belongs to.
@@ -455,6 +463,9 @@ class AuditEvent(models.Model):
         USER_DEACTIVATED: "users",
         SETTINGS_CHANGED: "settings",
         RELEASE_PUBLISHED: "app",
+        PHONE_CHANGED: "users",
+        PHONE_REQUESTED: "users",
+        PHONE_REQUEST_DECIDED: "users",
     }
 
     actor = models.ForeignKey(
@@ -489,6 +500,122 @@ class AuditEvent(models.Model):
         return _lazy(self.get_action_display())
 
 
+class MobileProfile(models.Model):
+    """The phone number a person signs in with in the Android app.
+
+    The phone is the identity in the app and it is deliberately NOT editable
+    from the app: a person who changes their SIM asks a warehouse manager, who
+    changes it here. An identity the user can rewrite is not an identity — the
+    stock movements and the audit trail would then point at a number nobody
+    verified.
+    """
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="mobile_profile"
+    )
+    # Canonical digits only (201012345678): the same person typing +20 101…
+    # or 0101… must not become two accounts.
+    phone = models.CharField(max_length=20, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("phone",)
+        verbose_name = "Mobile profile"
+        verbose_name_plural = "Mobile profiles"
+
+    def __str__(self):
+        return f"{self.user.get_username()} · {self.phone}"
+
+    @staticmethod
+    def for_user(user):
+        return MobileProfile.objects.filter(user=user).first()
+
+    @staticmethod
+    def by_phone(phone):
+        canonical = canonical_phone(phone)
+        if not canonical:
+            return None
+        return MobileProfile.objects.select_related("user").filter(phone=canonical).first()
+
+
+class PhoneChangeRequest(models.Model):
+    """A user asking a manager to change the phone they sign in with.
+
+    The request is the ONLY route the app has, and it changes nothing by
+    itself: the phone moves when a manager approves, and that approval is what
+    the audit trail records.
+    """
+
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    STATUS_CHOICES = (
+        (PENDING, _lazy("Pending")),
+        (APPROVED, _lazy("Approved")),
+        (REJECTED, _lazy("Rejected")),
+    )
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="phone_change_requests"
+    )
+    current_phone = models.CharField(max_length=20, blank=True, default="")
+    requested_phone = models.CharField(max_length=20)
+    reason = models.TextField(blank=True, default="")
+    status = models.CharField(max_length=12, choices=STATUS_CHOICES, default=PENDING)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+    decided_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="decided_phone_requests",
+    )
+    decided_at = models.DateTimeField(null=True, blank=True)
+    decision_note = models.TextField(blank=True, default="")
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+        verbose_name = "Phone change request"
+        verbose_name_plural = "Phone change requests"
+        indexes = [models.Index(fields=["status", "created_at"])]
+
+    def __str__(self):
+        return f"{self.user.get_username()} → {self.requested_phone} ({self.status})"
+
+    @staticmethod
+    def pending_for(user):
+        return PhoneChangeRequest.objects.filter(
+            user=user, status=PhoneChangeRequest.PENDING
+        ).first()
+
+
+class MobileSession(models.Model):
+    """A signed-in phone: a revocable token, stored as its hash.
+
+    Stateless signed tokens cannot be revoked, and a warehouse phone gets lost.
+    Only the SHA-256 of the token is stored, so a database dump cannot be
+    replayed as a session.
+    """
+
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="mobile_sessions"
+    )
+    token_hash = models.CharField(max_length=64, unique=True)
+    device = models.CharField(max_length=120, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(auto_now=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("-last_used_at",)
+        verbose_name = "Mobile session"
+        verbose_name_plural = "Mobile sessions"
+
+    def __str__(self):
+        return f"{self.user.get_username()} · {self.created_at:%Y-%m-%d}"
+
+
 class AppRelease(models.Model):
     """A published Android build.
 
@@ -499,7 +626,16 @@ class AppRelease(models.Model):
     """
 
     version = models.CharField(max_length=40, unique=True)
+    # The app compares THIS number with its own BuildConfig.VERSION_CODE. A
+    # version string ("5.3.0") cannot be ordered reliably, and the update
+    # decision must be unambiguous.
+    version_code = models.PositiveIntegerField(null=True, blank=True, unique=True)
     download_url = models.CharField(max_length=500)
+    sha256 = models.CharField(max_length=64, blank=True, default="")
+    size_bytes = models.PositiveBigIntegerField(null=True, blank=True)
+    # A mandatory build refuses to be skipped: the app blocks use until the
+    # operator installs it (a broken client that talks to a changed API).
+    mandatory = models.BooleanField(default=False)
     notes = models.TextField(blank=True, default="")
     is_current = models.BooleanField(default=True)
     created_by = models.ForeignKey(
@@ -529,4 +665,25 @@ class AppRelease(models.Model):
 
     @staticmethod
     def latest():
+        """The newest build BY VERSION CODE, which is what the app compares.
+
+        ``is_current`` marks the row the page highlights; it must NOT decide
+        what the phones are offered. Publishing a lower build made it current
+        and hid the higher one, so a phone two builds behind was told about the
+        older of the two.
+        """
+        newest = (
+            AppRelease.objects.filter(version_code__isnull=False)
+            .order_by("-version_code")
+            .first()
+        )
+        if newest is not None:
+            return newest
+        # Releases published before build numbers existed have nothing to
+        # compare, but they must still be visible.
         return AppRelease.objects.filter(is_current=True).first() or AppRelease.objects.first()
+
+    def newer_than(self, installed_code):
+        return self.version_code is not None and installed_code is not None and (
+            self.version_code > installed_code
+        )

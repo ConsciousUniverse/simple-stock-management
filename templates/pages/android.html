@@ -13,6 +13,16 @@
         <span class="sap-tile__value" id="currentVersion">{{ latest.version|default:"—" }}</span>
     </div>
     <div class="sap-tile sap-tile--neutral">
+        <span class="sap-tile__label">{% trans "Build number" %}</span>
+        <span class="sap-tile__value" id="currentVersionCode">{{ latest.version_code|default:"—" }}</span>
+    </div>
+    {% if latest.mandatory %}
+    <div class="sap-tile sap-tile--warning">
+        <span class="sap-tile__label">{% trans "Update" %}</span>
+        <span class="sap-tile__value">{% trans "Mandatory" %}</span>
+    </div>
+    {% endif %}
+    <div class="sap-tile sap-tile--neutral">
         <span class="sap-tile__label">{% trans "Published builds" %}</span>
         <span class="sap-tile__value">{{ releases|length }}</span>
     </div>
@@ -38,7 +48,7 @@
         </p>
         <ol class="sap-steps">
             <li>{% trans "Open the download link on the phone and install the file (allow installing apps from this source if the phone asks)." %}</li>
-            <li>{% trans "Sign in with the same user name and password you use here." %}</li>
+            <li>{% trans "Sign in with your phone number (or user name) and the password a manager gave you." %}</li>
             <li>{% trans "The app reads the server address from the field below; it is already set for this deployment." %}</li>
         </ol>
         {% else %}
@@ -74,6 +84,7 @@
                 <thead>
                     <tr>
                         <th>{% trans "Version" %}</th>
+                        <th>{% trans "Build number" %}</th>
                         <th>{% trans "Published" %}</th>
                         <th>{% trans "By" %}</th>
                         <th>{% trans "Notes" %}</th>
@@ -89,6 +100,7 @@
                             <span class="sap-pill sap-pill--positive">{% trans "Current" %}</span>
                             {% endif %}
                         </td>
+                        <td dir="ltr">{{ release.version_code|default:"—" }}</td>
                         <td>{{ release.created_at|date:"Y-m-d" }}</td>
                         <td>{{ release.created_by.get_username|default:"—" }}</td>
                         <td>{{ release.notes|default:"—"|truncatechars:80 }}</td>
@@ -97,7 +109,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="sap-empty">
+                        <td colspan="6" class="sap-empty">
                             <span class="sap-empty__title">{% trans "No build has been published yet." %}</span>
                         </td>
                     </tr>
@@ -120,6 +132,14 @@
                 <span class="sap-label">{% trans "Version" %}</span>
                 <input class="sap-input" type="text" name="version" placeholder="1.0.1" required>
             </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Build number" %}</span>
+                <input class="sap-input" type="number" name="version_code" min="1" step="1" required
+                    value="{% if latest.version_code %}{{ latest.version_code|add:1 }}{% else %}1{% endif %}">
+                <span class="sap-field__hint">
+                    {% trans "The phones compare this number with their own: it must grow with every build." %}
+                </span>
+            </label>
             <label class="sap-field sap-field--wide">
                 <span class="sap-label">{% trans "Download address" %}</span>
                 <input class="sap-input" type="text" name="download_url" placeholder="https://…/app-release.apk"
@@ -128,9 +148,25 @@
                     {% trans "A durable address, not a file on this server: the server's disk is wiped on every deploy." %}
                 </span>
             </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Checksum (SHA-256)" %}</span>
+                <input class="sap-input" type="text" name="sha256" dir="ltr" maxlength="64"
+                    placeholder="64 hexadecimal characters">
+                <span class="sap-field__hint">
+                    {% trans "The app refuses a file whose checksum does not match." %}
+                </span>
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "File size (bytes)" %}</span>
+                <input class="sap-input" type="number" name="size_bytes" min="0" step="1" dir="ltr">
+            </label>
             <label class="sap-field sap-field--wide">
                 <span class="sap-label">{% trans "Release notes" %}</span>
                 <textarea class="sap-input" name="notes" rows="3"></textarea>
+            </label>
+            <label class="sap-check sap-field--wide">
+                <input type="checkbox" name="mandatory">
+                <span>{% trans "Mandatory: the app blocks use until this build is installed." %}</span>
             </label>
             <div class="sap-form-actions">
                 <button class="sap-btn sap-btn--emphasized" type="submit">{% trans "Publish" %}</button>

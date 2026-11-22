@@ -13,8 +13,12 @@ from stock_manager.models import AppRelease, AuditEvent
 pytestmark = pytest.mark.django_db
 
 
-def publish(client, **fields):
-    data = {"version": "1.0.1", "download_url": "https://example.com/app.apk"}
+def publish(client, version_code=1, **fields):
+    data = {
+        "version": "1.0.1",
+        "download_url": "https://example.com/app.apk",
+        "version_code": str(version_code),
+    }
     data.update(fields)
     return client.post("/android/", data, follow=True)
 
@@ -76,17 +80,22 @@ class TestPublishing:
     def test_only_one_build_stays_current(self, client, manager):
         client.force_login(manager)
 
-        publish(client, version="1.0.1")
-        publish(client, version="1.0.2", download_url="https://example.com/v2.apk")
+        publish(client, version_code=1, version="1.0.1")
+        publish(
+            client,
+            version_code=2,
+            version="1.0.2",
+            download_url="https://example.com/v2.apk",
+        )
 
         assert AppRelease.objects.filter(is_current=True).count() == 1
         assert AppRelease.objects.get(is_current=True).version == "1.0.2"
 
     def test_a_duplicate_version_is_refused(self, client, manager):
         client.force_login(manager)
-        publish(client, version="1.0.1")
+        publish(client, version_code=1, version="1.0.1")
 
-        response = publish(client, version="1.0.1")
+        response = publish(client, version_code=2, version="1.0.1")
 
         assert AppRelease.objects.filter(version="1.0.1").count() == 1
         assert "already published" in response.content.decode()
@@ -103,7 +112,7 @@ class TestPublishing:
     def test_an_address_a_phone_cannot_open_is_refused(self, client, manager, url):
         client.force_login(manager)
 
-        response = publish(client, version="1.0.1", download_url=url)
+        response = publish(client, version_code=1, version="1.0.1", download_url=url)
 
         assert not AppRelease.objects.filter(version="1.0.1").exists()
         assert "must start with" in response.content.decode()
@@ -111,16 +120,68 @@ class TestPublishing:
     def test_a_path_on_this_site_is_accepted(self, client, manager):
         client.force_login(manager)
 
-        publish(client, version="1.0.1", download_url="/media/app.apk")
+        publish(client, version_code=1, version="1.0.1", download_url="/media/app.apk")
 
         assert AppRelease.objects.get(version="1.0.1").download_url == "/media/app.apk"
 
     def test_an_empty_version_is_refused(self, client, manager):
         client.force_login(manager)
 
-        publish(client, version="   ")
+        publish(client, version_code=1, version="   ")
 
         assert AppRelease.objects.count() == 0
+
+
+class TestTheBuildNumber:
+    """The app compares numbers: a release without one is never an update."""
+
+    def test_a_build_without_a_number_is_refused(self, client, manager):
+        client.force_login(manager)
+
+        response = client.post(
+            "/android/",
+            {"version": "1.0.1", "download_url": "https://example.com/a.apk"},
+            follow=True,
+        )
+
+        assert not AppRelease.objects.filter(version="1.0.1").exists()
+        assert "build number" in response.content.decode()
+
+    def test_a_build_number_that_does_not_grow_is_refused(self, client, manager):
+        client.force_login(manager)
+        publish(client, version_code=7, version="1.0.7")
+
+        response = publish(client, version_code=7, version="1.0.6")
+
+        assert not AppRelease.objects.filter(version="1.0.6").exists()
+        assert "higher than 7" in response.content.decode()
+
+    def test_the_number_checksum_and_flag_are_stored(self, client, manager):
+        client.force_login(manager)
+        digest = "a" * 64
+
+        publish(
+            client,
+            version_code=3,
+            version="1.0.3",
+            sha256=digest,
+            size_bytes="123456",
+            mandatory="on",
+        )
+
+        release = AppRelease.objects.get(version="1.0.3")
+        assert release.version_code == 3
+        assert release.sha256 == digest
+        assert release.size_bytes == 123456
+        assert release.mandatory is True
+
+    def test_a_checksum_that_is_not_a_checksum_is_refused(self, client, manager):
+        client.force_login(manager)
+
+        response = publish(client, version_code=1, version="1.0.1", sha256="abc")
+
+        assert not AppRelease.objects.filter(version="1.0.1").exists()
+        assert "64 hexadecimal" in response.content.decode()
 
 
 class TestTheAppConfigEndpoint:

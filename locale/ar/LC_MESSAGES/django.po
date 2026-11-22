@@ -160,6 +160,9 @@ msgstr "طباعة الباركود"
 msgid "Book the delivery against the purchase order number; the quantities are added to the warehouse."
 msgstr "سجّل التوريد على رقم أمر الشراء؛ تُضاف الكميات إلى المخزن."
 
+msgid "Build number"
+msgstr "رقم البناء"
+
 msgid "By"
 msgstr "بواسطة"
 
@@ -186,6 +189,9 @@ msgstr "غيّر التواريخ أو سجّل إذن صرف أولًا."
 
 msgid "Change the password"
 msgstr "تغيير كلمة السر"
+
+msgid "Checksum (SHA-256)"
+msgstr "بصمة الملف (SHA-256)"
 
 msgid "Choose a file"
 msgstr "اختر ملفًا"
@@ -285,6 +291,9 @@ msgstr "الحالي"
 
 msgid "Current password"
 msgstr "كلمة المرور الحالية"
+
+msgid "Current phone"
+msgstr "الرقم الحالي"
 
 msgid "Current version"
 msgstr "الإصدار الحالي"
@@ -421,6 +430,9 @@ msgstr "أدخل اسم المستخدم."
 msgid "Enter more than 0!"
 msgstr "أدخل قيمة أكبر من صفر!"
 
+msgid "Enter the build number (a whole number that only grows)."
+msgstr "أدخل رقم البناء (رقم صحيح يزيد فقط)."
+
 msgid "Enter the company voucher number."
 msgstr "أدخل رقم إذن الشركة."
 
@@ -462,6 +474,9 @@ msgstr "تصدير إلى Excel"
 
 msgid "Failed to upload stock data."
 msgstr "تعذّر رفع بيانات المخزون."
+
+msgid "File size (bytes)"
+msgstr "حجم الملف (بايت)"
 
 msgid "Fill in the required fields."
 msgstr "أكمل الحقول المطلوبة."
@@ -658,6 +673,12 @@ msgstr "تحديث دليل الأصناف والكميات."
 msgid "Maintenance mode"
 msgstr "وضع الصيانة"
 
+msgid "Mandatory"
+msgstr "إلزامي"
+
+msgid "Mandatory: the app blocks use until this build is installed."
+msgstr "إلزامي: يمنع التطبيق الاستخدام حتى تثبيت هذا البناء."
+
 msgid "Menu"
 msgstr "القائمة"
 
@@ -721,8 +742,14 @@ msgstr "لم يُعلَّم أي بند على هذا الإذن بعد."
 msgid "No items match this search."
 msgstr "لا توجد أصناف مطابقة لهذا البحث."
 
+msgid "No pending request."
+msgstr "لا توجد طلبات معلّقة."
+
 msgid "No permit"
 msgstr "بلا إذن"
+
+msgid "No phone"
+msgstr "بلا رقم"
 
 msgid "No records"
 msgstr "لا توجد سجلات"
@@ -853,6 +880,18 @@ msgstr "الأذون والبنود التي يغطيها كل إذن"
 msgid "Permits total"
 msgstr "إجمالي الأذون"
 
+msgid "Phone change decided"
+msgstr "تم البتّ في طلب تغيير الرقم"
+
+msgid "Phone change requested"
+msgstr "طلب تغيير رقم الهاتف"
+
+msgid "Phone change requests"
+msgstr "طلبات تغيير رقم الهاتف"
+
+msgid "Phone the app signs in with"
+msgstr "رقم الهاتف الذي يدخل به التطبيق"
+
 msgid "Please confirm"
 msgstr "برجاء التأكيد"
 
@@ -955,6 +994,9 @@ msgstr "المرجع"
 msgid "Refresh"
 msgstr "تحديث"
 
+msgid "Refuse"
+msgstr "رفض"
+
 msgid "Reject"
 msgstr "رفض"
 
@@ -975,6 +1017,9 @@ msgstr "حذف السطر"
 
 msgid "Request items from the warehouse to build your site stock."
 msgstr "اطلب أصنافًا من المخزن لبناء مخزون موقعك."
+
+msgid "Requested phone"
+msgstr "الرقم المطلوب"
 
 msgid "Requested stock movements between the warehouse and the sites"
 msgstr "حركات المخزون المطلوبة بين المخزن والمواقع"
@@ -1005,6 +1050,9 @@ msgstr "حفظ الصرف"
 
 msgid "Save the permits"
 msgstr "حفظ الأذون"
+
+msgid "Save the phone"
+msgstr "حفظ الرقم"
 
 msgid "Save the user"
 msgstr "حفظ المستخدم"
@@ -1087,6 +1135,12 @@ msgstr "تسجيل الدخول"
 msgid "Sign in with the same user name and password you use here."
 msgstr "سجّل الدخول بنفس اسم المستخدم وكلمة السر التي تستخدمها هنا."
 
+msgid "Sign in with your phone number (or user name) and the password a manager gave you."
+msgstr "سجّل الدخول برقم هاتفك (أو اسم المستخدم) وكلمة المرور التي أعطاها لك المدير."
+
+msgid "Sign in with your phone number and the password a manager gave you."
+msgstr "سجّل الدخول برقم هاتفك وكلمة المرور التي أعطاها لك المدير."
+
 msgid "Sign in with your username and password"
 msgstr "سجّل الدخول باسم المستخدم وكلمة المرور"
 
@@ -1095,6 +1149,12 @@ msgstr "تسجيل الدخول"
 
 msgid "Sign-in is paused for this username."
 msgstr "تسجيل الدخول موقوف مؤقتًا لهذا المستخدم."
+
+msgid "Sign-in phone"
+msgstr "رقم الدخول"
+
+msgid "Sign-in phone changed"
+msgstr "تغيّر رقم الدخول"
 
 msgid "Sign-in refused"
 msgstr "رفض تسجيل الدخول"
@@ -1210,6 +1270,9 @@ msgstr "الموردون · المواقع · المخزون"
 msgid "That permit number was just recorded elsewhere."
 msgstr "رقم الإذن هذا سُجّل للتوّ في موضع آخر."
 
+msgid "That request is no longer pending."
+msgstr "هذا الطلب لم يعد معلّقًا."
+
 msgid "That user does not exist."
 msgstr "هذا المستخدم غير موجود."
 
@@ -1222,17 +1285,32 @@ msgstr "هذا الإصدار منشور بالفعل."
 msgid "The account may sign in"
 msgstr "الحساب مسموح له بتسجيل الدخول"
 
+msgid "The app cannot change a phone: it asks, a manager decides."
+msgstr "التطبيق لا يغيّر رقم الهاتف: يطلب، والمدير يقرر."
+
+msgid "The app cannot change this number; only a manager can, here."
+msgstr "التطبيق لا يغيّر هذا الرقم؛ يغيّره المدير من هنا فقط."
+
 msgid "The app reads the server address from the field below; it is already set for this deployment."
 msgstr "يقرأ التطبيق عنوان الخادم من الحقل أدناه، وهو مضبوط لهذا النشر بالفعل."
 
+msgid "The app refuses a file whose checksum does not match."
+msgstr "يرفض التطبيق أي ملف لا تطابق بصمته."
+
 msgid "The app uses this address to reach the warehouse data."
 msgstr "يستخدم التطبيق هذا العنوان للوصول إلى بيانات المخزن."
+
+msgid "The build number must be higher than %(code)s, or the phones on that build would not see the update."
+msgstr "رقم البناء يجب أن يكون أعلى من %(code)s، وإلا فلن ترى الهواتف التي على ذلك البناء التحديث."
 
 msgid "The build to install on the phone, and how it connects to this server."
 msgstr "الإصدار الذي يُنصَّب على الهاتف، وكيف يتصل بهذا الخادم."
 
 msgid "The build was published."
 msgstr "تم نشر الإصدار."
+
+msgid "The checksum must be 64 hexadecimal characters."
+msgstr "البصمة يجب أن تكون 64 حرفًا سادس عشريًا."
 
 msgid "The company voucher number is too long."
 msgstr "رقم إذن الشركة أطول من المسموح."
@@ -1270,6 +1348,15 @@ msgstr "مبلغ الإذن لا يكون سالبًا."
 msgid "The permit number is too long."
 msgstr "رقم الإذن أطول من المسموح."
 
+msgid "The phone of %(name)s is now %(phone)s."
+msgstr "رقم %(name)s أصبح %(phone)s."
+
+msgid "The phone of %(name)s was changed to %(phone)s."
+msgstr "تم تغيير رقم %(name)s إلى %(phone)s."
+
+msgid "The phones compare this number with their own: it must grow with every build."
+msgstr "تقارن الهواتف هذا الرقم برقمها: يجب أن يزيد مع كل بناء."
+
 msgid "The received quantity must be a whole number."
 msgstr "الكمية المستلمة يجب أن تكون رقمًا صحيحًا."
 
@@ -1278,6 +1365,9 @@ msgstr "الكمية المستلمة يجب أن تكون أكبر من صفر.
 
 msgid "The request is withdrawn; no stock moves."
 msgstr "سيتم سحب الطلب؛ لن تُنقل أي كمية."
+
+msgid "The request of %(name)s was refused."
+msgstr "تم رفض طلب %(name)s."
 
 msgid "The stock leaves the warehouse and moves to the site."
 msgstr "سيخرج المخزون من المخزن إلى الموقع."
@@ -1347,6 +1437,9 @@ msgstr "الوحدة"
 
 msgid "Unknown action."
 msgstr "إجراء غير معروف."
+
+msgid "Update"
+msgstr "تحديث"
 
 msgid "Update the description, price and warehouse quantity."
 msgstr "حدّث الوصف والسعر وكمية المخزن."
@@ -1467,6 +1560,9 @@ msgstr "حساب"
 
 msgid "all"
 msgstr "الكل"
+
+msgid "changed from the users page"
+msgstr "من صفحة المستخدمين"
 
 msgid "e.g. NSCOM-1001"
 msgstr "مثال: NSCOM-1001"

@@ -21,8 +21,9 @@ from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy as _lazy
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from . import audit
-from .models import AppRelease, AuditEvent, Item
+from . import audit, mobile
+from .models import AppRelease, AuditEvent, Item, PhoneChangeRequest
+from .phones import display_phone
 from .permissions import is_warehouse_manager
 
 AUDIT_PAGE_SIZE = 40
@@ -74,7 +75,9 @@ def users_page(request):
         return _save_user(request)
 
     users = list(
-        User.objects.prefetch_related("groups").order_by("-is_active", "username")
+        User.objects.prefetch_related("groups", "mobile_profile").order_by(
+            "-is_active", "username"
+        )
     )
     for account in users:
         # The reader knows "warehouse manager", not the group's internal name.
@@ -97,8 +100,66 @@ def users_page(request):
             if editing
             else set(),
             "min_password_length": MIN_PASSWORD_LENGTH,
+            "phone_requests": PhoneChangeRequest.objects.filter(
+                status=PhoneChangeRequest.PENDING
+            ).select_related("user"),
         },
     )
+
+
+def _save_phone(request, action):
+    """The phone an account signs in with — the app cannot touch it."""
+    if action == "phone":
+        user = User.objects.filter(pk=request.POST.get("user_id")).first()
+        if user is None:
+            messages.error(request, _("That user does not exist."))
+            return _redirect_users()
+        try:
+            profile = mobile.set_phone(
+                user,
+                request.POST.get("phone") or "",
+                actor=request.user,
+                note=_("changed from the users page"),
+            )
+        except mobile.MobileError as exc:
+            messages.error(request, exc.message)
+            return _redirect_users()
+        messages.success(
+            request,
+            _("The phone of %(name)s is now %(phone)s.")
+            % {"name": user.get_username(), "phone": display_phone(profile.phone)},
+        )
+        return _redirect_users()
+
+    record = PhoneChangeRequest.objects.filter(
+        pk=request.POST.get("request_id"), status=PhoneChangeRequest.PENDING
+    ).first()
+    if record is None:
+        messages.error(request, _("That request is no longer pending."))
+        return _redirect_users()
+    approve = request.POST.get("decision") == "approve"
+    try:
+        mobile.decide_phone_change(
+            record,
+            request.user,
+            approve=approve,
+            note=(request.POST.get("note") or "").strip(),
+        )
+    except mobile.MobileError as exc:
+        messages.error(request, exc.message)
+        return _redirect_users()
+    messages.success(
+        request,
+        _("The phone of %(name)s was changed to %(phone)s.")
+        % {
+            "name": record.user.get_username(),
+            "phone": display_phone(record.requested_phone),
+        }
+        if approve
+        else _("The request of %(name)s was refused.")
+        % {"name": record.user.get_username()},
+    )
+    return _redirect_users()
 
 
 def _selected_groups(request):
@@ -108,6 +169,9 @@ def _selected_groups(request):
 
 def _save_user(request):
     action = request.POST.get("action", "create")
+
+    if action in {"phone", "phone-request"}:
+        return _save_phone(request, action)
     if action == "password":
         user = User.objects.filter(pk=request.POST.get("user_id")).first()
         password = request.POST.get("password") or ""
@@ -222,10 +286,33 @@ def android_page(request):
         version = (request.POST.get("version") or "").strip()[:40]
         download_url = (request.POST.get("download_url") or "").strip()[:500]
         notes = (request.POST.get("notes") or "").strip()
+        raw_code = (request.POST.get("version_code") or "").strip()
+        sha256 = (request.POST.get("sha256") or "").strip().lower()[:64]
+        raw_size = (request.POST.get("size_bytes") or "").strip()
+        mandatory = request.POST.get("mandatory") == "on"
+        latest = AppRelease.latest()
+        version_code = int(raw_code) if raw_code.isdigit() else None
+
         if not version:
             messages.error(request, _("Enter the version."))
         elif AppRelease.objects.filter(version__iexact=version).exists():
             messages.error(request, _("That version is already published."))
+        elif not raw_code.isdigit():
+            # The app compares this number with its own; a release without one
+            # would never be offered as an update.
+            messages.error(
+                request, _("Enter the build number (a whole number that only grows).")
+            )
+        elif latest and latest.version_code and version_code <= latest.version_code:
+            messages.error(
+                request,
+                _(
+                    "The build number must be higher than %(code)s, or the phones on that build would not see the update."
+                )
+                % {"code": latest.version_code},
+            )
+        elif sha256 and (len(sha256) != 64 or any(c not in "0123456789abcdef" for c in sha256)):
+            messages.error(request, _("The checksum must be 64 hexadecimal characters."))
         elif not _is_acceptable_download_url(download_url):
             messages.error(
                 request,
@@ -234,8 +321,12 @@ def android_page(request):
         else:
             release = AppRelease.objects.create(
                 version=version,
+                version_code=version_code,
                 download_url=download_url,
                 notes=notes,
+                sha256=sha256,
+                size_bytes=int(raw_size) if raw_size.isdigit() else None,
+                mandatory=mandatory,
                 is_current=True,
                 created_by=request.user,
             )
@@ -244,7 +335,11 @@ def android_page(request):
                 action=AuditEvent.RELEASE_PUBLISHED,
                 entity="app_release",
                 entity_id=release.pk,
-                description=f"{release.version} · {release.download_url}",
+                description=(
+                    f"{release.version} (build {release.version_code}) · "
+                    f"{release.download_url}"
+                    + (" · إلزامي" if release.mandatory else "")
+                ),
             )
             messages.success(request, _("The build was published."))
         return _redirect_android()

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- The downloaded APK lives in the app's own external files dir; the
+         installer is handed a content:// URI from here. -->
+    <external-files-path name="updates" path="updates/" />
+    <files-path name="internal" path="." />
+</paths>

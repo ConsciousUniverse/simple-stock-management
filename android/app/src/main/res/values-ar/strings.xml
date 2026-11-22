@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">المخزن</string>
+
+    <!-- Sign in -->
+    <string name="sign_in_title">تسجيل الدخول</string>
+    <string name="sign_in_subtitle">رقم هاتفك أو اسم المستخدم، وكلمة المرور التي أعطاها لك المدير.</string>
+    <string name="phone_label">رقم الهاتف أو اسم المستخدم</string>
+    <string name="password_label">كلمة المرور</string>
+    <string name="server_label">الخادم</string>
+    <string name="sign_in">دخول</string>
+    <string name="forgot_phone">رقمي تغيّر</string>
+    <string name="forgot_phone_hint">لا يغيّر رقم الدخول إلا مدير المخزن. اطلب من المدير تغييره من النظام، ثم سجّل الدخول من جديد.</string>
+    <string name="phone_and_password_required">أدخل رقم الهاتف أو اسم المستخدم، وكلمة المرور.</string>
+    <string name="server_address_invalid">عنوان الخادم يجب أن يبدأ بـ http:// أو https://</string>
+    <string name="sign_in_failed">تعذّر تسجيل الدخول.</string>
+
+    <!-- Profile -->
+    <string name="profile_title">حسابي</string>
+    <string name="role">الدور</string>
+    <string name="sign_out">تسجيل الخروج</string>
+    <string name="refresh">تحديث</string>
+    <string name="phone_locked_hint">هذا هو الرقم الذي تدخل به، ولا يمكن تغييره من هنا. يغيّره مدير المخزن من النظام.</string>
+    <string name="no_phone">بلا رقم</string>
+    <string name="request_phone_change">طلب رقم جديد</string>
+    <string name="request_phone_change_explained">يُرسل الطلب إلى مدير المخزن، ولا يتغيّر الرقم إلا بعد موافقته في النظام.</string>
+    <string name="new_phone_hint">رقم الهاتف الجديد</string>
+    <string name="new_phone_reason">السبب (اختياري)</string>
+    <string name="send_request">إرسال الطلب</string>
+    <string name="cancel">إلغاء</string>
+    <string name="request_sent">أُرسل الطلب إلى مدير المخزن.</string>
+    <string name="pending_phone_change">يوجد طلب لتغيير الرقم إلى %1$s في انتظار المدير.</string>
+
+    <!-- Roles -->
+    <string name="role_manager">مدير المخزن</string>
+    <string name="role_shop">مستخدم محل</string>
+    <string name="role_receive">استلام</string>
+    <string name="role_user">مستخدم</string>
+
+    <!-- Updates -->
+    <string name="check_updates">التحقق من التحديثات</string>
+    <string name="update_channel_name">تحديثات التطبيق</string>
+    <string name="update_channel_description">إصدار جديد من تطبيق المخزن</string>
+    <string name="update_available_title">يوجد إصدار جديد</string>
+    <string name="update_available_body">يمكن تثبيت الإصدار %1$s الآن.</string>
+    <string name="update_mandatory_note">هذا التحديث إلزامي: لا يعمل التطبيق إلا بعد تثبيته.</string>
+    <string name="update_now">تحديث الآن</string>
+    <string name="later">لاحقًا</string>
+    <string name="downloading_update">جارٍ تنزيل التحديث…</string>
+    <string name="checksum_mismatch">الملف الذي نُزِّل لا يطابق البصمة المنشورة، فحُذف. أعد المحاولة.</string>
+    <string name="allow_install_explained">اسمح للتطبيق بتثبيت التطبيقات، ثم اضغط «تحديث الآن» مرة أخرى.</string>
+    <string name="already_current">أنت على آخر إصدار (%1$s).</string>
+    <string name="update_check_failed">تعذّر الوصول إلى الخادم للتحقق من التحديثات.</string>
+</resources>

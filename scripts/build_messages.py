@@ -636,6 +636,42 @@ ARABIC.update(
     }
 )
 
+ARABIC.update({
+    'Build number': 'رقم البناء',
+    'Checksum (SHA-256)': 'بصمة الملف (SHA-256)',
+    'Current phone': 'الرقم الحالي',
+    'Enter the build number (a whole number that only grows).': 'أدخل رقم البناء (رقم صحيح يزيد فقط).',
+    'File size (bytes)': 'حجم الملف (بايت)',
+    'Mandatory': 'إلزامي',
+    'Mandatory: the app blocks use until this build is installed.': 'إلزامي: يمنع التطبيق الاستخدام حتى تثبيت هذا البناء.',
+    'No pending request.': 'لا توجد طلبات معلّقة.',
+    'No phone': 'بلا رقم',
+    'Phone change decided': 'تم البتّ في طلب تغيير الرقم',
+    'Phone change requested': 'طلب تغيير رقم الهاتف',
+    'Phone change requests': 'طلبات تغيير رقم الهاتف',
+    'Phone the app signs in with': 'رقم الهاتف الذي يدخل به التطبيق',
+    'Refuse': 'رفض',
+    'Requested phone': 'الرقم المطلوب',
+    'Save the phone': 'حفظ الرقم',
+    'Sign in with your phone number and the password a manager gave you.': 'سجّل الدخول برقم هاتفك وكلمة المرور التي أعطاها لك المدير.',
+    'Sign in with your phone number (or user name) and the password a manager gave you.': 'سجّل الدخول برقم هاتفك (أو اسم المستخدم) وكلمة المرور التي أعطاها لك المدير.',
+    'Sign-in phone': 'رقم الدخول',
+    'Sign-in phone changed': 'تغيّر رقم الدخول',
+    'That request is no longer pending.': 'هذا الطلب لم يعد معلّقًا.',
+    'The app cannot change a phone: it asks, a manager decides.': 'التطبيق لا يغيّر رقم الهاتف: يطلب، والمدير يقرر.',
+    'The app cannot change this number; only a manager can, here.': 'التطبيق لا يغيّر هذا الرقم؛ يغيّره المدير من هنا فقط.',
+    'The app refuses a file whose checksum does not match.': 'يرفض التطبيق أي ملف لا تطابق بصمته.',
+    'The build number must be higher than %(code)s, or the phones on that build would not see the update.': 'رقم البناء يجب أن يكون أعلى من %(code)s، وإلا فلن ترى الهواتف التي على ذلك البناء التحديث.',
+    'The checksum must be 64 hexadecimal characters.': 'البصمة يجب أن تكون 64 حرفًا سادس عشريًا.',
+    'The phone of %(name)s is now %(phone)s.': 'رقم %(name)s أصبح %(phone)s.',
+    'The phone of %(name)s was changed to %(phone)s.': 'تم تغيير رقم %(name)s إلى %(phone)s.',
+    'The phones compare this number with their own: it must grow with every build.': 'تقارن الهواتف هذا الرقم برقمها: يجب أن يزيد مع كل بناء.',
+    'The request of %(name)s was refused.': 'تم رفض طلب %(name)s.',
+    'Update': 'تحديث',
+    'changed from the users page': 'من صفحة المستخدمين',
+})
+
+
 
 def main():
     msgids = collect_msgids()

@@ -18,3 +18,11 @@ spreadsheet_convert.py
 .pytest_cache/
 Pipfile.lock
 .venv/
+
+# Android build output (the app is built from source, never committed)
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+*.iml
