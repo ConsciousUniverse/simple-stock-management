@@ -21,6 +21,7 @@ Three promises the code has to keep:
 
 from __future__ import annotations
 
+import html
 import json
 import logging
 import os
@@ -53,6 +54,21 @@ ERROR_UNREACHABLE = "unreachable"
 ERROR_BAD_RESPONSE = "bad_response"
 
 _BUILD_WORD = re.compile(r"\bbuild\s+(\d+)\b", re.IGNORECASE)
+
+#: The public pages of the releases repository. They are NOT the API, which
+#: matters: the anonymous API limit is 60 requests an hour **per IP**, and
+#: Render's egress is shared — measured in production as ``rate_limited``, i.e.
+#: a published build the phones were never told about.
+FEED_URL = "https://github.com/{repo}/releases.atom"
+ASSETS_URL = "https://github.com/{repo}/releases/expanded_assets/{tag}"
+_ENTRY = re.compile(r"<entry>(.*?)</entry>", re.S)
+_ENTRY_TAG = re.compile(r"/releases/tag/([^\"]+)")
+_ENTRY_TITLE = re.compile(r"<title>([^<]*)</title>")
+_ENTRY_UPDATED = re.compile(r"<updated>([^<]+)</updated>")
+_ENTRY_BODY = re.compile(r'<content type="html">(.*?)</content>', re.S)
+_ASSET_LINK = re.compile(r'href="([^"]*/releases/download/[^"]+\.apk)"')
+_SHA_LINE = re.compile(r"SHA-?256[:\s]*([0-9a-fA-F]{64})")
+_SIZE_LINE = re.compile(r"Size:\s*(\d+)\s*bytes", re.IGNORECASE)
 _TRAILING_NUMBER = re.compile(r"[vV](\d+)$|[-_ ](\d+)$")
 _cache = {"at": 0.0, "value": None, "ok": False, "error": None}
 
@@ -123,6 +139,74 @@ def _fetch_releases():
         message = payload.get("message") if isinstance(payload, dict) else ""
         raise ReleaseFetchError(ERROR_BAD_RESPONSE, str(message)[:120])
     return payload
+
+
+def _get(url, timeout):
+    """One public page, with the failures classified the same way as the API."""
+    request = urllib.request.Request(url, headers={"User-Agent": "ssm-warehouse"})
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            return response.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as exc:
+        kind = ERROR_RATE_LIMITED if exc.code in (403, 429) else ERROR_BAD_RESPONSE
+        raise ReleaseFetchError(kind, f"HTTP {exc.code}") from exc
+    except (urllib.error.URLError, OSError) as exc:
+        raise ReleaseFetchError(ERROR_UNREACHABLE, str(exc)) from exc
+
+
+def _feed_release():
+    """The newest build, read from the repository's public release pages.
+
+    The atom feed carries the tag, the title, the date and the notes; the asset
+    list carries the file. Neither is the API, so a shared egress IP that has
+    spent its hourly API budget can still see a build that was published.
+    """
+    feed = _get(FEED_URL.format(repo=RELEASES_REPO), TIMEOUT_SECONDS * 2)
+    entries = _ENTRY.findall(feed)
+    if not entries:
+        raise ReleaseFetchError(ERROR_BAD_RESPONSE, "no entries in the feed")
+
+    best = None
+    for entry in entries[:5]:
+        tag = _ENTRY_TAG.search(entry)
+        if not tag:
+            continue
+        tag = tag.group(1)
+        found_title = _ENTRY_TITLE.search(entry)
+        title = html.unescape(found_title.group(1)) if found_title else ""
+        updated = _ENTRY_UPDATED.search(entry)
+        body = _ENTRY_BODY.search(entry)
+        body_text = html.unescape(body.group(1)) if body else ""
+
+        page = _get(ASSETS_URL.format(repo=RELEASES_REPO, tag=tag), TIMEOUT_SECONDS * 2)
+        link = _ASSET_LINK.search(page)
+        if link is None:
+            continue
+        url = link.group(1)
+        if url.startswith("/"):
+            url = "https://github.com" + url
+
+        code = parse_version_code(tag) or parse_version_code(title)
+        if code is None:
+            continue
+        sha = _SHA_LINE.search(body_text)
+        size = _SIZE_LINE.search(body_text)
+        candidate = {
+            "versionName": title or tag,
+            "versionCode": code,
+            "downloadUrl": url,
+            "notes": body_text,
+            "mandatory": False,
+            "sha256": (sha.group(1).lower() if sha else ""),
+            "sizeBytes": int(size.group(1)) if size else None,
+            "publishedAt": updated.group(1) if updated else "",
+            "source": "feed",
+        }
+        if best is None or (candidate["versionCode"] or 0) > (best["versionCode"] or 0):
+            best = candidate
+    if best is None:
+        raise ReleaseFetchError(ERROR_BAD_RESPONSE, "no numbered release in the feed")
+    return best
 
 
 def _apk_asset(release):
@@ -238,8 +322,20 @@ def latest_release(force=False):
     try:
         raw = _fetch_releases()
     except ReleaseFetchError as exc:
+        # The API refused (usually the shared hourly limit) — the public pages
+        # still answer, so a build published today is still delivered today.
         logger.warning("App releases could not be read from %s: %s", RELEASES_REPO, exc)
-        return _serve_mirror(now, exc.kind)
+        try:
+            value = _feed_release()
+        except ReleaseFetchError as feed_exc:
+            logger.warning("The release feed failed too: %s", feed_exc)
+            return _serve_mirror(now, exc.kind)
+        logger.info(
+            "App release %s read from the release feed", value.get("versionName")
+        )
+        remember_release(value)
+        _cache.update({"at": now, "value": value, "ok": True, "error": None})
+        return value
     except Exception as exc:  # noqa: BLE001 - a public endpoint must answer
         # A defect in the reader is still not "there is no update": fall back to
         # the mirror and say the read failed, rather than answering 500.

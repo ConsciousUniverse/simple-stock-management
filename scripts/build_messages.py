@@ -23,6 +23,51 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 LOCALE_DIR = BASE_DIR / "locale" / "ar" / "LC_MESSAGES"
 
 ARABIC = {
+    # --- the Android page: the build, and the people who use it -----------
+    "The build on the phones, and the people who sign in from them.":
+        "النسخة اللي على الموبايلات، والناس اللي بتدخل منها.",
+    "App users": "مستخدمو التطبيق",
+    "Automatic": "تلقائي",
+    "Nobody sends a file or a link: an installed app asks this server for the newest build when it opens, and every six hours while it is closed. A new build is offered to the phone, downloaded and installed after one confirmation.":
+        "مش حد بيبعت ملف ولا لينك: التطبيق المثبَّت بيسأل السيرفر عن أحدث نسخة لما يتفتح، وكل ست ساعات وهو مقفول. النسخة الجديدة تظهر على الموبايل، وتنزّل وتتثبّت بعد تأكيد واحد.",
+    "The list of published builds could not be read just now.":
+        "مش قادرين نقرأ قائمة النسخ المنشورة دلوقتي.",
+    "GitHub refused the request for now (its hourly limit). The phones are offered the last build this server has seen; it catches up by itself.":
+        "GitHub رفض الطلب مؤقتًا (حد الساعة). الموبايلات بتعرض لها آخر نسخة شافها السيرفر، ويرجع يتظبط لوحده.",
+    "The server could not reach GitHub. The phones are offered the last build this server has seen.":
+        "السيرفر مش قادر يوصل GitHub. الموبايلات بتعرض لها آخر نسخة شافها السيرفر.",
+    "GitHub answered with something unexpected. The phones are offered the last build this server has seen.":
+        "GitHub رد بحاجة غير متوقعة. الموبايلات بتعرض لها آخر نسخة شافها السيرفر.",
+    "From then on the app updates itself: this link is only needed for a new phone.":
+        "من بعد كده التطبيق بيحدّث نفسه: اللينك ده للموبايل الجديد بس.",
+    "A warehouse manager publishes the build from the advanced options below.":
+        "مدير المخزن بينشر النسخة من الخيارات المتقدمة تحت.",
+    "User name": "اسم الدخول",
+    "Phone": "الهاتف",
+    "Last sign-in": "آخر دخول",
+    "App only": "من التطبيق فقط",
+    "Closed": "مغلق",
+    "No one signs in from the app yet.": "مفيش حد بيدخل من التطبيق لحد دلوقتي.",
+    "Add a user below: the phone number is what they sign in with.":
+        "أضف مستخدم تحت: رقم الهاتف هو اللي بيدخل بيه.",
+    "Add an app user": "إضافة مستخدم للتطبيق",
+    "The phone number is the identity: the app signs in with it (or with the user name), and the web form can be closed to this account.":
+        "رقم الهاتف هو الهوية: التطبيق بيدخل بيه (أو باسم الدخول)، وممكن تقفل دخول الويب للحساب ده.",
+    "Left empty, it is taken from the phone number.": "لو سيبتها فاضية، بتتاخد من رقم الهاتف.",
+    "For example 01012345678": "مثال: 01012345678",
+    "At least %(n)s characters.": "على الأقل %(n)s حروف.",
+    "Create the account": "إنشاء الحساب",
+    "Previous builds": "نسخ سابقة",
+    "Open the link on the phone once and install the file (allow installing apps from this source if the phone asks).":
+        "افتح اللينك على الموبايل مرة واحدة وثبّت الملف (اسمح بتثبيت التطبيقات من المصدر ده لو الموبايل سأل).",
+    "Sign in with the phone number (or the user name) and the password a manager gave you.":
+        "ادخل برقم الهاتف (أو باسم الدخول) والباسورد اللي مدير المخزن أعطاه لك.",
+    "Advanced options": "خيارات متقدمة",
+    "A build published as a release on %(repo)s is the whole step: nothing has to be typed here. Use the form only to pin a build that is not there yet, or to keep the phones on an older one.":
+        "نشر النسخة كـrelease على %(repo)s هو الخطوة كلها: مفيش حاجة تتكتب هنا. استخدم الفورم بس لتثبيت نسخة لسه مش موجودة، أو لتخلي الموبايلات على نسخة أقدم.",
+    "The server address is built into the app; there is no field on the phone to change it.":
+        "عنوان السيرفر مبني جوّه التطبيق، ومفيش خانة على الموبايل تغيّره.",
+    "%(active)s of %(total)s active": "%(active)s نشِط من %(total)s",
     # --- the update arrives from GitHub, not from this page ---------------
     "The update arrives by itself": "التحديث يصل تلقائيًا",
     "Read from GitHub releases": "مقروء من إصدارات GitHub",

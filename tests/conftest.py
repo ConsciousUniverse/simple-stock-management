@@ -32,6 +32,15 @@ def no_live_release_list(monkeypatch):
 
     releases.clear_cache()
     monkeypatch.setattr(releases, "_fetch_releases", lambda: [])
+    # The public pages are the fallback when the API refuses; leaving them live
+    # would let a test that simulates a refusal read the real repository.
+    monkeypatch.setattr(
+        releases,
+        "_get",
+        lambda url, timeout: (_ for _ in ()).throw(
+            releases.ReleaseFetchError(releases.ERROR_UNREACHABLE, "stubbed")
+        ),
+    )
     yield
     releases.clear_cache()
 

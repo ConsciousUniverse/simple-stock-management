@@ -7,8 +7,14 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5);\n"
 
+msgid "%(active)s of %(total)s active"
+msgstr "%(active)s نشِط من %(total)s"
+
 msgid "(.xlsx — the sheet is the source of truth)"
 msgstr "(‎.xlsx — الملف هو مصدر البيانات)"
+
+msgid "A build published as a release on %(repo)s is the whole step: nothing has to be typed here. Use the form only to pin a build that is not there yet, or to keep the phones on an older one."
+msgstr "نشر النسخة كـrelease على %(repo)s هو الخطوة كلها: مفيش حاجة تتكتب هنا. استخدم الفورم بس لتثبيت نسخة لسه مش موجودة، أو لتخلي الموبايلات على نسخة أقدم."
 
 msgid "A document takes at most %(max)s company permits."
 msgstr "المستند يأخذ %(max)s إذن صرف كحد أقصى."
@@ -27,6 +33,9 @@ msgstr "رقم الإذن يُسجَّل مرة واحدة: لا يمكن لنف
 
 msgid "A warehouse manager completes this."
 msgstr "مدير المخزن هو من يكمل هذا."
+
+msgid "A warehouse manager publishes the build from the advanced options below."
+msgstr "مدير المخزن بينشر النسخة من الخيارات المتقدمة تحت."
 
 msgid "A warehouse manager publishes the download address below."
 msgstr "مدير المخزن هو من ينشر عنوان التنزيل أدناه."
@@ -64,6 +73,12 @@ msgstr "أصناف نشطة"
 msgid "Add a new item code to the warehouse catalogue"
 msgstr "إضافة كود صنف جديد إلى دليل المخزن"
 
+msgid "Add a user below: the phone number is what they sign in with."
+msgstr "أضف مستخدم تحت: رقم الهاتف هو اللي بيدخل بيه."
+
+msgid "Add an app user"
+msgstr "إضافة مستخدم للتطبيق"
+
 msgid "Add an item to the warehouse first."
 msgstr "أضف صنفًا إلى المخزن أولًا."
 
@@ -93,6 +108,9 @@ msgstr "عدّل البحث أو أضف كود صنف جديد."
 
 msgid "Administration"
 msgstr "الإدارة"
+
+msgid "Advanced options"
+msgstr "خيارات متقدمة"
 
 msgid "All areas"
 msgstr "كل المجالات"
@@ -130,6 +148,9 @@ msgstr "تطبيق فقط: صفحة الدخول على الويب ترفض هذ
 msgid "App release published"
 msgstr "نشر إصدار للتطبيق"
 
+msgid "App users"
+msgstr "مستخدمو التطبيق"
+
 msgid "Apply"
 msgstr "تطبيق"
 
@@ -145,11 +166,17 @@ msgstr "اعتمده"
 msgid "Area"
 msgstr "المجال"
 
+msgid "At least %(n)s characters."
+msgstr "على الأقل %(n)s حروف."
+
 msgid "Audit log"
 msgstr "سجل التدقيق"
 
 msgid "Authorised users only. Accounts are created by the system administrator."
 msgstr "للمستخدمين المصرح لهم فقط. الحسابات تُنشأ بواسطة مسؤول النظام."
+
+msgid "Automatic"
+msgstr "تلقائي"
 
 msgid "Awaiting dispatch"
 msgstr "في انتظار الصرف"
@@ -247,6 +274,9 @@ msgstr "فتح القفل"
 msgid "Close"
 msgstr "إغلاق"
 
+msgid "Closed"
+msgstr "مغلق"
+
 msgid "Company item code"
 msgstr "كود الصنف في نظام الشركة"
 
@@ -303,6 +333,9 @@ msgstr "تعذّر تحديث الصنف."
 
 msgid "Create item"
 msgstr "إنشاء صنف"
+
+msgid "Create the account"
+msgstr "إنشاء الحساب"
 
 msgid "Create the app account"
 msgstr "إنشاء حساب التطبيق"
@@ -517,14 +550,26 @@ msgstr "تصفية"
 msgid "First name"
 msgstr "الاسم الأول"
 
+msgid "For example 01012345678"
+msgstr "مثال: 01012345678"
+
 msgid "From"
 msgstr "من"
+
+msgid "From then on the app updates itself: this link is only needed for a new phone."
+msgstr "من بعد كده التطبيق بيحدّث نفسه: اللينك ده للموبايل الجديد بس."
 
 msgid "GitHub answered with something unexpected. The app is offered the last build this server has seen."
 msgstr "GitHub ردّ بردّ غير متوقع. التطبيق بيتعرض عليه آخر بناء شافه السيرفر."
 
+msgid "GitHub answered with something unexpected. The phones are offered the last build this server has seen."
+msgstr "GitHub رد بحاجة غير متوقعة. الموبايلات بتعرض لها آخر نسخة شافها السيرفر."
+
 msgid "GitHub refused the request for now (its hourly limit). The app is offered the last build this server has seen; nothing is lost and it will catch up by itself."
 msgstr "GitHub رفض الطلب مؤقتًا (حد الاستخدام في الساعة). التطبيق بيتعرض عليه آخر بناء شافه السيرفر؛ مفيش حاجة ضاعت والسيرفر هيلحق نفسه لوحده."
+
+msgid "GitHub refused the request for now (its hourly limit). The phones are offered the last build this server has seen; it catches up by itself."
+msgstr "GitHub رفض الطلب مؤقتًا (حد الساعة). الموبايلات بتعرض لها آخر نسخة شافها السيرفر، ويرجع يتظبط لوحده."
 
 msgid "Hello"
 msgstr "أهلًا"
@@ -661,6 +706,9 @@ msgstr "اترك السطر فارغًا لتجاهله."
 msgid "Leave empty if the app is the only record"
 msgstr "اتركه فارغًا إذا كان التطبيق هو السجل الوحيد"
 
+msgid "Left empty, it is taken from the phone number."
+msgstr "لو سيبتها فاضية، بتتاخد من رقم الهاتف."
+
 msgid "License GPLv3"
 msgstr "رخصة GPLv3"
 
@@ -787,6 +835,9 @@ msgstr "لم يُعلَّم أي بند على هذا الإذن بعد."
 msgid "No items match this search."
 msgstr "لا توجد أصناف مطابقة لهذا البحث."
 
+msgid "No one signs in from the app yet."
+msgstr "مفيش حد بيدخل من التطبيق لحد دلوقتي."
+
 msgid "No pending request."
 msgstr "لا توجد طلبات معلّقة."
 
@@ -816,6 +867,9 @@ msgstr "بلا رقم إذن"
 
 msgid "No warehouse items found"
 msgstr "لا توجد أصناف بالمخزن"
+
+msgid "Nobody sends a file or a link: an installed app asks this server for the newest build when it opens, and every six hours while it is closed. A new build is offered to the phone, downloaded and installed after one confirmation."
+msgstr "مش حد بيبعت ملف ولا لينك: التطبيق المثبَّت بيسأل السيرفر عن أحدث نسخة لما يتفتح، وكل ست ساعات وهو مقفول. النسخة الجديدة تظهر على الموبايل، وتنزّل وتتثبّت بعد تأكيد واحد."
 
 msgid "Not needed while the list above is readable. Use it to pin a build that is not on GitHub yet, or to keep the phones on an older one."
 msgstr "مش مطلوب طالما القائمة فوق مقروءة. استخدمه لتثبيت بناء لسه مش على GitHub، أو لتثبيت الموبايلات على بناء أقدم."
@@ -873,6 +927,9 @@ msgstr "فتح"
 
 msgid "Open the download link on the phone and install the file (allow installing apps from this source if the phone asks)."
 msgstr "افتح رابط التنزيل على الهاتف ونصّب الملف (واسمح بتثبيت التطبيقات من هذا المصدر إذا طلب الهاتف)."
+
+msgid "Open the link on the phone once and install the file (allow installing apps from this source if the phone asks)."
+msgstr "افتح اللينك على الموبايل مرة واحدة وثبّت الملف (اسمح بتثبيت التطبيقات من المصدر ده لو الموبايل سأل)."
 
 msgid "Operational"
 msgstr "يعمل"
@@ -934,6 +991,9 @@ msgstr "الأذون والبنود التي يغطيها كل إذن"
 msgid "Permits total"
 msgstr "إجمالي الأذون"
 
+msgid "Phone"
+msgstr "الهاتف"
+
 msgid "Phone change decided"
 msgstr "تم البتّ في طلب تغيير الرقم"
 
@@ -954,6 +1014,9 @@ msgstr "اختر ملفًا للرفع."
 
 msgid "Previous"
 msgstr "السابق"
+
+msgid "Previous builds"
+msgstr "نسخ سابقة"
 
 msgid "Print"
 msgstr "طباعة"
@@ -1201,6 +1264,9 @@ msgstr "يُعرض حتى 300 صنف"
 msgid "Sign in"
 msgstr "تسجيل الدخول"
 
+msgid "Sign in with the phone number (or the user name) and the password a manager gave you."
+msgstr "ادخل برقم الهاتف (أو باسم الدخول) والباسورد اللي مدير المخزن أعطاه لك."
+
 msgid "Sign in with the same user name and password you use here."
 msgstr "سجّل الدخول بنفس اسم المستخدم وكلمة السر التي تستخدمها هنا."
 
@@ -1390,6 +1456,9 @@ msgstr "يستخدم التطبيق هذا العنوان للوصول إلى ب
 msgid "The build number must be higher than %(code)s, or the phones on that build would not see the update."
 msgstr "رقم البناء يجب أن يكون أعلى من %(code)s، وإلا فلن ترى الهواتف التي على ذلك البناء التحديث."
 
+msgid "The build on the phones, and the people who sign in from them."
+msgstr "النسخة اللي على الموبايلات، والناس اللي بتدخل منها."
+
 msgid "The build to install on the phone, and how it connects to this server."
 msgstr "الإصدار الذي يُنصَّب على الهاتف، وكيف يتصل بهذا الخادم."
 
@@ -1420,6 +1489,9 @@ msgstr "سيتم حذف الصنف وسجل مخزونه."
 msgid "The limit is {{ failure_limit }} failed attempts. Access is restored automatically once the cool-off period ends."
 msgstr "الحد هو {{ failure_limit }} محاولة فاشلة. يُستعاد الوصول تلقائيًا بعد انتهاء فترة الانتظار."
 
+msgid "The list of published builds could not be read just now."
+msgstr "مش قادرين نقرأ قائمة النسخ المنشورة دلوقتي."
+
 msgid "The password could not be changed."
 msgstr "لم يتم تغيير كلمة المرور."
 
@@ -1434,6 +1506,9 @@ msgstr "مبلغ الإذن لا يكون سالبًا."
 
 msgid "The permit number is too long."
 msgstr "رقم الإذن أطول من المسموح."
+
+msgid "The phone number is the identity: the app signs in with it (or with the user name), and the web form can be closed to this account."
+msgstr "رقم الهاتف هو الهوية: التطبيق بيدخل بيه (أو باسم الدخول)، وممكن تقفل دخول الويب للحساب ده."
 
 msgid "The phone of %(name)s is now %(phone)s."
 msgstr "رقم %(name)s أصبح %(phone)s."
@@ -1459,8 +1534,14 @@ msgstr "سيتم سحب الطلب؛ لن تُنقل أي كمية."
 msgid "The request of %(name)s was refused."
 msgstr "تم رفض طلب %(name)s."
 
+msgid "The server address is built into the app; there is no field on the phone to change it."
+msgstr "عنوان السيرفر مبني جوّه التطبيق، ومفيش خانة على الموبايل تغيّره."
+
 msgid "The server could not reach GitHub at all. The app is offered the last build this server has seen."
 msgstr "السيرفر مش قادر يوصل GitHub خالص. التطبيق بيتعرض عليه آخر بناء شافه السيرفر."
+
+msgid "The server could not reach GitHub. The phones are offered the last build this server has seen."
+msgstr "السيرفر مش قادر يوصل GitHub. الموبايلات بتعرض لها آخر نسخة شافها السيرفر."
 
 msgid "The server reads the newest build from %(repo)s every ten minutes. Publishing a release there is the whole step: nothing has to be typed on this page, and every phone is offered the new build on its next start."
 msgstr "السيرفر يقرأ آخر بناء من %(repo)s كل عشر دقائق. نشر إصدار جديد هناك هو كل المطلوب: مفيش حاجة تتكتب في الصفحة دي، وكل موبايل بيتعرض عليه البناء الجديد عند أول تشغيل."

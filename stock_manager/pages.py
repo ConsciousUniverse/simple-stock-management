@@ -50,9 +50,18 @@ def _home():
     return redirect("/")
 
 
-def _redirect_users():
+def _redirect_users(request=None):
+    """Back to the account list, or to the page the form was opened from.
+
+    The Android page carries the same account actions, and a manager working
+    there must not be bounced to a different screen after saving. Only a local
+    path is honoured, so a crafted form cannot walk the manager off the site.
+    """
     from django.shortcuts import redirect
 
+    target = (request.POST.get("next") if request is not None else "") or ""
+    if target.startswith("/") and not target.startswith("//"):
+        return redirect(target)
     return redirect("/users/")
 
 
@@ -121,7 +130,7 @@ def _save_phone(request, action):
         user = User.objects.filter(pk=request.POST.get("user_id")).first()
         if user is None:
             messages.error(request, _("That user does not exist."))
-            return _redirect_users()
+            return _redirect_users(request)
         try:
             profile = mobile.set_phone(
                 user,
@@ -131,20 +140,20 @@ def _save_phone(request, action):
             )
         except mobile.MobileError as exc:
             messages.error(request, exc.message)
-            return _redirect_users()
+            return _redirect_users(request)
         messages.success(
             request,
             _("The phone of %(name)s is now %(phone)s.")
             % {"name": user.get_username(), "phone": display_phone(profile.phone)},
         )
-        return _redirect_users()
+        return _redirect_users(request)
 
     record = PhoneChangeRequest.objects.filter(
         pk=request.POST.get("request_id"), status=PhoneChangeRequest.PENDING
     ).first()
     if record is None:
         messages.error(request, _("That request is no longer pending."))
-        return _redirect_users()
+        return _redirect_users(request)
     approve = request.POST.get("decision") == "approve"
     try:
         mobile.decide_phone_change(
@@ -155,7 +164,7 @@ def _save_phone(request, action):
         )
     except mobile.MobileError as exc:
         messages.error(request, exc.message)
-        return _redirect_users()
+        return _redirect_users(request)
     messages.success(
         request,
         _("The phone of %(name)s was changed to %(phone)s.")
@@ -167,7 +176,7 @@ def _save_phone(request, action):
         else _("The request of %(name)s was refused.")
         % {"name": record.user.get_username()},
     )
-    return _redirect_users()
+    return _redirect_users(request)
 
 
 def _create_app_user(request):
@@ -187,13 +196,13 @@ def _create_app_user(request):
         )
     except mobile.MobileError as exc:
         messages.error(request, exc.message)
-        return _redirect_users()
+        return _redirect_users(request)
     messages.success(
         request,
         _("The app account %(name)s was created. They sign in with the phone number.")
         % {"name": user.get_username()},
     )
-    return _redirect_users()
+    return _redirect_users(request)
 
 
 def _unlock_user(request):
@@ -202,7 +211,7 @@ def _unlock_user(request):
     user = User.objects.filter(pk=raw_id).first() if raw_id.isdigit() else None
     if user is None:
         messages.error(request, _("That user does not exist."))
-        return _redirect_users()
+        return _redirect_users(request)
     removed = lockout.clear(user.get_username())
     audit.record(
         user=request.user,
@@ -216,7 +225,7 @@ def _unlock_user(request):
         _("The sign-in lockout of %(name)s was cleared. They can sign in now.")
         % {"name": user.get_username()},
     )
-    return _redirect_users()
+    return _redirect_users(request)
 
 
 def _toggle_active(request):
@@ -225,15 +234,15 @@ def _toggle_active(request):
     user = User.objects.filter(pk=raw_id).first() if raw_id.isdigit() else None
     if user is None:
         messages.error(request, _("That user does not exist."))
-        return _redirect_users()
+        return _redirect_users(request)
     if user.pk == request.user.pk:
         messages.error(request, _("You cannot close your own account."))
-        return _redirect_users()
+        return _redirect_users(request)
     # Closing the last manager would leave nobody able to reopen anyone, and
     # there is no shell on the deployed host to undo it.
     if user.is_active and _is_last_manager(user):
         messages.error(request, _("This is the last warehouse manager."))
-        return _redirect_users()
+        return _redirect_users(request)
     user.is_active = not user.is_active
     user.save(update_fields=["is_active"])
     audit.record(
@@ -255,7 +264,7 @@ def _toggle_active(request):
         )
         % {"name": user.get_username()},
     )
-    return _redirect_users()
+    return _redirect_users(request)
 
 
 def _is_last_manager(user):
@@ -307,13 +316,13 @@ def _save_user(request):
                 description=f"{user.get_username()} (by {request.user.get_username()})",
             )
             messages.success(request, _("The password was changed."))
-        return _redirect_users()
+        return _redirect_users(request)
 
     if action == "update":
         user = User.objects.filter(pk=request.POST.get("user_id")).first()
         if user is None:
             messages.error(request, _("That user does not exist."))
-            return _redirect_users()
+            return _redirect_users(request)
         was_active = user.is_active
         user.first_name = (request.POST.get("first_name") or "").strip()[:150]
         user.last_name = (request.POST.get("last_name") or "").strip()[:150]
@@ -343,7 +352,7 @@ def _save_user(request):
             + (", ".join(g.name for g in user.groups.all()) or "—"),
         )
         messages.success(request, _("The user was saved."))
-        return _redirect_users()
+        return _redirect_users(request)
 
     # create
     username = (request.POST.get("username") or "").strip()
@@ -376,7 +385,7 @@ def _save_user(request):
             + (", ".join(g.name for g in user.groups.all()) or "—"),
         )
         messages.success(request, _("The user was created."))
-    return _redirect_users()
+    return _redirect_users(request)
 
 
 def _is_acceptable_download_url(value: str) -> bool:
@@ -469,14 +478,37 @@ def android_page(request):
     from stock_manager import releases
 
     published = releases.latest_release()
+    # The people who sign in from the phone: an account is usable there once it
+    # has a phone number, so that is the list this page is responsible for.
+    app_users = list(
+        User.objects.filter(mobile_profile__isnull=False)
+        .select_related("mobile_profile")
+        .prefetch_related("groups")
+        .order_by("-is_active", "username")
+    )
+    lock_states = lockout.states([account.get_username() for account in app_users])
+    for account in app_users:
+        account.role_names = [role_label(group.name) for group in account.groups.all()]
+        account.is_app_only = bool(
+            getattr(account, "mobile_profile", None)
+            and account.mobile_profile.mobile_only
+        )
+        account.lock = lock_states[account.get_username()]
+        account.phone_display = display_phone(account.mobile_profile.phone)
     return render(
         request,
         "pages/android.html",
         {
+            "app_users": app_users,
+            "app_user_count": len(app_users),
+            "app_user_active": sum(1 for account in app_users if account.is_active),
+            "min_password_length": MIN_PASSWORD_LENGTH,
             # What the phones are offered, and where it came from: the page must
             # not show a build the app is not told about, or the reverse.
             "latest": releases.as_row(releases.select_release()),
             "auto": releases.as_row(published),
+            # One date for the tile: whichever build the phones are offered.
+            "published_on": _published_on(releases.as_row(published) or releases.as_row(releases.select_release())),
             "auto_failed": published is None,
             "auto_error": releases.last_error(),
             "release_repo": releases.RELEASES_REPO,
@@ -485,6 +517,12 @@ def android_page(request):
             "api_root": request.build_absolute_uri("/") + "api/",
         },
     )
+
+
+def _published_on(row):
+    """The date part of a release row, or None when there is no build."""
+    stamp = getattr(row, "published_at", None) or ""
+    return stamp[:10] if stamp else None
 
 
 def _redirect_android():

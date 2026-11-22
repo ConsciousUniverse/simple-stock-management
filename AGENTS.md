@@ -373,12 +373,30 @@ the phone, and no way to type a server address into the app.
 
 ### The app: logo, and an address that cannot be typed
 
-- Icons are generated from `stock_manager/static/img/logo-mark.png` (the raven —
-  **not** `company-logo.png`, which is the Orascom wordmark). Legacy
-  `mipmap-*/ic_launcher.png` are white rounded tiles with the mark;
-  `mipmap-anydpi-v26/ic_launcher.xml` is the adaptive icon (white background,
-  `drawable-*/ic_launcher_foreground.png`, plus `monochrome`); `drawable-*/app_logo.png`
-  is the mark on the sign-in screen.
+- **The app wears the company's mark, taken from the web app's own logo**
+  (`stock_manager/static/img/company-logo.png`), not from `logo-mark.png` — that
+  file was the old raven, and the operator asked for the logo the web shows. The
+  emblem is the right-hand glyph of the wordmark (bbox `(600,6)-(783,122)`), and
+  `scripts/make_app_icons.py` draws it in its **own colours on a white tile**:
+  white-on-blue was tried first and the grey figure turned to mush, so the mark
+  keeps its ink and only the tile is white. Legacy `mipmap-*/ic_launcher.png` are
+  rounded white tiles; `mipmap-anydpi-v26/ic_launcher.xml` is the adaptive icon
+  (white background, `drawable-*/ic_launcher_foreground.png`, plus `monochrome`);
+  `drawable-*/app_logo.png` is the **full wordmark** (4.6:1) on the sign-in
+  screen, shown with `adjustViewBounds` rather than a fixed square — a square box
+  would either crop the name or shrink it to nothing.
+- `tests/test_app_brand_assets.py` reads the **pixels**: each launcher icon must
+  carry the brand blue (`#003D7D`, measured 11.3% of the tile — the raven has
+  0.0%), the adaptive foreground must have nothing painted on its outer ring,
+  `app_logo.png` must be wider than 4:1, and the layout must not pin it to `96dp`.
+  A build succeeds with any image in `mipmap-*/`, so nothing else notices a swap.
+- `scripts/publish_app.py` is the whole release: bump `versionCode` in
+  `android/app/build.gradle.kts`, then
+  `GITHUB_TOKEN=… python scripts/publish_app.py --notes "…"`. It builds, hashes,
+  creates release `v{versionCode}` on `APP_RELEASES_REPO` and uploads
+  `warehouse-{code}.apk`. It **refuses a number that is already published** —
+  the phones compare numbers, so republishing the same one would be a release
+  nobody receives.
 - **`Session.baseUrl` is `val = BuildConfig.DEFAULT_BASE_URL`** — no setter, no
   stored copy, and `forgetStoredServer()` deletes the key an older build saved. A
   field that could repoint the app was a way to send a warehouse password to
@@ -386,10 +404,12 @@ the phone, and no way to type a server address into the app.
   person holding it.
 - `tests/test_android_sources.py` guards the two promises as text (no
   `serverInput`/`textUri`, the `val baseUrl` line, the icon files, `versionCode >= 2`).
-- **Build 2 (1.1.0) is published** to `melsofany/warehouse-app-releases` as
-  release `v2` / `warehouse-2.apk`, sha256
-  `d2e5e1c317a699b12a534bc00d78af0f674759c6e7e6a0e728e65add07a1c1d5`, 5,726,658
-  bytes — verified by downloading the asset back and hashing it.
+- **Build 3 (1.2.0) is published** to `melsofany/warehouse-app-releases` as
+  release `v3` / `warehouse-3.apk`, sha256
+  `334dfbe2f90eea480ec66ae57496aaaa1badee7cccd800bf209c02e9e0c1161e`, 5,801,166
+  bytes; build 2 (1.1.0) stays as `v2` for phones that have not caught up. The
+  icon inside the built APK was measured, not assumed: the packaged launcher PNG
+  is 9.7% brand blue where the previous build was 0%.
 
 ## Two doors, and a refusal that says which one
 
@@ -487,3 +507,55 @@ new one sat published and unreachable — and nothing anywhere said so.
   update arrives by itself, and the manual form is labelled a fallback. A page
   that shows one build while the app is told about another is the same defect
   class as a log naming an engine that is not running.
+
+## The Android page is the app's control room
+
+The operator asked for one screen that answers both questions a warehouse
+manager has about the phones — *which build is on them?* and *who signs in from
+them?* — and asked for the noise to go. The page had been a build table plus a
+manual publish form, with the people who actually use the app nowhere on it.
+
+- **The list is "accounts with a phone", and that is the honest definition**: a
+  `MobileProfile` is what makes an account usable from the app, so
+  `User.objects.filter(mobile_profile__isnull=False)` is the roster. An account
+  with no phone cannot open the app and is therefore not listed — showing every
+  web user would fill the table with people who can never appear on it.
+- **The actions are the users page's own handlers, posted with `next`**: the
+  create / close / unlock forms post to `/users/` and `_redirect_users(request)`
+  honours a **local** `next` path (`startswith("/")` and not `//`). Re-implementing
+  the account rules here would let one door accept a password the other refuses.
+  A crafted `next` that leaves the site falls back to `/users/`.
+- **The manual publish form is behind `<details>` and managers only.** It is a
+  fallback for pinning a build that is not a release yet; the normal path is a
+  GitHub release, and the page says so in one sentence instead of asking the
+  reader to understand two mechanisms.
+- **The server address is shown to everyone** (a support fact: "read me the
+  address in the app"), while the build form is not.
+- `tests/test_android_page_users.py` guards the roster, the counts, the lock
+  badge (written as axes writes it), the three actions returning to `/android/`,
+  the `next` guard, and that a shop user sees the table with **no** forms.
+
+### The API rate limit hid a published build — the public pages do not
+
+Measured in production minutes after publishing build 3: `/api/mobile/version/`
+answered `releaseSource: "cache"`, `releaseError: "rate_limited"` and offered
+**build 2**. GitHub's anonymous API allows 60 requests an hour **per IP**, and
+Render's egress is shared, so the server could not read the list at all — the
+release existed and no phone was told about it. That is the operator's exact
+complaint ("the update must arrive by itself") failing silently.
+
+- `_feed_release()` reads the **atom feed** (`releases.atom`) plus the asset
+  list (`releases/expanded_assets/<tag>`): neither is the API, and the feed body
+  carries the notes — which is where `scripts/publish_app.py` writes `SHA-256:`
+  and `Size:`, so the checksum survives the fallback.
+- The API still wins whenever it answers (`test_a_working_api_is_never_second_guessed`);
+  the feed is a fallback, and its result is mirrored into `app_releases` like any
+  other successful read. Only when **both** fail does the mirror answer, and the
+  page keeps saying so.
+- Verified live against the real repository: `_feed_release()` returned
+  `Warehouse 1.2.0 (build 3)`, code 3, the `v3/warehouse-3.apk` URL,
+  `334dfbe2…` and `5801166` bytes. Two of `tests/test_release_feed.py`'s cases
+  fail when the fallback is removed (checked by reverting it).
+- The durable fix is still an authenticated read (`GITHUB_RELEASES_TOKEN` raises
+  the limit to 5000/hour); the feed fallback is what keeps the promise when that
+  variable is missing.

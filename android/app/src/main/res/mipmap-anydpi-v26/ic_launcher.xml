@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The company mark on a white tile: the bird is dark, so a coloured
-     background would swallow it, and the launcher may crop the outer ring. -->
+<!-- The company mark on a white tile. The mark is the Orascom builder emblem
+     that the web app's wordmark carries, in its own blue and grey: the two
+     tones are what keeps the figure readable once the launcher crops the ring. -->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
     <background android:drawable="@drawable/ic_launcher_background" />
     <foreground android:drawable="@drawable/ic_launcher_foreground" />

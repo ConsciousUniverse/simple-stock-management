@@ -4,7 +4,7 @@
 {% block title %}{% trans "Android app" %}{% endblock %}
 {% block crumb %}{% trans "Android app" %}{% endblock %}
 {% block heading %}{% trans "Android app" %}{% endblock %}
-{% block subheading %}{% trans "The build to install on the phone, and how it connects to this server." %}{% endblock %}
+{% block subheading %}{% trans "The build on the phones, and the people who sign in from them." %}{% endblock %}
 
 {% block content %}
 <div class="sap-tiles">
@@ -16,58 +16,41 @@
         <span class="sap-tile__label">{% trans "Build number" %}</span>
         <span class="sap-tile__value" id="currentVersionCode">{{ latest.version_code|default:"—" }}</span>
     </div>
-    {% if latest.mandatory %}
-    <div class="sap-tile sap-tile--warning">
-        <span class="sap-tile__label">{% trans "Update" %}</span>
-        <span class="sap-tile__value">{% trans "Mandatory" %}</span>
-    </div>
-    {% endif %}
     <div class="sap-tile sap-tile--neutral">
-        <span class="sap-tile__label">{% trans "Published builds" %}</span>
-        <span class="sap-tile__value">{{ build_count }}</span>
+        <span class="sap-tile__label">{% trans "Published" %}</span>
+        <span class="sap-tile__value">{{ published_on|default:"—" }}</span>
+    </div>
+    <div class="sap-tile sap-tile--neutral">
+        <span class="sap-tile__label">{% trans "App users" %}</span>
+        <span class="sap-tile__value" id="appUserCount">{{ app_user_active }} / {{ app_user_count }}</span>
     </div>
 </div>
 
 <div class="sap-card">
     <div class="sap-card__header">
         <h2 class="sap-card__title">{% trans "The update arrives by itself" %}</h2>
-        {% if auto %}
+        {% if latest %}
         <div class="sap-card__header-actions">
-            <span class="sap-pill sap-pill--positive">{% trans "Read from GitHub releases" %}</span>
+            <span class="sap-pill sap-pill--positive" id="autoUpdateState">{% trans "Automatic" %}</span>
         </div>
         {% endif %}
     </div>
     <div class="sap-card__body">
-        {% if auto %}
-        <p class="sap-muted" id="autoReleaseSource">
-            {% blocktrans with repo=release_repo %}The server reads the newest build from {{ repo }} every ten minutes. Publishing a release there is the whole step: nothing has to be typed on this page, and every phone is offered the new build on its next start.{% endblocktrans %}
+        <p class="sap-muted" id="autoUpdateRule">
+            {% blocktrans %}Nobody sends a file or a link: an installed app asks this server for the newest build when it opens, and every six hours while it is closed. A new build is offered to the phone, downloaded and installed after one confirmation.{% endblocktrans %}
         </p>
-        <dl class="sap-deflist">
-            <dt>{% trans "Version" %}</dt>
-            <dd id="autoVersion">{{ auto.version }}</dd>
-            <dt>{% trans "Build number" %}</dt>
-            <dd id="autoVersionCode" dir="ltr">{{ auto.version_code|default:"—" }}</dd>
-            <dt>{% trans "Published" %}</dt>
-            <dd id="autoPublishedAt">{{ auto.published_at|default:"—" }}</dd>
-            <dt>{% trans "Size" %}</dt>
-            <dd id="autoSize" dir="ltr">{% if auto.size_bytes %}{{ auto.size_bytes }}{% else %}—{% endif %}</dd>
-            <dt>{% trans "Checksum (SHA-256)" %}</dt>
-            <dd id="autoSha" dir="ltr" style="word-break: break-all">{{ auto.sha256|default:"—" }}</dd>
-            <dt>{% trans "Download" %}</dt>
-            <dd><a href="{{ auto.download_url }}" target="_blank" rel="noopener">{{ auto.download_url }}</a></dd>
-        </dl>
-        {% else %}
+        {% if auto_failed %}
         <div class="sap-msgstrip sap-msgstrip--warning" role="status" id="autoReleaseUnavailable">
             <svg class="sap-icon" aria-hidden="true"><use href="#i-alert"></use></svg>
             <div>
-                <span class="sap-msgstrip__title">{% trans "The release list could not be read just now." %}</span>
+                <span class="sap-msgstrip__title">{% trans "The list of published builds could not be read just now." %}</span>
                 <span>
                     {% if auto_error == "rate_limited" %}
-                    {% trans "GitHub refused the request for now (its hourly limit). The app is offered the last build this server has seen; nothing is lost and it will catch up by itself." %}
+                    {% trans "GitHub refused the request for now (its hourly limit). The phones are offered the last build this server has seen; it catches up by itself." %}
                     {% elif auto_error == "unreachable" %}
-                    {% trans "The server could not reach GitHub at all. The app is offered the last build this server has seen." %}
+                    {% trans "The server could not reach GitHub. The phones are offered the last build this server has seen." %}
                     {% else %}
-                    {% trans "GitHub answered with something unexpected. The app is offered the last build this server has seen." %}
+                    {% trans "GitHub answered with something unexpected. The phones are offered the last build this server has seen." %}
                     {% endif %}
                 </span>
             </div>
@@ -91,40 +74,156 @@
     </div>
     <div class="sap-card__body">
         {% if latest %}
-        <p class="sap-muted" id="releaseNotes">
-            {% if latest.notes %}{{ latest.notes|linebreaksbr }}{% else %}{% trans "No release notes." %}{% endif %}
-        </p>
         <ol class="sap-steps">
-            <li>{% trans "Open the download link on the phone and install the file (allow installing apps from this source if the phone asks)." %}</li>
-            <li>{% trans "Sign in with your phone number (or user name) and the password a manager gave you." %}</li>
-            <li>{% trans "Nothing to configure: the app is already tied to this server, and the phone cannot change that address." %}</li>
+            <li>{% trans "Open the link on the phone once and install the file (allow installing apps from this source if the phone asks)." %}</li>
+            <li>{% trans "Sign in with the phone number (or the user name) and the password a manager gave you." %}</li>
+            <li>{% trans "From then on the app updates itself: this link is only needed for a new phone." %}</li>
         </ol>
         {% else %}
         <div class="sap-empty">
             <span class="sap-empty__title">{% trans "No build has been published yet." %}</span>
-            <span class="sap-empty__hint">{% trans "A warehouse manager publishes the download address below." %}</span>
+            <span class="sap-empty__hint">{% trans "A warehouse manager publishes the build from the advanced options below." %}</span>
         </div>
         {% endif %}
+        <p class="sap-muted">
+            {% trans "The server address is built into the app; there is no field on the phone to change it." %}
+            <code dir="ltr" id="apiRoot">{{ api_root }}</code>
+        </p>
     </div>
 </div>
 
 <div class="sap-card">
     <div class="sap-card__header">
-        <h2 class="sap-card__title">{% trans "Server address (fixed in the app)" %}</h2>
+        <h2 class="sap-card__title">{% trans "App users" %}</h2>
+        <div class="sap-card__header-actions">
+            <span class="sap-pill sap-pill--neutral">
+                {% blocktrans with active=app_user_active total=app_user_count %}{{ active }} of {{ total }} active{% endblocktrans %}
+            </span>
+        </div>
     </div>
+    <div class="sap-card__body sap-card__body--flush">
+        <div class="sap-tablewrap">
+            <table class="sap-table" id="appUsersTable">
+                <thead>
+                    <tr>
+                        <th>{% trans "Name" %}</th>
+                        <th>{% trans "User name" %}</th>
+                        <th>{% trans "Phone" %}</th>
+                        <th>{% trans "Role" %}</th>
+                        <th>{% trans "Last sign-in" %}</th>
+                        <th>{% trans "Status" %}</th>
+                        <th class="sap-actions">{% trans "Actions" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in app_users %}
+                    <tr>
+                        <td>{{ row.get_full_name|default:row.get_username }}</td>
+                        <td dir="ltr">{{ row.get_username }}</td>
+                        <td dir="ltr">{{ row.phone_display|default:"—" }}</td>
+                        <td>{{ row.role_names|join:", "|default:"—" }}</td>
+                        <td>{{ row.last_login|date:"Y-m-d H:i"|default:"—" }}</td>
+                        <td>
+                            {% if not row.is_active %}
+                            <span class="sap-pill sap-pill--critical">{% trans "Closed" %}</span>
+                            {% else %}
+                            <span class="sap-pill sap-pill--positive">{% trans "Active" %}</span>
+                            {% endif %}
+                            {% if row.lock.locked %}
+                            <span class="sap-pill sap-pill--critical"
+                                title="{% blocktrans with failures=row.lock.failures limit=row.lock.limit %}Locked after {{ failures }} failed attempts (limit {{ limit }}){% endblocktrans %}">
+                                {% trans "Locked" %}
+                            </span>
+                            {% endif %}
+                            {% if row.is_app_only %}
+                            <span class="sap-pill sap-pill--neutral">{% trans "App only" %}</span>
+                            {% endif %}
+                        </td>
+                        <td class="sap-actions">
+                            {% if is_manager %}
+                            <a class="sap-btn sap-btn--ghost sap-btn--sm"
+                                href="/users/?edit={{ row.pk }}">{% trans "Edit" %}</a>
+                            {% if row.lock.locked %}
+                            <form method="post" action="/users/" class="sap-inline-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="unlock">
+                                <input type="hidden" name="user_id" value="{{ row.pk }}">
+                                <input type="hidden" name="next" value="/android/">
+                                <button class="sap-btn sap-btn--emphasized sap-btn--sm"
+                                    type="submit">{% trans "Clear the lockout" %}</button>
+                            </form>
+                            {% endif %}
+                            {% if row.pk != request.user.pk %}
+                            <form method="post" action="/users/" class="sap-inline-form">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="toggle-active">
+                                <input type="hidden" name="user_id" value="{{ row.pk }}">
+                                <input type="hidden" name="next" value="/android/">
+                                <button class="sap-btn sap-btn--ghost sap-btn--sm" type="submit">
+                                    {% if row.is_active %}{% trans "Close" %}{% else %}{% trans "Reopen" %}{% endif %}
+                                </button>
+                            </form>
+                            {% endif %}
+                            {% else %}
+                            <span class="sap-muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="sap-empty">
+                            <span class="sap-empty__title">{% trans "No one signs in from the app yet." %}</span>
+                            <span class="sap-empty__hint">{% trans "Add a user below: the phone number is what they sign in with." %}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if is_manager %}
     <div class="sap-card__body">
-        <label class="sap-field">
-            <span class="sap-label">{% trans "API address" %}</span>
-            <input class="sap-input" type="text" value="{{ api_root }}" readonly id="apiRoot"
-                onclick="this.select()">
-            <span class="sap-field__hint">{% trans "Built into the app for support only: there is no field on the phone to change it, so a password cannot be sent to another server." %}</span>
-        </label>
+        <h3 class="sap-card__title">{% trans "Add an app user" %}</h3>
+        <p class="sap-muted">
+            {% trans "The phone number is the identity: the app signs in with it (or with the user name), and the web form can be closed to this account." %}
+        </p>
+        <form method="post" action="/users/" class="sap-form-grid" id="addAppUserForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="app-user">
+            <input type="hidden" name="next" value="/android/">
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Name" %}</span>
+                <input class="sap-input" type="text" name="name" maxlength="150" required>
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "User name" %}</span>
+                <input class="sap-input" type="text" name="username" maxlength="150" dir="ltr">
+                <span class="sap-field__hint">{% trans "Left empty, it is taken from the phone number." %}</span>
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Phone" %}</span>
+                <input class="sap-input" type="tel" name="phone" dir="ltr" required>
+                <span class="sap-field__hint">{% trans "For example 01012345678" %}</span>
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Password" %}</span>
+                <input class="sap-input" type="password" name="password" autocomplete="new-password"
+                    minlength="{{ min_password_length }}" required>
+                <span class="sap-field__hint">
+                    {% blocktrans with n=min_password_length %}At least {{ n }} characters.{% endblocktrans %}
+                </span>
+            </label>
+            <div class="sap-form-actions">
+                <button class="sap-btn sap-btn--emphasized" type="submit">{% trans "Create the account" %}</button>
+            </div>
+        </form>
     </div>
+    {% endif %}
 </div>
 
 <div class="sap-card">
     <div class="sap-card__header">
-        <h2 class="sap-card__title">{% trans "Published builds" %}</h2>
+        <h2 class="sap-card__title">{% trans "Previous builds" %}</h2>
     </div>
     <div class="sap-card__body sap-card__body--flush">
         <div class="sap-tablewrap">
@@ -134,8 +233,6 @@
                         <th>{% trans "Version" %}</th>
                         <th>{% trans "Build number" %}</th>
                         <th>{% trans "Published" %}</th>
-                        <th>{% trans "By" %}</th>
-                        <th>{% trans "Notes" %}</th>
                         <th>{% trans "Download" %}</th>
                     </tr>
                 </thead>
@@ -144,23 +241,23 @@
                     <tr>
                         <td>
                             {{ release.version }}
-                            {% if release.source == "github" %}
-                            <span class="sap-pill sap-pill--neutral">{% trans "Read from GitHub" %}</span>
-                            {% endif %}
                             {% if release.is_current %}
                             <span class="sap-pill sap-pill--positive">{% trans "Current" %}</span>
+                            {% endif %}
+                            {% if release.mandatory %}
+                            <span class="sap-pill sap-pill--warning">{% trans "Mandatory" %}</span>
                             {% endif %}
                         </td>
                         <td dir="ltr">{{ release.version_code|default:"—" }}</td>
                         <td>{{ release.created_at|date:"Y-m-d" }}</td>
-                        <td>{{ release.created_by.get_username|default:"—" }}</td>
-                        <td>{{ release.notes|default:"—"|truncatechars:80 }}</td>
-                        <td><a class="sap-btn sap-btn--ghost sap-btn--sm" href="{{ release.download_url }}"
-                                target="_blank" rel="noopener">{% trans "Open" %}</a></td>
+                        <td>
+                            <a class="sap-btn sap-btn--ghost sap-btn--sm" href="{{ release.download_url }}"
+                                target="_blank" rel="noopener">{% trans "Open" %}</a>
+                        </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="sap-empty">
+                        <td colspan="4" class="sap-empty">
                             <span class="sap-empty__title">{% trans "No build has been published yet." %}</span>
                         </td>
                     </tr>
@@ -172,19 +269,19 @@
 </div>
 
 {% if is_manager %}
-<div class="sap-card">
-    <div class="sap-card__header">
-        <h2 class="sap-card__title">{% trans "Record a build by hand (fallback)" %}</h2>
-    </div>
+<details class="sap-card" id="advancedOptions">
+    <summary class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Advanced options" %}</h2>
+    </summary>
     <div class="sap-card__body">
         <p class="sap-muted">
-            {% trans "Not needed while the list above is readable. Use it to pin a build that is not on GitHub yet, or to keep the phones on an older one." %}
+            {% blocktrans with repo=release_repo %}A build published as a release on {{ repo }} is the whole step: nothing has to be typed here. Use the form only to pin a build that is not there yet, or to keep the phones on an older one.{% endblocktrans %}
         </p>
         <form method="post" action="/android/" class="sap-form-grid" id="publishReleaseForm">
             {% csrf_token %}
             <label class="sap-field">
                 <span class="sap-label">{% trans "Version" %}</span>
-                <input class="sap-input" type="text" name="version" placeholder="1.0.1" required>
+                <input class="sap-input" type="text" name="version" placeholder="1.2.0" required>
             </label>
             <label class="sap-field">
                 <span class="sap-label">{% trans "Build number" %}</span>
@@ -196,8 +293,8 @@
             </label>
             <label class="sap-field sap-field--wide">
                 <span class="sap-label">{% trans "Download address" %}</span>
-                <input class="sap-input" type="text" name="download_url" placeholder="https://…/app-release.apk"
-                    required>
+                <input class="sap-input" type="text" name="download_url" dir="ltr"
+                    placeholder="https://…/app-release.apk" required>
                 <span class="sap-field__hint">
                     {% trans "A durable address, not a file on this server: the server's disk is wiped on every deploy." %}
                 </span>
@@ -227,6 +324,6 @@
             </div>
         </form>
     </div>
-</div>
+</details>
 {% endif %}
 {% endblock %}
