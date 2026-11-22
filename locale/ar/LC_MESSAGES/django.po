@@ -1036,6 +1036,9 @@ msgstr "نشر"
 msgid "Publish a build"
 msgstr "نشر إصدار"
 
+msgid "Publish a build by hand"
+msgstr "نشر نسخة يدويًا"
+
 msgid "Published"
 msgstr "تاريخ النشر"
 

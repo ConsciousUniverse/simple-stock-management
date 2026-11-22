@@ -508,7 +508,15 @@ def android_page(request):
             "latest": releases.as_row(releases.select_release()),
             "auto": releases.as_row(published),
             # One date for the tile: whichever build the phones are offered.
-            "published_on": _published_on(releases.as_row(published) or releases.as_row(releases.select_release())),
+            "published_on": _published_on(
+                releases.as_row(published) or releases.as_row(releases.select_release())
+            ),
+            # The tile shows the version a person says out loud ("1.2.0"); the
+            # release's own name ("Warehouse 1.2.0 (build 3)") wraps onto three
+            # lines in a tile and pushes its neighbours out of line.
+            "version_short": _version_short(
+                releases.as_row(published) or releases.as_row(releases.select_release())
+            ),
             "auto_failed": published is None,
             "auto_error": releases.last_error(),
             "release_repo": releases.RELEASES_REPO,
@@ -517,6 +525,13 @@ def android_page(request):
             "api_root": request.build_absolute_uri("/") + "api/",
         },
     )
+
+
+def _version_short(row):
+    """The dotted version in a release name, or the name itself."""
+    name = str(getattr(row, "versionName", None) or getattr(row, "version", "") or "")
+    found = re.search(r"\d+(?:\.\d+)+", name)
+    return found.group(0) if found else name
 
 
 def _published_on(row):

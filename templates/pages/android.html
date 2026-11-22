@@ -10,7 +10,8 @@
 <div class="sap-tiles">
     <div class="sap-tile">
         <span class="sap-tile__label">{% trans "Current version" %}</span>
-        <span class="sap-tile__value" id="currentVersion">{{ latest.version|default:"—" }}</span>
+        <span class="sap-tile__value" id="currentVersion">{{ version_short|default:"—" }}</span>
+        {% if latest %}<span class="sap-tile__foot">{{ latest.version }}</span>{% endif %}
     </div>
     <div class="sap-tile sap-tile--neutral">
         <span class="sap-tile__label">{% trans "Build number" %}</span>
@@ -272,6 +273,7 @@
 <details class="sap-card" id="advancedOptions">
     <summary class="sap-card__header">
         <h2 class="sap-card__title">{% trans "Advanced options" %}</h2>
+        <span class="sap-muted">{% trans "Publish a build by hand" %}</span>
     </summary>
     <div class="sap-card__body">
         <p class="sap-muted">

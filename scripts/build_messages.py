@@ -63,6 +63,7 @@ ARABIC = {
     "Sign in with the phone number (or the user name) and the password a manager gave you.":
         "ادخل برقم الهاتف (أو باسم الدخول) والباسورد اللي مدير المخزن أعطاه لك.",
     "Advanced options": "خيارات متقدمة",
+    "Publish a build by hand": "نشر نسخة يدويًا",
     "A build published as a release on %(repo)s is the whole step: nothing has to be typed here. Use the form only to pin a build that is not there yet, or to keep the phones on an older one.":
         "نشر النسخة كـrelease على %(repo)s هو الخطوة كلها: مفيش حاجة تتكتب هنا. استخدم الفورم بس لتثبيت نسخة لسه مش موجودة، أو لتخلي الموبايلات على نسخة أقدم.",
     "The server address is built into the app; there is no field on the phone to change it.":
