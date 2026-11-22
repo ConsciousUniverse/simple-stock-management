@@ -412,6 +412,16 @@ new one sat published and unreachable — and nothing anywhere said so.
   an update?" must get an answer during a GitHub outage. A manual row with a
   HIGHER code wins (an explicit pin forward); an older one never hides the
   published build.
+- **A failed read is not an absence.** The first cut answered `null` when the
+  read failed, so a GitHub refusal and a company with no builds looked identical
+  — the phone was told there is nothing to install while a build existed. Every
+  successful read is now mirrored into `app_releases` (`source="github"`,
+  migration `0008`), a failed read is served from that mirror (`source: "cache"`),
+  and the failure is classified (`rate_limited` / `unreachable` / `bad_response`)
+  and reported as `releaseError` in the payload and on the page. **An error
+  object from GitHub must never be read as `[]`** — that is the same defect in
+  a different hat. A mirrored row is excluded from `latest_manual()`, so it can
+  never act as a manual pin.
 - **One request per ten minutes, shared by every phone** (`CACHE_SECONDS`);
   a failure is remembered for 60s so an outage does not turn into a retry storm.
   The fetch is anonymous (the releases repo is public) and `GITHUB_RELEASES_TOKEN`
