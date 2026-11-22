@@ -559,3 +559,74 @@ complaint ("the update must arrive by itself") failing silently.
 - The durable fix is still an authenticated read (`GITHUB_RELEASES_TOKEN` raises
   the limit to 5000/hour); the feed fallback is what keeps the promise when that
   variable is missing.
+
+## One account, one phone — and what must never be retried
+
+The mobile app can be installed on any phone by anyone holding a password, so
+an account open on two phones is two people moving stock in one name and an
+audit trail that cannot tell them apart.
+
+- **Binding lives in `MobileProfile.device_id` / `bound_at`** (migration
+  `0010`), written by `mobile.login(..., device_id=…)` on the FIRST sign-in
+  only. A second phone is refused with `409 {code:"device_locked"}` and a
+  sentence naming the device that holds it — the person can take that sentence
+  to their manager, which a generic "sign-in failed" does not allow.
+- **Clearing revokes the sessions**, not just the binding
+  (`pages._clear_device`): a lost phone must stop working at once, not when its
+  token expires. The action is `clear-device` on `/users/`, reachable from the
+  «مسح الجهاز» button on `/android/`, which now shows **which** phone holds the
+  account (otherwise the manager frees the wrong one).
+- **A device id is generated per install and kept** (`Session.deviceId`), so a
+  reinstall looks like a new phone — that is correct: the manager clears the
+  old one.
+
+### Retrying a cold start is only safe for calls that can be repeated
+
+Render stops an idle service after fifteen minutes and the first request after
+that used to read as "the app is broken". The client retries with backoff
+(`Api.retrying`), but **what may be retried is the safety-critical part**
+(`Retry.shouldRetry`):
+
+| Failure | Read | Document submission |
+|---|---|---|
+| Connection refused | retry | retry — nothing reached the app |
+| 502 / 503 / 504 | retry | retry — the proxy answered, not the app |
+| Read timeout | retry | **no** — it may already be recorded |
+| 400 / 401 / 409 | no | no — an answer, not a transport fault |
+
+Retrying a submission whose fate is unknown puts **two stock movements on the
+books for one sheet of paper**. `RetryRuleTest` pins all four rows; a sign-in is
+declared repeatable explicitly because it only opens a session.
+
+### The shelf is the ceiling, on both ends
+
+`DraftLine.exceedsShelf` refuses a scan beyond the stock on hand and the review
+button refuses to continue; the server refuses the same document at submission
+**and** at approval, where the balance moves through a conditional update — two
+managers approving at once can never oversell.
+
+### Publishing a build
+
+`scripts/publish_app.py` (needs a `ghp_` token with `repo`) builds, tags `v{versionCode}`
+and uploads `warehouse-{code}.apk` to **`melsofany/warehouse-app-releases`** —
+that repository, not this one, is what `/api/mobile/version/` reads.
+
+**The feed is cached for ten minutes per process**, so right after publishing one
+worker may still answer with the previous build while another already serves the
+new one. Observed: `v5` then `v4` then `v5` across three requests within a
+minute. Wait out the cache before concluding the release was not picked up.
+
+**`versionCode` must grow** or the phone is never offered the build; the script
+refuses a tag that already exists.
+
+### The app's screens
+
+- **Sign in asks for the password alone** — the account stays on the phone, so
+  the number is not retyped every morning; «الدخول بحساب آخر» reveals the
+  identifier field.
+- **No phone number on any screen**: the settings card shows the last four
+  digits (`Session.maskedPhone`), which identifies the account without printing
+  it for whoever is standing nearby.
+- **The update check lives behind the gear** (`SettingsActivity`), together with
+  the version, a connection test and sign-out; the dashboard is two tiles and a
+  count. `Updates.offer` is the single prompt for both doors.
