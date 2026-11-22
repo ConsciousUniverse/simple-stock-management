@@ -136,6 +136,12 @@ class GoodsReceipt(models.Model):
 
     po_number = models.CharField(max_length=60)
     supplier = models.CharField(max_length=200, blank=True, default="")
+    # The company voucher number for this delivery. Optional at booking time —
+    # the goods are on the shelf either way — but a delivery without it cannot
+    # be paid, so the reconciliation page lists it until it is filled in.
+    external_ref = models.CharField(
+        max_length=80, null=True, blank=True, unique=True
+    )
     notes = models.TextField(blank=True, default="")
     received_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True, related_name="receipts"
@@ -337,6 +343,7 @@ class AuditEvent(models.Model):
     DOCUMENT_CREATED = "document_created"
     DOCUMENT_APPROVED = "document_approved"
     DOCUMENT_REJECTED = "document_rejected"
+    DOCUMENT_PERMIT = "document_permit"
     ITEM_CREATED = "item_created"
     ITEM_UPDATED = "item_updated"
     ITEM_DELETED = "item_deleted"
@@ -358,6 +365,7 @@ class AuditEvent(models.Model):
         (DOCUMENT_CREATED, _lazy("Document created")),
         (DOCUMENT_APPROVED, _lazy("Document approved")),
         (DOCUMENT_REJECTED, _lazy("Document rejected")),
+        (DOCUMENT_PERMIT, _lazy("Company voucher recorded")),
         (ITEM_CREATED, _lazy("Item created")),
         (ITEM_UPDATED, _lazy("Item changed")),
         (ITEM_DELETED, _lazy("Item deleted")),

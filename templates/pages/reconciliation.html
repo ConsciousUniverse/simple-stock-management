@@ -1,0 +1,178 @@
+{% extends "base_app.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Missing paperwork" %}{% endblock %}
+{% block crumb %}{% trans "Missing paperwork" %}{% endblock %}
+{% block heading %}{% trans "Missing paperwork" %}{% endblock %}
+{% block subheading %}
+{% trans "Every line that moved without its document: no company voucher, a document still waiting for approval, or goods delivered with nothing recording them. Completing a line here removes it." %}
+{% endblock %}
+
+{% block actions %}
+<a class="sap-btn sap-btn--emphasized" id="exportMissing" href="{{ export_url }}">
+    <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-data"></use></svg>
+    {% trans "Export to Excel" %}
+</a>
+{% endblock %}
+
+{% block content %}
+<form method="get" action="/reconciliation/" class="sap-card" id="missingFilters">
+    <div class="sap-card__body">
+        <div class="sap-form-grid">
+            <label class="sap-field">
+                <span class="sap-label">{% trans "From" %}</span>
+                <input class="sap-input" type="date" name="from" id="missingFrom"
+                    value="{{ filters.date_from|date:'Y-m-d' }}">
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "To" %}</span>
+                <input class="sap-input" type="date" name="to" id="missingTo"
+                    value="{{ filters.date_to|date:'Y-m-d' }}">
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Reason" %}</span>
+                <select class="sap-input" name="reason" id="missingReason">
+                    <option value="">{% trans "All reasons" %}</option>
+                    {% for value, label in reasons.items %}
+                    <option value="{{ value }}"{% if filters.reason == value %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Site" %}</span>
+                <select class="sap-input" name="site" id="missingSite">
+                    <option value="">{% trans "All sites" %}</option>
+                    {% for site in sites %}
+                    <option value="{{ site.username }}"{% if filters.site == site.username %} selected{% endif %}>{{ site.username }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="sap-field">
+                <span class="sap-label">{% trans "Item code" %}</span>
+                <input class="sap-input" type="search" name="q" id="missingQuery"
+                    value="{{ filters.query }}" placeholder="SKU">
+            </label>
+        </div>
+        <div class="sap-form-actions">
+            <button class="sap-btn sap-btn--emphasized" type="submit">
+                <svg class="sap-icon sap-icon--sm" aria-hidden="true"><use href="#i-search"></use></svg>
+                {% trans "Show" %}
+            </button>
+            <a class="sap-btn sap-btn--ghost" href="/reconciliation/">{% trans "Clear the filters" %}</a>
+        </div>
+    </div>
+</form>
+
+<div class="sap-tiles">
+    <div class="sap-tile sap-tile--critical">
+        <span class="sap-tile__label">{% trans "Lines missing paperwork" %}</span>
+        <span class="sap-tile__value" id="kpiMissing">{{ summary.total }}</span>
+    </div>
+    <div class="sap-tile">
+        <span class="sap-tile__label" title="{{ reasons.issue_pending }}">{{ short_reasons.issue_pending }}</span>
+        <span class="sap-tile__value" id="kpiIssuePending">{{ summary.issue_pending }}</span>
+    </div>
+    <div class="sap-tile">
+        <span class="sap-tile__label" title="{{ reasons.addition_pending }}">{{ short_reasons.addition_pending }}</span>
+        <span class="sap-tile__value" id="kpiAdditionPending">{{ summary.addition_pending }}</span>
+    </div>
+    <div class="sap-tile">
+        <span class="sap-tile__label" title="{{ reasons.permit_missing }}">{{ short_reasons.permit_missing }}</span>
+        <span class="sap-tile__value" id="kpiPermitMissing">{{ summary.permit_missing }}</span>
+    </div>
+    <div class="sap-tile">
+        <span class="sap-tile__label" title="{{ reasons.receipt_without_permit }}">{{ short_reasons.receipt_without_permit }}</span>
+        <span class="sap-tile__value" id="kpiReceiptMissing">{{ summary.receipt_without_permit }}</span>
+    </div>
+</div>
+
+<div class="sap-card">
+    <div class="sap-card__header">
+        <h2 class="sap-card__title">{% trans "Lines to complete" %}</h2>
+        <div class="sap-card__header-actions">
+            <span class="sap-muted">{% trans "One row per line, not per document." %}</span>
+        </div>
+    </div>
+    <div class="sap-card__body sap-card__body--flush">
+        <div class="sap-tablewrap">
+            <table class="sap-table sap-table--dense" id="missingRows">
+                <thead>
+                    <tr>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "Document" %}</th>
+                        <th>{% trans "Type" %}</th>
+                        <th>{% trans "PO / reference" %}</th>
+                        <th>{% trans "Item code" %}</th>
+                        <th>{% trans "Description" %}</th>
+                        <th>{% trans "Quantity" %}</th>
+                        <th>{% trans "Site / supplier" %}</th>
+                        <th>{% trans "Reason" %}</th>
+                        <th>{% trans "Company voucher number" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows %}
+                    <tr data-reason="{{ row.reason }}" data-sku="{{ row.sku }}">
+                        <td dir="ltr">{{ row.occurred_on|date:"Y-m-d" }}</td>
+                        <td>{{ row.number }}</td>
+                        <td>{{ row.type_label }}</td>
+                        <td>{{ row.reference|default:"—" }}</td>
+                        <td dir="ltr">{{ row.sku }}</td>
+                        <td>{{ row.description }}</td>
+                        <td>{{ row.quantity }}{% if row.unit %} {{ row.unit }}{% endif %}</td>
+                        <td>{{ row.party|default:"—" }}</td>
+                        <td>
+                            <span class="sap-pill {% if row.pending %}sap-pill--critical{% else %}sap-pill--info{% endif %}"
+                                title="{{ row.reason_label }}">{{ row.short_reason_label }}</span>
+                        </td>
+                        <td>
+                            {% if is_manager %}
+                            <form class="sap-inline-form" method="post" action="{{ row.action_url }}">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ next_url }}">
+                                <input class="sap-input" type="text" name="external_ref"
+                                    id="permit-{{ forloop.counter }}"
+                                    placeholder="{% trans 'Company voucher number' %}" required>
+                                {% if row.pending %}
+                                <label class="sap-check">
+                                    <input type="checkbox" name="approve" value="1" checked>
+                                    <span>{% trans "Approve" %}</span>
+                                </label>
+                                {% endif %}
+                                <button class="sap-btn sap-btn--emphasized sap-btn--sm" type="submit">
+                                    {% trans "Save" %}
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="sap-muted">{% trans "A warehouse manager completes this." %}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="sap-empty">
+                            <span class="sap-empty__title">{% trans "Nothing is missing: every line has its document." %}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if rows.paginator.num_pages > 1 %}
+    <div class="sap-card__footer">
+        <div class="sap-pager">
+            {% if rows.has_previous %}
+            <a class="sap-btn sap-btn--ghost sap-btn--sm"
+                href="{{ page_url_prefix }}page={{ rows.previous_page_number }}">{% trans "Previous" %}</a>
+            {% endif %}
+            <span class="sap-muted" dir="ltr">{{ rows.number }} / {{ rows.paginator.num_pages }}</span>
+            {% if rows.has_next %}
+            <a class="sap-btn sap-btn--ghost sap-btn--sm"
+                href="{{ page_url_prefix }}page={{ rows.next_page_number }}">{% trans "Next" %}</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

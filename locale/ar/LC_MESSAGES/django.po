@@ -22,6 +22,9 @@ msgstr "يظهر الطلب هنا عندما يطلب أحد المواقع أ�
 msgid "A voucher number is booked once: the same number cannot move stock twice."
 msgstr "رقم الإذن يُسجَّل مرة واحدة: لا يمكن لنفس الرقم أن يحرّك المخزون مرتين."
 
+msgid "A warehouse manager completes this."
+msgstr "مدير المخزن هو من يكمل هذا."
+
 msgid "A warehouse manager publishes the download address below."
 msgstr "مدير المخزن هو من ينشر عنوان التنزيل أدناه."
 
@@ -64,6 +67,12 @@ msgstr "إضافة صنف"
 msgid "Add line"
 msgstr "إضافة سطر"
 
+msgid "Addition not approved"
+msgstr "إضافة غير معتمدة"
+
+msgid "Addition not approved — the stock was never increased"
+msgstr "إضافة لم تُعتمد — المخزون لم يزد"
+
 msgid "Additions"
 msgstr "الإضافة"
 
@@ -73,8 +82,17 @@ msgstr "إضافة إلى المخزن"
 msgid "Adjust your search or add a new item code."
 msgstr "عدّل البحث أو أضف كود صنف جديد."
 
+msgid "Administration"
+msgstr "الإدارة"
+
 msgid "All areas"
 msgstr "كل المجالات"
+
+msgid "All reasons"
+msgstr "كل الأسباب"
+
+msgid "All sites"
+msgstr "كل المواقع"
 
 msgid "An error occurred."
 msgstr "حدث خطأ."
@@ -181,6 +199,9 @@ msgstr "اختر نوع الصرف."
 msgid "Clear"
 msgstr "مسح"
 
+msgid "Clear the filters"
+msgstr "مسح الفلاتر"
+
 msgid "Close"
 msgstr "إغلاق"
 
@@ -189,6 +210,9 @@ msgstr "كود الصنف في نظام الشركة"
 
 msgid "Company voucher number"
 msgstr "رقم إذن الشركة"
+
+msgid "Company voucher recorded"
+msgstr "تسجيل رقم إذن الشركة"
 
 msgid "Confirm"
 msgstr "تأكيد"
@@ -265,8 +289,14 @@ msgstr "حذف الصنف؟"
 msgid "Deleted."
 msgstr "تم الحذف."
 
+msgid "Delivered against a purchase order with no company voucher number"
+msgstr "مستلم على أمر شراء بلا رقم إذن شركة"
+
 msgid "Delivery received."
 msgstr "تم استلام التوريد."
+
+msgid "Delivery without voucher"
+msgstr "توريد بلا رقم إذن"
 
 msgid "Description"
 msgstr "الوصف"
@@ -361,6 +391,9 @@ msgstr "أدخل اسم المستخدم."
 msgid "Enter more than 0!"
 msgstr "أدخل قيمة أكبر من صفر!"
 
+msgid "Enter the company voucher number."
+msgstr "أدخل رقم إذن الشركة."
+
 msgid "Enter the purchase order number."
 msgstr "أدخل رقم أمر الشراء."
 
@@ -369,6 +402,9 @@ msgstr "أدخل الإصدار."
 
 msgid "Events"
 msgstr "الأحداث"
+
+msgid "Every line that moved without its document: no company voucher, a document still waiting for approval, or goods delivered with nothing recording them. Completing a line here removes it."
+msgstr "كل بند اتحرك من غير ورقته: بلا رقم إذن شركة، أو مستند لسه مستني الاعتماد، أو بضاعة اتسلّمت ومفيش حاجة مسجّلة لها. إكمال البند هنا بيشيله من الصفحة."
 
 msgid "Every movement, by period"
 msgstr "كل حركة خلال فترة محددة."
@@ -435,6 +471,12 @@ msgstr "صرف"
 
 msgid "Issue documents"
 msgstr "أذون الصرف"
+
+msgid "Issue not approved"
+msgstr "صرف غير معتمد"
+
+msgid "Issue not approved — it never reaches the issues report"
+msgstr "صرف لم يُعتمد — لن يظهر في تقرير الصرفيات"
 
 msgid "Issue stock to a site and it appears here."
 msgstr "اصرف مخزونًا لموقع وسيظهر هنا."
@@ -526,6 +568,12 @@ msgstr "تمت إضافة السطر."
 msgid "Lines"
 msgstr "البنود"
 
+msgid "Lines missing paperwork"
+msgstr "بنود ناقصة الورق"
+
+msgid "Lines to complete"
+msgstr "بنود تحتاج استكمال"
+
 msgid "Loading..."
 msgstr "جارٍ التحميل..."
 
@@ -556,11 +604,17 @@ msgstr "وضع الصيانة"
 msgid "Menu"
 msgstr "القائمة"
 
+msgid "Missing paperwork"
+msgstr "الحركات الناقصة"
+
 msgid "Move stock from the warehouse to a construction site"
 msgstr "نقل المخزون من المخزن إلى موقع الإنشاءات"
 
 msgid "Move the catalogue in and out of the system"
 msgstr "إدخال وإخراج دليل الأصناف من النظام"
+
+msgid "Moved with no company voucher number"
+msgstr "تحرّك بلا رقم إذن شركة"
 
 msgid "Name"
 msgstr "الاسم"
@@ -619,6 +673,9 @@ msgstr "لا يوجد مخزون بالمواقع بعد"
 msgid "No stock has been issued to a site yet."
 msgstr "لم يُصرف مخزون لأي موقع بعد."
 
+msgid "No voucher number"
+msgstr "بلا رقم إذن"
+
 msgid "No warehouse items found"
 msgstr "لا توجد أصناف بالمخزن"
 
@@ -631,11 +688,20 @@ msgstr "ملاحظات"
 msgid "Nothing awaiting dispatch"
 msgstr "لا يوجد ما ينتظر الصرف"
 
+msgid "Nothing is missing: every line has its document."
+msgstr "لا يوجد ناقص: كل بند له مستنده."
+
 msgid "Nothing was issued in this period."
 msgstr "لم يُصرف شيء في هذه الفترة."
 
+msgid "One row per line, not per document."
+msgstr "سطر لكل بند، لا لكل مستند."
+
 msgid "Only a warehouse manager can approve documents."
 msgstr "اعتماد الأذون متاح لأمين المخزن فقط."
+
+msgid "Only a warehouse manager can complete the paperwork."
+msgstr "مدير المخزن فقط هو من يكمل الورق."
 
 msgid "Only a warehouse manager can issue stock to a site."
 msgstr "أمين المخزن فقط يمكنه الصرف لموقع."
@@ -655,11 +721,17 @@ msgstr "افتح رابط التنزيل على الهاتف ونصّب المل
 msgid "Operational"
 msgstr "يعمل"
 
+msgid "Operations"
+msgstr "العمليات"
+
 msgid "Optional"
 msgstr "اختياري"
 
 msgid "Overview"
 msgstr "نظرة عامة"
+
+msgid "PO / reference"
+msgstr "أمر الشراء / المرجع"
 
 msgid "PO number"
 msgstr "رقم أمر الشراء"
@@ -721,6 +793,9 @@ msgstr "الإصدارات المنشورة"
 msgid "Purchase order / reference"
 msgstr "أمر الشراء / المرجع"
 
+msgid "Purchase order delivery"
+msgstr "توريد أمر شراء"
+
 msgid "Purchase order number"
 msgstr "رقم أمر الشراء"
 
@@ -735,6 +810,9 @@ msgstr "الكمية"
 
 msgid "Quantity on hand"
 msgstr "الكمية المتاحة"
+
+msgid "Reason"
+msgstr "السبب"
 
 msgid "Receipts (30 days)"
 msgstr "توريدات (30 يومًا)"
@@ -1045,6 +1123,9 @@ msgstr "الإصدار الذي يُنصَّب على الهاتف، وكيف ي
 msgid "The build was published."
 msgstr "تم نشر الإصدار."
 
+msgid "The company voucher number is too long."
+msgstr "رقم إذن الشركة أطول من المسموح."
+
 msgid "The download address must start with https:// or with /."
 msgstr "يجب أن يبدأ عنوان التنزيل بـ https:// أو بـ /."
 
@@ -1191,6 +1272,21 @@ msgstr "القيمة"
 
 msgid "Version"
 msgstr "الإصدار"
+
+msgid "Voucher %(permit)s is already booked as %(number)s."
+msgstr "الإذن %(permit)s مسجّل بالفعل على المستند %(number)s."
+
+msgid "Voucher %(permit)s is already recorded on the delivery of %(po)s."
+msgstr "الإذن %(permit)s مسجّل بالفعل على توريد %(po)s."
+
+msgid "Voucher %(permit)s was just booked on another document."
+msgstr "الإذن %(permit)s سُجّل للتوّ على مستند آخر."
+
+msgid "Voucher recorded on %(number)s."
+msgstr "تم تسجيل الإذن على %(number)s."
+
+msgid "Voucher recorded on the delivery of %(po)s."
+msgstr "تم تسجيل الإذن على توريد %(po)s."
 
 msgid "Wait for the lock to expire, or ask the system administrator to reset it."
 msgstr "انتظر انتهاء القفل أو اطلب من مسؤول النظام إعادة ضبطه."

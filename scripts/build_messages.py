@@ -364,6 +364,39 @@ ARABIC = {
     "Showing": "عرض",
     "of": "من",
     "Updated": "آخر تحديث",
+    # Sidebar group titles and the missing-paperwork page.
+    "Operations": "العمليات",
+    "Administration": "الإدارة",
+    "Missing paperwork": "الحركات الناقصة",
+    "Lines missing paperwork": "بنود ناقصة الورق",
+    "Lines to complete": "بنود تحتاج استكمال",
+    "Reason": "السبب",
+    "All reasons": "كل الأسباب",
+    "All sites": "كل المواقع",
+    "Clear the filters": "مسح الفلاتر",
+    "PO / reference": "أمر الشراء / المرجع",
+    "One row per line, not per document.": "سطر لكل بند، لا لكل مستند.",
+    "Nothing is missing: every line has its document.": "لا يوجد ناقص: كل بند له مستنده.",
+    "A warehouse manager completes this.": "مدير المخزن هو من يكمل هذا.",
+    "Only a warehouse manager can complete the paperwork.": "مدير المخزن فقط هو من يكمل الورق.",
+    "Every line that moved without its document: no company voucher, a document still waiting for approval, or goods delivered with nothing recording them. Completing a line here removes it.": "كل بند اتحرك من غير ورقته: بلا رقم إذن شركة، أو مستند لسه مستني الاعتماد، أو بضاعة اتسلّمت ومفيش حاجة مسجّلة لها. إكمال البند هنا بيشيله من الصفحة.",
+    "Issue not approved — it never reaches the issues report": "صرف لم يُعتمد — لن يظهر في تقرير الصرفيات",
+    "Addition not approved — the stock was never increased": "إضافة لم تُعتمد — المخزون لم يزد",
+    "Moved with no company voucher number": "تحرّك بلا رقم إذن شركة",
+    "Delivered against a purchase order with no company voucher number": "مستلم على أمر شراء بلا رقم إذن شركة",
+    "Purchase order delivery": "توريد أمر شراء",
+    "Company voucher recorded": "تسجيل رقم إذن الشركة",
+    "Issue not approved": "صرف غير معتمد",
+    "Addition not approved": "إضافة غير معتمدة",
+    "No voucher number": "بلا رقم إذن",
+    "Delivery without voucher": "توريد بلا رقم إذن",
+    "Enter the company voucher number.": "أدخل رقم إذن الشركة.",
+    "The company voucher number is too long.": "رقم إذن الشركة أطول من المسموح.",
+    "Voucher %(permit)s is already booked as %(number)s.": "الإذن %(permit)s مسجّل بالفعل على المستند %(number)s.",
+    "Voucher %(permit)s is already recorded on the delivery of %(po)s.": "الإذن %(permit)s مسجّل بالفعل على توريد %(po)s.",
+    "Voucher %(permit)s was just booked on another document.": "الإذن %(permit)s سُجّل للتوّ على مستند آخر.",
+    "Voucher recorded on %(number)s.": "تم تسجيل الإذن على %(number)s.",
+    "Voucher recorded on the delivery of %(po)s.": "تم تسجيل الإذن على توريد %(po)s.",
 }
 
 
@@ -384,16 +417,11 @@ def collect_msgids():
     js_block = ui_strings.split("JS_TEXTS = [", 1)[-1].split("]\n", 1)[0]
     for match in re.finditer(r'"((?:[^"\\]|\\.)*)"', js_block):
         msgids.add(match.group(1))
-    for name in (
-        "ui_strings.py",
-        "views.py",
-        "barcodes.py",
-        "pages.py",
-        "models.py",
-        "documents.py",
-    ):
-        text = (BASE_DIR / "stock_manager" / name).read_text(encoding="utf-8")
-        # ``_()`` and ``_lazy()`` both mark a translatable string.
+    # Every module is scanned, not a hand-kept list: a module left out of the
+    # list would ship English on the Arabic interface and nothing would
+    # complain. ``_()`` and ``_lazy()`` both mark a translatable string.
+    for path in sorted((BASE_DIR / "stock_manager").glob("*.py")):
+        text = path.read_text(encoding="utf-8")
         for match in re.finditer(r'_(?:lazy)?\(\s*(["\'])(.+?)\1\s*\)', text, re.S):
             msgids.add(match.group(2))
     return sorted(msgids)

@@ -25,6 +25,10 @@ from .views import (
     issues_page,
     decide_document,
     issues_report_page,
+    reconciliation_page,
+    reconciliation_set_permit,
+    reconciliation_set_receipt_permit,
+    reconciliation_export,
     stock_documents_api,
     decide_stock_document_api,
 )
@@ -95,6 +99,22 @@ urlpatterns = [
     path("receipts/", receipts_page, name="receipts_page"),
     path("issues/", issues_page, name="issues_page"),
     path("issues/report/", issues_report_page, name="issues_report"),
+    path("reconciliation/", reconciliation_page, name="reconciliation_page"),
+    path(
+        "reconciliation/<int:pk>/permit",
+        reconciliation_set_permit,
+        name="reconciliation_set_permit",
+    ),
+    path(
+        "reconciliation/receipts/<int:pk>/permit",
+        reconciliation_set_receipt_permit,
+        name="reconciliation_set_receipt_permit",
+    ),
+    path(
+        "reconciliation/export/",
+        reconciliation_export,
+        name="reconciliation_export",
+    ),
     path("issues/<int:pk>/<str:action>/", decide_document, name="decide_document"),
     path("api/issue/", issue_to_site, name="issue_to_site"),
 ]

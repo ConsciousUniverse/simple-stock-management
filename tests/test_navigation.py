@@ -19,6 +19,7 @@ EXPECTED = [
     ("issues", "/issues/"),
     ("spending", "/issues/report/"),
     ("labels", "/labels/"),
+    ("reconciliation", "/reconciliation/"),
     ("users", "/users/"),
     ("android", "/android/"),
     ("audit", "/audit/"),
@@ -44,7 +45,7 @@ def nav_items(response):
 
 
 class TestOrder:
-    def test_a_manager_sees_the_nine_entries_in_the_requested_order(
+    def test_a_manager_sees_the_entries_in_the_requested_order(
         self, client, manager
     ):
         client.force_login(manager)

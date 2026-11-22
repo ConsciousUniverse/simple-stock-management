@@ -183,3 +183,48 @@ the copies drifting.
 - **Printing the label sheet opens a new tab** (`target="_blank"` on the picker
   form): navigating away from the picker to a print page loses the selection the
   operator just made.
+
+## Missing paperwork: one page that is also the place you fix it
+
+The operator's rule is a loop, not a report: every line that moved without its
+document is listed **until it is completed from the list**, then it disappears.
+
+- **One row per LINE, never per document.** `stock_manager/reconciliation.py`
+  builds rows from `StockDocument` lines and from `GoodsReceipt` lines, so a
+  ten-line order with one undocumented line shows one row. A guard
+  (`test_a_multi_line_document_shows_one_row_per_line`) fails if the loop is
+  collapsed to one row per document.
+- **Four reasons, each a real gap**: a pending issue (the issues report reads
+  APPROVED only, so it can never appear there), a pending addition (the stock was
+  never increased), an approved document with no voucher, and a delivery booked
+  by the receipts screen — which writes no stock document at all — with no
+  voucher.
+- **A delivery covered by a proper addition is not listed.** Otherwise booking
+  the addition the normal way would leave the delivery on the page forever and
+  report the same goods twice. The coverage lookup is scoped to the orders on the
+  page (a page load must not walk every addition ever booked); it can only ever
+  miss a coverage (a duplicate row), never hide a real gap.
+- **Completing is one transaction**: `record_permit(..., approve=True)` approves
+  the document (moving the stock) and writes the voucher together, so a document
+  can never carry paper for a movement that did not happen. The docstring said
+  this before the code did — fix the code, not the sentence.
+- **A voucher is booked once across documents AND deliveries** (`_assert_permit_free`
+  plus unique indexes on both `external_ref` columns). The check is the message;
+  the index is the referee.
+- **`GoodsReceipt.external_ref` is optional on purpose**: the goods are on the
+  shelf either way, and a delivery that cannot be paid is exactly what this page
+  exists to chase.
+- **Short labels for the table, long sentences for the filter and the export.**
+  A full sentence in a pill squeezed the columns beside it and pushed the voucher
+  input out of view; the sentence is now a `title` tooltip.
+- **The page URLs are built once in the view** (`next_url`, `export_url`,
+  `page_url_prefix`), so no link can grow a stray `?` or lose the filters.
+- **The Arabic catalog is collected by globbing every module.** The old
+  hand-kept list omitted `navigation.py`, so the sidebar group titles
+  («Operations» / «Administration») had shipped in English on the Arabic
+  interface and nothing complained. `scripts/build_messages.py` now scans every
+  `stock_manager/*.py`.
+- **Verify in a real browser, in both directions**: the loop was checked live
+  (row listed → voucher saved → banner «Voucher recorded on …» → row gone, count
+  16 → 15) and the Arabic RTL layout was checked by setting the
+  `django_language` cookie, since the language switcher is a POST form.

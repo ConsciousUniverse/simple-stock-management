@@ -45,6 +45,7 @@ NAV_GROUPS: Tuple[NavGroup, ...] = (
             NavItem("issues", "issues_page", "/issues/", "i-upload", _("Issues")),
             NavItem("spending", "issues_report", "/issues/report/", "i-data", _("Issues report")),
             NavItem("labels", "print_labels", "/labels/", "i-package", _("Barcode printing")),
+            NavItem("reconciliation", "reconciliation_page", "/reconciliation/", "i-alert", _("Missing paperwork")),
         ),
     ),
     NavGroup(

@@ -1957,6 +1957,27 @@ body.sap-login {
     font-size: 0.8125rem;
 }
 
+/* The inline "record the voucher" form that sits inside a table cell. */
+.sap-inline-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.sap-inline-form .sap-input {
+    min-width: 9rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8125rem;
+}
+
+.sap-pager {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-inline-start: auto;
+}
+
 .sap-pagination__info {
     font-size: 0.8125rem;
     color: var(--sap-text-muted);

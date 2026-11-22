@@ -17,3 +17,4 @@ spreadsheet_convert.py
 .vscode
 .pytest_cache/
 Pipfile.lock
+.venv/
