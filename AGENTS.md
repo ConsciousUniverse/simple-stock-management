@@ -422,6 +422,15 @@ and nothing on the page answered it.
   — and does nothing at all when the variables are unset. Anyone who can set
   those can already set `DATABASE_URL`, so it grants nothing new; the reset is
   audited (`user_reset`).
+- **A username is typed from memory — the capitals are not part of the secret.**
+  The account was `Lifeendy`; `lifeendy` was typed. Django matches usernames
+  EXACTLY, so the account was never found, every attempt failed, and `axes`
+  counted them against a name that no account has — eight failures, then a
+  lockout of an account that was never reached. `WarehouseBackend` now retries
+  the case-insensitive spelling **when it identifies exactly one account** (two
+  accounts differing only in capitals keep their own passwords, and the exact
+  spelling always wins), and `AXES_USERNAME_CALLABLE` keys the lockout on the
+  canonical name so one person has one counter.
 - **A bootstrap account, so the first door is never locked.** `bootstrap_admin`
   (in the build command) creates `sysadmin` in `managers` from a **PBKDF2 hash**
   in `stock_manager/bootstrap_account.py` — the plaintext is not in the repo, and

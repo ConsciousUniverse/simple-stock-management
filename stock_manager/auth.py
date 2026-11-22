@@ -30,6 +30,21 @@ def _refuse(request, reason):
         request.login_refusal = reason
 
 
+def canonical_username(username):
+    """One spelling for one account: the lockout must not key on the capitals."""
+    return (username or "").strip().lower()
+
+
+def axes_username(request, credentials=None):
+    """What ``axes`` counts against.
+
+    Django matches usernames exactly, so ``lifeendy`` never found ``Lifeendy`` —
+    every attempt failed AND was counted under a name no account has, so the
+    person could be locked out of an account they were never reaching.
+    """
+    return canonical_username((credentials or {}).get("username"))
+
+
 class WarehouseBackend(ModelBackend):
     """The project's password backend: one refusal, for the app-only accounts.
 
@@ -38,7 +53,7 @@ class WarehouseBackend(ModelBackend):
     """
 
     def authenticate(self, request, username=None, password=None, app_sign_in=False, **kwargs):
-        user = super().authenticate(request, username, password, **kwargs)
+        user = self._authenticate_case_insensitive(request, username, password, **kwargs)
         if user is not None:
             if app_sign_in:
                 return user
@@ -60,6 +75,28 @@ class WarehouseBackend(ModelBackend):
         ):
             _refuse(request, REFUSAL_INACTIVE)
         return None
+
+    def _authenticate_case_insensitive(self, request, username, password, **kwargs):
+        """Try the spelling given, then the account's own spelling.
+
+        A username is typed from memory: ``Lifeendy`` and ``lifeendy`` are the
+        same person. The exact spelling wins; the case-insensitive match is only
+        used when it identifies ONE account, so two accounts that differ only in
+        capitals can never be confused with each other.
+        """
+        user = super().authenticate(request, username, password, **kwargs)
+        if user is not None:
+            return user
+        user_model = get_user_model()
+        exact = self._find_user(username)
+        if exact is not None:
+            return None
+        matches = list(
+            user_model._default_manager.filter(username__iexact=(username or "").strip())[:2]
+        )
+        if len(matches) != 1:
+            return None
+        return super().authenticate(request, matches[0].get_username(), password, **kwargs)
 
     @staticmethod
     def _find_user(username):

@@ -91,6 +91,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "axes.middleware.AxesMiddleware",
 ]
+AXES_USERNAME_CALLABLE = "stock_manager.auth.axes_username"
 AXES_FAILURE_LIMIT = int(os.getenv("AXES_FAILURE_LIMIT"))
 AXES_COOLOFF_TIME = int(os.getenv("AXES_COOLOFF_TIME"))
 # Lock out by username only: the client IP is deliberately not logged (see
