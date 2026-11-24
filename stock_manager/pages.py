@@ -15,13 +15,13 @@ from django.contrib.auth.models import Group, User
 from django.contrib.auth.views import PasswordChangeView
 from django.core.paginator import Paginator
 from django.db.models import Q
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from django.utils.translation import gettext_lazy as _lazy
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from . import audit, lockout, mobile
+from . import audit, item_codes, lockout, mobile
 from .models import AppRelease, AuditEvent, Item, PhoneChangeRequest
 from .phones import display_phone
 from .permissions import is_warehouse_manager
@@ -656,6 +656,74 @@ def audit_page(request):
 
 @ensure_csrf_cookie
 @login_required
+def item_groups_page(request):
+    """The internal codes: which Oracle codes share one, and their total.
+
+    This is also the screen that changes the grouping. Merging or moving a code
+    only changes which group its row belongs to; quantities, documents and the
+    Oracle code on every line stay exactly as they were.
+    """
+    if _manager_only(request):
+        return _home()
+
+    if request.method == "POST":
+        action = (request.POST.get("action") or "merge_new").strip()
+        target = (request.POST.get("target_code") or "").strip()
+        skus = request.POST.getlist("skus")
+        try:
+            if action == "merge_into":
+                if not target:
+                    raise item_codes.ItemCodeError(
+                        _("Type the internal code you want to move to.")
+                    )
+                group = (
+                    item_codes.move_code(skus[0], target, user=request.user)
+                    if len(skus) == 1
+                    else item_codes.merge_codes(skus, target, user=request.user)
+                )
+                messages.success(
+                    request,
+                    _("The selected codes are now under internal code %(code)s.")
+                    % {"code": group.code},
+                )
+            else:
+                group = item_codes.merge_codes(skus, "", user=request.user)
+                messages.success(
+                    request,
+                    _("Internal code %(code)s was created for the selected codes.")
+                    % {"code": group.code},
+                )
+        except item_codes.ItemCodeError as exc:
+            messages.error(request, str(exc))
+        return redirect("/items/groups/")
+
+    groups = item_codes.groups_overview()
+    items = list(
+        Item.objects.filter(is_active=True)
+        .select_related("internal_group")
+        .order_by("internal_group__code", "sku")
+    )
+    totals = item_codes.group_totals()
+    for item in items:
+        item.internal_total = totals.get(item.internal_code, item.quantity)
+    return render(
+        request,
+        "pages/item_groups.html",
+        {
+            "groups": groups,
+            "items": items,
+            "group_totals": totals,
+            "group_count": len(groups),
+            "oracle_count": Item.objects.filter(is_active=True).count(),
+            "missing_codes": Item.objects.filter(
+                internal_group__isnull=True, is_active=True
+            ).count(),
+        },
+    )
+
+
+@ensure_csrf_cookie
+@login_required
 def labels_page(request):
     """Pick the items to label, then print the sheet.
 
@@ -669,9 +737,13 @@ def labels_page(request):
         return print_labels(request)
 
     query = (request.GET.get("q") or "").strip()
-    items = Item.objects.filter(is_active=True)
+    items = Item.objects.filter(is_active=True).select_related("internal_group")
     if query:
-        items = items.filter(Q(sku__icontains=query) | Q(description__icontains=query))
+        items = items.filter(
+            Q(sku__icontains=query)
+            | Q(description__icontains=query)
+            | Q(internal_group__code__icontains=query)
+        )
     return render(
         request,
         "pages/labels_picker.html",

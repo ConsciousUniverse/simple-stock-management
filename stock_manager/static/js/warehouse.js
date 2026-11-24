@@ -425,6 +425,12 @@
             const state = window.currentPageGlobals[tableNum - 1];
             const isManager = !!(window.userGroups && window.userGroups.includes("managers"));
             const isShopUser = !!(window.userGroups && window.userGroups.includes("shop_users"));
+            // The stock table merges the rows that share an internal code.
+            // Sorting by another column would separate them, so the merge is
+            // only asked for while the table is in its grouped order. The
+            // default `last_updated` is not a header the operator can sort by,
+            // so it counts as "no chosen order" and keeps the groups together.
+            const groupedMode = tableNum === 1 && (!state.sort || state.sort === 'last_updated');
 
             let apiUrl = meta.url;
             if (tableNum === 3 && isShopUser) {
@@ -432,8 +438,11 @@
             }
             const separator = apiUrl.includes('?') ? '&' : '?';
             apiUrl += `${separator}page=${state.page}&page_size=${window.recordsPerPage}&search=${encodeURIComponent(state.search)}`;
-            if (state.sort) {
+            if (state.sort && !groupedMode) {
                 apiUrl += `&ordering=${state.order === 'asc' ? '' : '-'}${state.sort}`;
+            }
+            if (groupedMode) {
+                apiUrl += '&grouped=1';
             }
 
             // Cancel any existing request for this table.
@@ -446,10 +455,39 @@
                 const $tableBody = $(meta.tbody);
                 $tableBody.empty();
 
-                data.results.forEach(item => {
+                // Rowspan of the merged internal-code cell: the first row of a
+                // group carries the span, the rows below it carry no code cell.
+                const groupSpans = {};
+                if (groupedMode) {
+                    let current = null;
+                    let start = 0;
+                    data.results.forEach((row, index) => {
+                        const key = row.internal_code || `sku:${row.sku}`;
+                        if (key !== current) {
+                            current = key;
+                            start = index;
+                            groupSpans[index] = { span: 1, total: row.group_total };
+                        } else {
+                            groupSpans[start].span += 1;
+                        }
+                    });
+                }
+
+                data.results.forEach((item, index) => {
                     let row = '';
                     if (tableNum === 1) {
                         const safeSku = escapeHtml(item.sku);
+                        const safeInternal = escapeHtml(item.internal_code || '—');
+                        const internalCell = groupedMode
+                            ? (groupSpans[index]
+                                ? `<td class="sap-table__group" rowspan="${groupSpans[index].span}" dir="ltr">${safeInternal}</td>`
+                                : '')
+                            : `<td class="sap-table__group" dir="ltr">${safeInternal}</td>`;
+                        const totalCell = groupedMode
+                            ? (groupSpans[index]
+                                ? `<td class="sap-table__group sap-table__num" rowspan="${groupSpans[index].span}">${groupSpans[index].total}</td>`
+                                : '')
+                            : `<td class="sap-table__group sap-table__num">${item.group_total}</td>`;
                         const quantityField = isManager ?
                             `<input type="number" min="0" value="${item.quantity}" class="sap-input wh_editable-field" data-sku="${safeSku}" data-field="quantity">` :
                             item.quantity;
@@ -462,11 +500,13 @@
                         const unitSuffix = item.unit ? `<span class="sap-muted"> · ${escapeHtml(item.unit)}</span>` : '';
                         const transferQuantityField = `<input type="number" min="0" class="sap-input xferQntField wh_editable-field" ${window.editLock ? 'disabled' : ''} value="" placeholder="${tr('How many?')}" data-sku="${safeSku}" data-field="xfer_qnt">`;
                         row = `
-<tr>
+<tr class="${groupedMode && groupSpans[index] ? 'sap-table__groupstart' : ''}">
+    ${internalCell}
     <td class="sap-table__sku">${safeSku}</td>
     <td>${descriptionField}${unitSuffix}</td>
     <td class="sap-table__num">${retailPriceField}</td>
     <td class="sap-table__num">${quantityField}</td>
+    ${totalCell}
     ${isShopUser ? `<td class="sap-table__num">${transferQuantityField}</td>` : ''}
     ${isManager ? `<td class="actions"></td>` : ''}
 </tr>`;
@@ -530,8 +570,14 @@
         const totalPages = data.total_pages || 1;
         const total = typeof data.count === 'number' ? data.count : data.results.length;
         const perPage = Math.min(window.recordsPerPage || 25, 100);
-        const firstRow = total === 0 ? 0 : (currentPage - 1) * perPage + 1;
-        const lastRow = total === 0 ? 0 : firstRow + data.results.length - 1;
+        // Grouped pages hold whole internal codes, so the first/last row are
+        // reported by the server rather than assumed from the page number.
+        const firstRow = typeof data.first_row === 'number'
+            ? data.first_row
+            : (total === 0 ? 0 : (currentPage - 1) * perPage + 1);
+        const lastRow = typeof data.last_row === 'number'
+            ? data.last_row
+            : (total === 0 ? 0 : firstRow + data.results.length - 1);
 
         const $info = $('<span class="sap-pagination__info"></span>').text(
             total === 0 ? tr('No records') :

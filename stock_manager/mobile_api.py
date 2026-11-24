@@ -13,6 +13,7 @@ import json
 import logging
 
 from django.core.cache import cache
+from django.db.models import Sum
 from django.http import JsonResponse
 from django.utils.decorators import method_decorator
 from django.views import View
@@ -208,12 +209,25 @@ def _iso_date(raw, label):
 
 
 def _item_payload(item):
+    group_total = item.quantity
+    group_size = 1
+    if item.internal_group_id:
+        members = item.internal_group.items.filter(is_active=True)
+        totals = members.aggregate(total=Sum("quantity"))
+        group_total = totals["total"] or 0
+        group_size = members.count()
     return {
         "code": item.sku,
         "description": item.description,
         "unit": item.unit or "",
         "quantity": item.quantity,
         "price": str(item.retail_price),
+        # Our own code over every Oracle code of the same article. The app
+        # shows it beside the scanned code; the movement still names the
+        # Oracle code, because that is what the paper carries.
+        "internalCode": item.internal_code,
+        "groupTotal": group_total,
+        "groupSize": group_size,
     }
 
 
@@ -244,6 +258,7 @@ def _document_payload(document, with_lines=True):
                 "description": line.description,
                 "quantity": line.quantity,
                 "unit": line.unit,
+                "internalCode": line.item.internal_code if line.item else "",
             }
             for line in document.lines.all()
         ]

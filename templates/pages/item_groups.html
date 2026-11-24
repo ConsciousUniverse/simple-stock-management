@@ -1,0 +1,160 @@
+{% extends "base_app.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Internal item codes" %}{% endblock %}
+{% block crumb %}{% trans "Internal item codes" %}{% endblock %}
+{% block heading %}{% trans "Internal item codes" %}{% endblock %}
+{% block subheading %}{% trans "One code of ours over every Oracle code that names the same item." %}{% endblock %}
+
+{% block content %}
+<div class="sap-tiles">
+    <div class="sap-tile">
+        <span class="sap-tile__label">{% trans "Internal codes" %}</span>
+        <span class="sap-tile__value">{{ group_count }}</span>
+    </div>
+    <div class="sap-tile sap-tile--neutral">
+        <span class="sap-tile__label">{% trans "Oracle codes" %}</span>
+        <span class="sap-tile__value">{{ oracle_count }}</span>
+    </div>
+    <div class="sap-tile {% if missing_codes %}sap-tile--critical{% else %}sap-tile--neutral{% endif %}">
+        <span class="sap-tile__label">{% trans "Codes without an internal code" %}</span>
+        <span class="sap-tile__value">{{ missing_codes }}</span>
+    </div>
+</div>
+
+{% if missing_codes %}
+<div class="sap-msgstrip sap-msgstrip--warning" role="alert">
+    <svg class="sap-icon" aria-hidden="true"><use href="#i-alert"></use></svg>
+    <span>{% trans "Some items have no internal code. Run `python manage.py internal_codes` to review them, then `--apply`." %}</span>
+</div>
+{% endif %}
+
+<div class="sap-card">
+    <div class="sap-card__header">
+        <div class="sap-card__heading">
+            <h2 class="sap-card__title">{% trans "Group Oracle codes" %}</h2>
+            <p class="sap-card__subtitle">
+                {% trans "Tick the codes that name the same item, then put them under one internal code." %}
+            </p>
+        </div>
+    </div>
+    <div class="sap-card__body sap-card__body--flush">
+        <form method="post" action="/items/groups/" id="groupForm">
+            {% csrf_token %}
+            <div class="sap-toolbar">
+                <label class="sap-field sap-field--inline">
+                    <span class="sap-label">{% trans "Existing internal code (optional)" %}</span>
+                    <input class="sap-input sap-input--narrow" type="text" name="target_code"
+                        placeholder="00001" dir="ltr" autocomplete="off">
+                </label>
+                <div class="sap-form-actions">
+                    <button class="sap-btn sap-btn--emphasized" type="submit" name="action" value="merge_new">
+                        {% trans "Group under a new code" %}
+                    </button>
+                    <button class="sap-btn sap-btn--ghost" type="submit" name="action" value="merge_into">
+                        {% trans "Move to the code above" %}
+                    </button>
+                </div>
+            </div>
+            <div class="sap-tablewrap">
+                <table class="sap-table" id="oracleCodesTable">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="checkAllCodes" aria-label="{% trans 'Select all' %}"></th>
+                            <th>{% trans "Internal code" %}</th>
+                            <th>{% trans "Oracle code" %}</th>
+                            <th>{% trans "Description" %}</th>
+                            <th class="sap-table__num">{% trans "Quantity" %}</th>
+                            <th class="sap-table__num">{% trans "Internal total" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                        <tr>
+                            <td><input type="checkbox" class="codePick" name="skus" value="{{ item.sku }}"></td>
+                            <td dir="ltr">{{ item.internal_code|default:"—" }}</td>
+                            <td dir="ltr">{{ item.sku }}</td>
+                            <td>{{ item.description }}</td>
+                            <td class="sap-table__num">{{ item.quantity }}</td>
+                            <td class="sap-table__num">{{ item.internal_total }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="sap-empty">
+                                <span class="sap-empty__title">{% trans "No items in the catalogue yet." %}</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="sap-card">
+    <div class="sap-card__header">
+        <div class="sap-card__heading">
+            <h2 class="sap-card__title">{% trans "The internal codes and their Oracle codes" %}</h2>
+            <p class="sap-card__subtitle">
+                {% trans "The internal code and its total are merged over the rows that belong to it." %}
+            </p>
+        </div>
+    </div>
+    <div class="sap-card__body sap-card__body--flush">
+        <div class="sap-tablewrap">
+            <table class="sap-table" id="internalCodesTable">
+                <thead>
+                    <tr>
+                        <th>{% trans "Internal code" %}</th>
+                        <th class="sap-table__num">{% trans "Internal total" %}</th>
+                        <th>{% trans "Oracle code" %}</th>
+                        <th>{% trans "Description" %}</th>
+                        <th class="sap-table__num">{% trans "Quantity" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for group in groups %}
+                        {% for item in group.items %}
+                        <tr class="{% if forloop.first %}sap-table__groupstart{% endif %}">
+                            {% if forloop.first %}
+                            <td class="sap-table__group" rowspan="{{ group.member_count }}" dir="ltr">{{ group.code }}</td>
+                            <td class="sap-table__group sap-table__num" rowspan="{{ group.member_count }}">{{ group.total_quantity }}</td>
+                            {% endif %}
+                            <td dir="ltr">{{ item.sku }}</td>
+                            <td>{{ item.description }}</td>
+                            <td class="sap-table__num">{{ item.quantity }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td dir="ltr">{{ group.code }}</td>
+                            <td class="sap-table__num">0</td>
+                            <td colspan="3" class="sap-muted">{% trans "No Oracle code under this internal code." %}</td>
+                        </tr>
+                        {% endfor %}
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="sap-empty">
+                            <span class="sap-empty__title">{% trans "No internal codes yet." %}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    (function () {
+        var all = document.getElementById("checkAllCodes");
+        var boxes = Array.prototype.slice.call(document.querySelectorAll(".codePick"));
+        if (!all) { return; }
+        all.addEventListener("change", function () {
+            boxes.forEach(function (box) { box.checked = all.checked; });
+        });
+    })();
+</script>
+{% endblock %}

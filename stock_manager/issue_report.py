@@ -59,7 +59,7 @@ def documents_in_range(date_from: date, date_to: date, *, direction=None, includ
     """Approved documents whose stock moved inside the window."""
     start = timezone.make_aware(datetime.combine(date_from, datetime.min.time()))
     end = timezone.make_aware(datetime.combine(date_to, datetime.max.time()))
-    queryset = StockDocument.objects.prefetch_related("lines__item", "permits").filter(
+    queryset = StockDocument.objects.prefetch_related("lines__item__internal_group", "permits").filter(
         applied_at__gte=start, applied_at__lte=end
     )
     if not include_pending:
@@ -134,6 +134,7 @@ def build_report(date_from: date, date_to: date, *, doc_types=None):
                 "supplier": document.counterparty,
                 "reference": document.reference,
                 "sku": line.sku,
+                "internal_code": line.item.internal_code if line.item else "",
                 "description": line.description,
                 "quantity": line.quantity,
                 "unit": line.unit or (line.item.unit if line.item else ""),
@@ -241,6 +242,7 @@ def workbook_bytes(report) -> bytes:
             "Site / project",
             "Supplier",
             "Reference",
+            "Internal code",
             "Item code",
             "Description",
             "Quantity",
@@ -260,6 +262,7 @@ def workbook_bytes(report) -> bytes:
                 row["destination"],
                 row["supplier"],
                 row["reference"],
+                row["internal_code"],
                 row["sku"],
                 row["description"],
                 row["quantity"],
@@ -273,11 +276,11 @@ def workbook_bytes(report) -> bytes:
             ]
             for row in report["rows"]
         ],
-        [12, 16, 26, 22, 22, 16, 18, 40, 10, 8, 12, 14, 14, 14, 30, 18],
+        [12, 16, 26, 22, 22, 16, 16, 18, 40, 10, 8, 12, 14, 14, 14, 30, 18],
     )
     detail.append([])
     detail.append(
-        ["Total", "", "", "", "", "", "", "", report["totals"]["quantity"], "", "",
+        ["Total", "", "", "", "", "", "", "", "", report["totals"]["quantity"], "", "",
          float(report["totals"]["value"])]
     )
 
@@ -302,14 +305,15 @@ def workbook_bytes(report) -> bytes:
     permit_sheet = workbook.create_sheet("Company permits")
     write_sheet(
         permit_sheet,
-        ["Date", "Document", "Company permit", "Amount", "Item code", "Description",
-         "Quantity", "Unit"],
+        ["Date", "Document", "Company permit", "Amount", "Internal code", "Item code",
+         "Description", "Quantity", "Unit"],
         [
             [
                 permit["date"],
                 permit["number"],
                 permit["permit_no"],
                 float(permit["amount"]),
+                line.item.internal_code if line.item else "",
                 line.sku,
                 line.description,
                 line.quantity,
@@ -318,7 +322,7 @@ def workbook_bytes(report) -> bytes:
             for permit in report["permits"]
             for line in permit["lines"]
         ],
-        [12, 16, 18, 14, 18, 40, 10, 8],
+        [12, 16, 18, 14, 16, 18, 40, 10, 8],
     )
 
     rollup("By day", "by_day", "Day")

@@ -15,6 +15,7 @@ pytestmark = pytest.mark.django_db
 EXPECTED = [
     ("dashboard", "/"),
     ("items", "/stock/"),
+    ("item_groups", "/items/groups/"),
     ("additions", "/receipts/"),
     ("issues", "/issues/"),
     ("spending", "/issues/report/"),
@@ -25,7 +26,7 @@ EXPECTED = [
     ("audit", "/audit/"),
 ]
 
-MANAGER_ONLY = {"users", "audit"}
+MANAGER_ONLY = {"item_groups", "users", "audit"}
 
 
 def nav_items(response):

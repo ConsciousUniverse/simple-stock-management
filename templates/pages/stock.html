@@ -20,6 +20,10 @@
         <span class="sap-tile__value" id="kpiWarehouse">{{ total_items }}</span>
     </div>
     <div class="sap-tile sap-tile--neutral">
+        <span class="sap-tile__label">{% trans "Internal codes" %}</span>
+        <span class="sap-tile__value" id="kpiInternalCodes">{{ internal_count }}</span>
+    </div>
+    <div class="sap-tile sap-tile--neutral">
         <span class="sap-tile__label">{% trans "Quantity on hand" %}</span>
         <span class="sap-tile__value" id="kpiQuantity">{{ total_quantity }}</span>
     </div>
@@ -41,6 +45,7 @@
                 <thead>
                     <tr>
                         <th>{% trans "Site" %}</th>
+                        <th>{% trans "Internal code" %}</th>
                         <th>{% trans "Item code" %}</th>
                         <th>{% trans "Description" %}</th>
                         <th>{% trans "Quantity" %}</th>
@@ -51,6 +56,7 @@
                     {% for row in site_rows %}
                     <tr>
                         <td>{{ row.shop_user.username }}</td>
+                        <td dir="ltr">{{ row.item.internal_code|default:"—" }}</td>
                         <td>{{ row.item.sku }}</td>
                         <td>{{ row.item.description }}</td>
                         <td>{{ row.quantity }}</td>
@@ -58,7 +64,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="sap-empty">
+                        <td colspan="6" class="sap-empty">
                             <span class="sap-empty__title">{% trans "No stock has been issued to a site yet." %}</span>
                         </td>
                     </tr>

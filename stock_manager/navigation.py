@@ -41,6 +41,7 @@ NAV_GROUPS: Tuple[NavGroup, ...] = (
         (
             NavItem("dashboard", "index", "/", "i-overview", _("Dashboard")),
             NavItem("items", "stock_page", "/stock/", "i-warehouse", _("Items")),
+            NavItem("item_groups", "item_groups_page", "/items/groups/", "i-package", _("Internal item codes"), manager_only=True),
             NavItem("additions", "receipts_page", "/receipts/", "i-download", _("Additions")),
             NavItem("issues", "issues_page", "/issues/", "i-upload", _("Issues")),
             NavItem("spending", "issues_report", "/issues/report/", "i-data", _("Issues report")),

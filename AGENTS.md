@@ -630,3 +630,60 @@ refuses a tag that already exists.
 - **The update check lives behind the gear** (`SettingsActivity`), together with
   the version, a connection test and sign-out; the dashboard is two tiles and a
   count. `Updates.offer` is the single prompt for both doors.
+
+## One internal code (كود داخلي) over several Oracle codes
+
+Oracle carries the same article under more than one item code; the warehouse
+reads one balance for it. The internal code is a **grouping**, not a second
+item: every Oracle code keeps its own row, quantity, movements and documents.
+
+- **`ItemGroup` + `Item.internal_group`** (migration `0012`) hold the grouping.
+  `Item.internal_code` is a property (`""` when there is no group), so nothing
+  duplicates the code on the item row.
+- **Every item gets its own code on creation** (`Item.save()` calls
+  `ItemGroup.create_next()`), starting at `00001`. The code is generated, never
+  typed; `create_next` retries on the unique index, so two requests cannot take
+  the same number. `python manage.py internal_codes [--apply] [--show-groups]`
+  is the review/repair path for rows that arrived without one.
+- **The migration adopts the live database**: `0012` creates the table/column
+  only where missing (`_adopt.ensure_models`) and then gives every existing item
+  a distinct code. `--fake-initial` is not needed; `makemigrations --check`
+  must still say "No changes detected".
+- **Merging never moves stock or paper.** `stock_manager/item_codes.py` changes
+  only `internal_group`; `merge_codes` / `move_code` delete the old group when
+  it becomes empty, and audit `item_grouped` / `item_ungrouped`. Documents keep
+  the Oracle code on every line.
+- **The total is read from the member rows, never stored**
+  (`group_totals()` / `groups_overview()` / an `OuterRef` subquery in
+  `ItemViewSet`). Summing the total as if it were a quantity double-counts.
+  Only **active** members count.
+- **A typed internal code resolves to one member**: `resolve_internal_code`
+  picks the active member with the most stock (lowest Oracle code breaks a
+  tie), so the line still names the code whose balance moves. Exact Oracle codes
+  always win over the group.
+- **The stock table stacks a group**: `?grouped=1` paginates by internal code,
+  not by row, so a group can never be split across pages and print its total
+  twice; `warehouse.js` draws the internal code and the total as two `rowspan`
+  cells. The total belongs in its **own column** (after warehouse qty), not
+  beside the code — putting it beside the code shifted every cell after it (the
+  browser caught this; the API tests could not).
+- **`/items/groups/`** is manager-only: tick Oracle codes, then either group
+  them under a new code or move them to an existing one. `navigation.py` maps
+  the page to `item_groups`.
+- **Reports carry the internal code**: the issues page and workbook (Issues and
+  Company permits sheets), missing paperwork, document detail, labels, the
+  stock page and the mobile item payload (`internalCode`, `groupTotal`,
+  `groupSize`).
+- **The label's barcode is the internal code** (`barcodes.barcode_value`), and
+  every active Oracle code of the article is printed under it. The barcode
+  endpoint answers with the same internal barcode for every member, so one
+  label covers the group; an ungrouped item falls back to its Oracle code.
+  Selecting two members prints two labels with the same barcode — the label is
+  per article, not per Oracle code.
+- **An ungrouped row is not a zero**: the `OuterRef` annotation returns 0 when
+  `internal_group_id` is NULL, so `ItemSerializer` checks for no group **first**
+  and reports the row's own quantity and size 1. Reversing that order made a
+  legacy row read as quantity 0.
+- Tests: `tests/test_item_codes.py` (18), `tests/test_barcodes.py` (17) + the
+  migration cases in `tests/test_migrations_adopt_existing_db.py` (5). Full run:
+  **803 passed, 3 skipped** (Chromium installed, so the E2E suites ran).

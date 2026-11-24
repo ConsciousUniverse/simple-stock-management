@@ -1251,6 +1251,26 @@ fieldset.sap-field {
     white-space: nowrap;
 }
 
+/* An internal code (and its total) spans the rows that belong to it. */
+.sap-table .sap-table__group {
+    font-family: var(--sap-font-mono);
+    font-weight: 700;
+    color: var(--sap-text-strong);
+    white-space: nowrap;
+    vertical-align: middle;
+    background-color: var(--sap-surface-alt);
+    border-right: 1px solid var(--sap-border);
+}
+
+[dir="rtl"] .sap-table .sap-table__group {
+    border-right: 0;
+    border-left: 1px solid var(--sap-border);
+}
+
+.sap-table tbody tr.sap-table__groupstart td {
+    border-top: 2px solid var(--sap-border-strong);
+}
+
 .sap-table td.actions {
     text-align: right;
     white-space: nowrap;

@@ -102,6 +102,7 @@
                         <th>{% trans "Document" %}</th>
                         <th>{% trans "Type" %}</th>
                         <th>{% trans "PO / reference" %}</th>
+                        <th>{% trans "Internal code" %}</th>
                         <th>{% trans "Item code" %}</th>
                         <th>{% trans "Description" %}</th>
                         <th>{% trans "Quantity" %}</th>
@@ -117,6 +118,7 @@
                         <td>{{ row.number }}</td>
                         <td>{{ row.type_label }}</td>
                         <td>{{ row.reference|default:"—" }}</td>
+                        <td dir="ltr">{{ row.internal_code|default:"—" }}</td>
                         <td dir="ltr">{{ row.sku }}</td>
                         <td>{{ row.description }}</td>
                         <td>{{ row.quantity }}{% if row.unit %} {{ row.unit }}{% endif %}</td>
@@ -150,7 +152,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="10" class="sap-empty">
+                        <td colspan="11" class="sap-empty">
                             <span class="sap-empty__title">{% trans "Nothing is missing: every line has its document." %}</span>
                         </td>
                     </tr>

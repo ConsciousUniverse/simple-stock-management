@@ -93,6 +93,7 @@ class MissingLine:
     type_label: object
     reference: str
     sku: str
+    internal_code: str
     description: str
     quantity: Decimal
     unit: str
@@ -168,7 +169,7 @@ def _document_rows(date_from, date_to, site) -> list[MissingLine]:
     """Documents that moved stock (or claim to) without complete paperwork."""
     queryset = (
         StockDocument.objects.select_related("site")
-        .prefetch_related("lines", "permits")
+        .prefetch_related("lines__item__internal_group", "permits")
         .exclude(status=StockDocument.REJECTED)
     )
     if date_from:
@@ -198,6 +199,7 @@ def _document_rows(date_from, date_to, site) -> list[MissingLine]:
                     type_label=document.type_label,
                     reference=document.reference,
                     sku=line.sku,
+                    internal_code=line.item.internal_code if line.item_id else "",
                     description=line.description,
                     quantity=line.quantity,
                     unit=line.unit,
@@ -227,7 +229,7 @@ def _reason_for(document: StockDocument) -> str:
 def _receipt_rows(date_from, date_to) -> list[MissingLine]:
     """Deliveries booked onto the shelf by the receipts screen, unpapered."""
     queryset = (
-        GoodsReceipt.objects.prefetch_related("lines")
+        GoodsReceipt.objects.prefetch_related("lines__item__internal_group")
         .filter(Q(external_ref__isnull=True) | Q(external_ref=""))
         .order_by("-received_at", "-id")
     )
@@ -255,6 +257,7 @@ def _receipt_rows(date_from, date_to) -> list[MissingLine]:
                     type_label=_("Purchase order delivery"),
                     reference=receipt.po_number,
                     sku=line.sku,
+                    internal_code=line.item.internal_code if line.item_id else "",
                     description=line.description,
                     quantity=line.quantity,
                     unit=line.unit,
@@ -417,6 +420,7 @@ def workbook_bytes(rows) -> bytes:
         "Document",
         "Type",
         "PO / reference",
+        "Internal code",
         "Item code",
         "Description",
         "Quantity",
@@ -439,6 +443,7 @@ def workbook_bytes(rows) -> bytes:
                 row.number,
                 str(row.type_label),
                 row.reference,
+                row.internal_code,
                 row.sku,
                 row.description,
                 row.quantity,
@@ -448,7 +453,7 @@ def workbook_bytes(rows) -> bytes:
             ]
         )
     for index, width in enumerate(
-        [12, 42, 18, 26, 18, 18, 44, 10, 8, 22, 20], start=1
+        [12, 42, 18, 26, 18, 16, 18, 44, 10, 8, 22, 20], start=1
     ):
         sheet.column_dimensions[get_column_letter(index)].width = width
     sheet.freeze_panes = "A2"

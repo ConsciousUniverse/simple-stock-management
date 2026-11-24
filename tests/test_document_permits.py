@@ -339,8 +339,8 @@ class TestReport:
         ]
         assert sheet["B2"].value == document.number
         assert sheet["C2"].value == "A-1"
-        assert sheet["E2"].value == "SKU-1"
-        assert sheet["G2"].value == 2
+        assert sheet["F2"].value == "SKU-1"
+        assert sheet["H2"].value == 2
 
 
 class TestPermitsPage:

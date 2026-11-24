@@ -9,8 +9,11 @@ from django.db import migrations, models
 from ._adopt import ensure_models
 
 #: The models the database already had before this app kept migrations.
+#: ``ItemGroup`` is created first because ``Item`` now carries a foreign key to
+#: it: creating ``Item`` before its target table would fail on PostgreSQL.
 LEGACY_MODELS = (
     "Admin",
+    "ItemGroup",
     "Item",
     "ShopItem",
     "TransferItem",

@@ -82,6 +82,7 @@
                         <th>{% trans "Type" %}</th>
                         <th>{% trans "Site / project" %}</th>
                         <th>{% trans "Supplier" %}</th>
+                        <th>{% trans "Internal code" %}</th>
                         <th>{% trans "Item code" %}</th>
                         <th class="sap-table__wide">{% trans "Description" %}</th>
                         <th>{% trans "Quantity" %}</th>
@@ -100,6 +101,7 @@
                         <td>{{ row.type_label }}</td>
                         <td>{{ row.destination|default:"—" }}</td>
                         <td>{{ row.supplier|default:"—" }}</td>
+                        <td dir="ltr">{{ row.internal_code|default:"—" }}</td>
                         <td>{{ row.sku }}</td>
                         <td class="sap-table__wide">{{ row.description }}</td>
                         <td>{{ row.quantity }}</td>
@@ -117,7 +119,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="13" class="sap-empty">
+                        <td colspan="14" class="sap-empty">
                             <span class="sap-empty__title">{% trans "Nothing was issued in this period." %}</span>
                             <span class="sap-empty__text">{% trans "Change the dates or record an issue first." %}</span>
                         </td>

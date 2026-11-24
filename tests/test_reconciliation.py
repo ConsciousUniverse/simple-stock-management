@@ -302,4 +302,4 @@ class TestThePage:
         )
         sheet = load_workbook(BytesIO(response.content)).active
         rows = list(sheet.iter_rows(min_row=2, values_only=True))
-        assert sorted(row[5] for row in rows) == ["SKU-E1", "SKU-E2"]
+        assert sorted(row[6] for row in rows) == ["SKU-E1", "SKU-E2"]

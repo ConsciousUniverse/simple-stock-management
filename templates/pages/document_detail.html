@@ -115,6 +115,7 @@
             <table class="sap-table">
                 <thead>
                     <tr>
+                        <th>{% trans "Internal code" %}</th>
                         <th>{% trans "Code" %}</th>
                         <th>{% trans "Description" %}</th>
                         <th>{% trans "Quantity" %}</th>
@@ -125,6 +126,7 @@
                 <tbody>
                     {% for line in lines %}
                     <tr>
+                        <td dir="ltr">{{ line.item.internal_code|default:"—" }}</td>
                         <td dir="ltr">{{ line.sku }}</td>
                         <td>{{ line.description }}</td>
                         <td>{{ line.quantity }}</td>

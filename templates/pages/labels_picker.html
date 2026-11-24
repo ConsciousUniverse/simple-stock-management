@@ -30,6 +30,7 @@
                 <thead>
                     <tr>
                         <th><input type="checkbox" id="checkAll" aria-label="{% trans 'Select all' %}"></th>
+                        <th>{% trans "Internal code" %}</th>
                         <th>{% trans "Item code" %}</th>
                         <th>{% trans "Description" %}</th>
                         <th>{% trans "Unit" %}</th>
@@ -40,6 +41,7 @@
                     {% for item in items %}
                     <tr>
                         <td><input type="checkbox" class="labelPick" value="{{ item.sku }}"></td>
+                        <td dir="ltr">{{ item.internal_code|default:"—" }}</td>
                         <td>{{ item.sku }}</td>
                         <td>{{ item.description }}</td>
                         <td>{{ item.unit|default:"—" }}</td>
@@ -47,7 +49,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="sap-empty">
+                        <td colspan="6" class="sap-empty">
                             <span class="sap-empty__title">{% trans "No items match this search." %}</span>
                         </td>
                     </tr>

@@ -25,7 +25,7 @@ from django.db.models import F
 from django.utils import timezone
 
 from .audit import record
-from .models import AuditEvent, Item, ShopItem, StockDocument, StockDocumentLine
+from .models import AuditEvent, Item, ItemGroup, ShopItem, StockDocument, StockDocumentLine
 
 IN = StockDocument.IN
 OUT = StockDocument.OUT
@@ -92,6 +92,12 @@ def parse_lines(raw_lines) -> list[tuple[str, int, str, str]]:
         sku = str(raw.get("sku") or "").strip()
         if not sku:
             continue
+        # A typed internal code is resolved to the Oracle code it stands for,
+        # so the document keeps naming an Oracle code (and its own balance).
+        if sku.isdigit() and not Item.objects.filter(sku=sku).exists():
+            member = resolve_internal_code(sku)
+            if member is not None:
+                sku = member.sku
         try:
             quantity = int(str(raw.get("quantity")))
         except (TypeError, ValueError):
@@ -113,6 +119,26 @@ def parse_lines(raw_lines) -> list[tuple[str, int, str, str]]:
     return [(sku, qty, desc, unit) for sku, (qty, desc, unit) in merged.items()]
 
 
+def resolve_internal_code(code: str) -> Item | None:
+    """The member item an internal code stands for, or None.
+
+    An internal code can cover several Oracle codes, so a document cannot store
+    it: the line still has to name the Oracle code whose balance moves. When
+    the operator types our code, the member holding the most stock answers;
+    the lowest code breaks a tie, so the choice is stable.
+    """
+    raw = (code or "").strip()
+    if not raw:
+        return None
+    group = ItemGroup.objects.filter(code__iexact=raw).first()
+    if group is None:
+        return None
+    return (
+        group.items.filter(is_active=True).order_by("-quantity", "sku").first()
+        or group.items.order_by("sku").first()
+    )
+
+
 def find_item_by_code(code: str) -> Item | None:
     """The item a scanned label points at.
 
@@ -131,6 +157,12 @@ def find_item_by_code(code: str) -> Item | None:
     item = Item.objects.filter(sku__iexact=raw).first()
     if item is not None:
         return item
+
+    # Our own code names a group, not one Oracle code. The operator typed it
+    # into the scan box, so answer with a member that can be issued.
+    member = resolve_internal_code(raw)
+    if member is not None:
+        return member
 
     def loose(value):
         return re.sub(r"[\s\-_]", "", value or "").upper()

@@ -107,6 +107,7 @@ the overview and the site-request queue, so the same table is not rendered twice
         <table class="sap-table whTable">
             <thead>
                 <tr>
+                    <th>{% trans "Internal code" %}</th>
                     <th onclick="sortTable(1, 'sku')" data-sort-col="sku" aria-sort="none">{% trans "Item code" %}<span
                             class="sap-sort" aria-hidden="true">&#8597;</span></th>
                     <th onclick="sortTable(1, 'description')" data-sort-col="description"
@@ -118,6 +119,7 @@ the overview and the site-request queue, so the same table is not rendered twice
                     <th onclick="sortTable(1, 'quantity')" data-sort-col="quantity" class="sap-table__num"
                         aria-sort="none">
                         {% trans "Warehouse qty" %}<span class="sap-sort" aria-hidden="true">&#8597;</span></th>
+                    <th class="sap-table__num">{% trans "Internal total" %}</th>
                     <th id="whXferQnt">{% trans "Transfer qty" %}</th>
                     <th id="whActions">{% trans "Actions" %}</th>
                 </tr>

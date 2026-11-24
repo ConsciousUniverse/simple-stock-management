@@ -52,7 +52,16 @@ class TestItemSerializer:
 
     def test_serializes_expected_fields(self, make_item):
         data = ItemSerializer(make_item()).data
-        assert set(data.keys()) == {"sku", "description", "retail_price", "quantity", "unit"}
+        assert set(data.keys()) == {
+            "sku",
+            "description",
+            "retail_price",
+            "quantity",
+            "unit",
+            "internal_code",
+            "group_total",
+            "group_size",
+        }
 
 
 class TestShopItemSerializer:

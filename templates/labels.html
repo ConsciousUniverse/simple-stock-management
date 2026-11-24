@@ -53,11 +53,20 @@
             page-break-inside: avoid;
         }
 
-        .label__code {
+        .label__oracle-codes {
             font-family: "Courier New", monospace;
-            font-size: 10pt;
+            font-size: 7.5pt;
+            line-height: 1.25;
+            letter-spacing: 0.02em;
+            overflow-wrap: anywhere;
+        }
+
+        .label__internal {
+            font-family: "Courier New", monospace;
+            font-size: 8pt;
             font-weight: 700;
-            letter-spacing: 0.04em;
+            letter-spacing: 0.06em;
+            color: #003d7d;
         }
 
         .label svg {
@@ -102,8 +111,11 @@
     <div class="label-sheet">
         {% for entry in items %}{% for _ in copies_range %}
         <div class="label">
-            <div class="label__code">{{ entry.item.sku }}</div>
+            {% if entry.internal_code %}<div class="label__internal" dir="ltr">{{ entry.internal_code }}</div>{% endif %}
             {{ entry.svg|safe }}
+            <div class="label__oracle-codes" dir="ltr">
+                {% for code in entry.oracle_codes %}{{ code }}{% if not forloop.last %} · {% endif %}{% endfor %}
+            </div>
             <div class="label__desc">{{ entry.item.description }}</div>
         </div>
         {% endfor %}{% endfor %}

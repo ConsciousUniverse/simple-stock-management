@@ -262,6 +262,12 @@ msgstr "اختر ملفًا"
 msgid "Choose a permit of this document for %(sku)s."
 msgstr "اختر إذنًا من أذون هذا المستند للبند %(sku)s."
 
+msgid "Choose an Oracle code."
+msgstr "اختر كود أوراكل."
+
+msgid "Choose at least one Oracle code."
+msgstr "اختر كود أوراكل واحدًا على الأقل."
+
 msgid "Choose the items"
 msgstr "اختر الأصناف"
 
@@ -300,6 +306,9 @@ msgstr "مغلق"
 
 msgid "Code"
 msgstr "الكود"
+
+msgid "Codes without an internal code"
+msgstr "أكواد بلا كود داخلي"
 
 msgid "Company item code"
 msgstr "كود الصنف في نظام الشركة"
@@ -562,6 +571,9 @@ msgstr "كل ما خرج من المخزن في الفترة المختارة: �
 msgid "Exchange warehouse and site stock as an Excel workbook"
 msgstr "تبادل بيانات المخزن والمواقع في ملف Excel"
 
+msgid "Existing internal code (optional)"
+msgstr "كود داخلي موجود (اختياري)"
+
 msgid "Export"
 msgstr "تصدير"
 
@@ -607,6 +619,12 @@ msgstr "GitHub رفض الطلب مؤقتًا (حد الاستخدام في ال
 msgid "GitHub refused the request for now (its hourly limit). The phones are offered the last build this server has seen; it catches up by itself."
 msgstr "GitHub رفض الطلب مؤقتًا (حد الساعة). الموبايلات بتعرض لها آخر نسخة شافها السيرفر، ويرجع يتظبط لوحده."
 
+msgid "Group Oracle codes"
+msgstr "تجميع أكواد أوراكل"
+
+msgid "Group under a new code"
+msgstr "تجميع تحت كود جديد"
+
 msgid "Hello"
 msgstr "أهلًا"
 
@@ -633,6 +651,21 @@ msgstr "غير نشط"
 
 msgid "Install the app"
 msgstr "تنصيب التطبيق"
+
+msgid "Internal code"
+msgstr "الكود الداخلي"
+
+msgid "Internal code %(code)s was created for the selected codes."
+msgstr "أُنشئ الكود الداخلي %(code)s للأكواد المحددة."
+
+msgid "Internal codes"
+msgstr "الأكواد الداخلية"
+
+msgid "Internal item codes"
+msgstr "أكواد الأصناف الداخلية"
+
+msgid "Internal total"
+msgstr "الإجمالي الداخلي"
 
 msgid "Inventory"
 msgstr "المخزون"
@@ -823,6 +856,9 @@ msgstr "نقل المخزون من المخزن إلى موقع الإنشاءا
 msgid "Move the catalogue in and out of the system"
 msgstr "إدخال وإخراج دليل الأصناف من النظام"
 
+msgid "Move to the code above"
+msgstr "نقل إلى الكود أعلاه"
+
 msgid "Moved with no company voucher number"
 msgstr "تحرّك بلا رقم إذن شركة"
 
@@ -847,6 +883,9 @@ msgstr "مستخدم جديد"
 msgid "Next"
 msgstr "التالي"
 
+msgid "No Oracle code under this internal code."
+msgstr "لا يوجد كود أوراكل تحت هذا الكود الداخلي."
+
 msgid "No accounts yet."
 msgstr "لا توجد حسابات بعد."
 
@@ -865,11 +904,17 @@ msgstr "لم يتم استلام أي توريدات بعد."
 msgid "No events match this filter."
 msgstr "لا توجد أحداث تطابق هذا التصفي."
 
+msgid "No internal codes yet."
+msgstr "لا توجد أكواد داخلية بعد."
+
 msgid "No issues yet."
 msgstr "لا توجد أذون صرف بعد."
 
 msgid "No item is ticked under this permit yet."
 msgstr "لم يُعلَّم أي بند على هذا الإذن بعد."
+
+msgid "No items in the catalogue yet."
+msgstr "لا توجد أصناف في الدليل بعد."
 
 msgid "No items match this search."
 msgstr "لا توجد أصناف مطابقة لهذا البحث."
@@ -937,6 +982,9 @@ msgstr "لا شيء يُضبط: التطبيق مربوط بهذا الخادم�
 msgid "Nothing was issued in this period."
 msgstr "لم يُصرف شيء في هذه الفترة."
 
+msgid "One code of ours over every Oracle code that names the same item."
+msgstr "كود خاص بنا يجمع كل أكواد أوراكل التي تسمّي الصنف نفسه."
+
 msgid "One issue can be paid against more than one company permit. Record each permit number with its amount, then tick the items that permit covers — a line belongs to one permit."
 msgstr "الصرفية الواحدة قد تُسدد بأكثر من إذن صرف. سجّل رقم كل إذن ومبلغه، ثم علّم البنود التي يغطيها الإذن — والبند يتبع إذنًا واحدًا."
 
@@ -984,6 +1032,18 @@ msgstr "العمليات"
 
 msgid "Optional"
 msgstr "اختياري"
+
+msgid "Oracle code"
+msgstr "كود أوراكل"
+
+msgid "Oracle code moved to another internal code"
+msgstr "نُقل كود أوراكل إلى كود داخلي آخر"
+
+msgid "Oracle codes"
+msgstr "أكواد أوراكل"
+
+msgid "Oracle codes grouped under an internal code"
+msgstr "أكواد أوراكل مجمّعة تحت كود داخلي"
 
 msgid "Overview"
 msgstr "نظرة عامة"
@@ -1414,6 +1474,9 @@ msgstr "مخزون المواقع"
 msgid "Size"
 msgstr "الحجم"
 
+msgid "Some items have no internal code. Run `python manage.py internal_codes` to review them, then `--apply`."
+msgstr "بعض الأصناف بلا كود داخلي. شغّل `python manage.py internal_codes` لمراجعتها، ثم `--apply`."
+
 msgid "Something went wrong."
 msgstr "حدث خطأ ما."
 
@@ -1537,6 +1600,9 @@ msgstr "تم نشر الإصدار."
 msgid "The checksum must be 64 hexadecimal characters."
 msgstr "البصمة يجب أن تكون 64 حرفًا سادس عشريًا."
 
+msgid "The code %(sku)s does not exist."
+msgstr "الكود %(sku)s غير موجود."
+
 msgid "The company voucher number is too long."
 msgstr "رقم إذن الشركة أطول من المسموح."
 
@@ -1551,6 +1617,15 @@ msgstr "يجب أن يبدأ عنوان التنزيل بـ https:// أو بـ /
 
 msgid "The file must match the exported layout."
 msgstr "يجب أن يطابق الملف تنسيق التصدير."
+
+msgid "The internal code %(code)s does not exist."
+msgstr "الكود الداخلي %(code)s غير موجود."
+
+msgid "The internal code and its total are merged over the rows that belong to it."
+msgstr "الكود الداخلي وإجماليه مدموجان على الصفوف التي تتبعه."
+
+msgid "The internal codes and their Oracle codes"
+msgstr "الأكواد الداخلية وأكواد أوراكل التابعة لها"
 
 msgid "The issued quantity must be a whole number."
 msgstr "الكمية المصروفة يجب أن تكون رقمًا صحيحًا."
@@ -1612,6 +1687,9 @@ msgstr "سيتم سحب الطلب؛ لن تُنقل أي كمية."
 msgid "The request of %(name)s was refused."
 msgstr "تم رفض طلب %(name)s."
 
+msgid "The selected codes are now under internal code %(code)s."
+msgstr "الأكواد المحددة أصبحت تحت الكود الداخلي %(code)s."
+
 msgid "The server address is built into the app; there is no field on the phone to change it."
 msgstr "عنوان السيرفر مبني جوّه التطبيق، ومفيش خانة على الموبايل تغيّره."
 
@@ -1663,6 +1741,9 @@ msgstr "هذا آخر مدير مخزن."
 msgid "This number is the account. The app cannot change it."
 msgstr "هذا الرقم هو الحساب نفسه. التطبيق لا يستطيع تغييره."
 
+msgid "Tick the codes that name the same item, then put them under one internal code."
+msgstr "علّم الأكواد التي تسمّي الصنف نفسه، ثم ضعها تحت كود داخلي واحد."
+
 msgid "To"
 msgstr "إلى"
 
@@ -1708,11 +1789,17 @@ msgstr "النقل متاح"
 msgid "Type"
 msgstr "النوع"
 
+msgid "Type the internal code you want to move to."
+msgstr "اكتب الكود الداخلي الذي تريد النقل إليه."
+
 msgid "Unit"
 msgstr "الوحدة"
 
 msgid "Unknown action."
 msgstr "إجراء غير معروف."
+
+msgid "Unknown codes: %(codes)s"
+msgstr "أكواد غير موجودة: %(codes)s"
 
 msgid "Update"
 msgstr "تحديث"

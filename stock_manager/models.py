@@ -1,8 +1,10 @@
-from django.db import models
+from django.db import IntegrityError, models, transaction
 from django.contrib.auth.models import User
 import re
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from django.core.validators import MinValueValidator
+from django.db.models import IntegerField
+from django.db.models.functions import Cast
 from django.utils.translation import gettext_lazy as _lazy
 
 from .phones import canonical_phone
@@ -54,6 +56,50 @@ class Admin(models.Model):
         return f"Configuration Options"
 
 
+class ItemGroup(models.Model):
+    """Our own item code: one internal code over one or more Oracle codes.
+
+    Oracle sometimes carries the same physical article under several item
+    codes. The Oracle code stays the key of ``Item`` and of every document
+    line, so the paper still matches; this group is the warehouse's own code
+    that reads one balance for the article. The total is computed from the
+    member rows and never stored, so a quantity can never be counted twice.
+    """
+
+    code = models.CharField(max_length=20, unique=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("code",)
+        verbose_name = "Internal item code"
+        verbose_name_plural = "Internal item codes"
+
+    def __str__(self):
+        return self.code
+
+    @classmethod
+    def create_next(cls):
+        """Create a group with the next free code (00001, 00002, ...).
+
+        Two requests can compute the same number, so the unique index decides:
+        the loser retries with the next one. The code is generated here, never
+        typed, so a duplicate cannot be created by hand either.
+        """
+        for _ in range(50):
+            try:
+                with transaction.atomic():
+                    last = (
+                        cls.objects.annotate(number=Cast("code", IntegerField()))
+                        .order_by("-number")
+                        .values_list("number", flat=True)
+                        .first()
+                    ) or 0
+                    return cls.objects.create(code=f"{last + 1:05d}")
+            except IntegrityError:
+                continue
+        raise IntegrityError("Could not allocate an internal item code.")
+
+
 class Item(models.Model):
     sku = models.CharField(primary_key=True, unique=True, editable=True, max_length=100)
     description = models.CharField(max_length=250)
@@ -62,11 +108,25 @@ class Item(models.Model):
     # Unit of measure as the operator writes it (قطعة / متر / كجم ...). A unit
     # is data, not an enum: the catalogue mixes Arabic and English articles.
     unit = models.CharField(max_length=20, blank=True, default="")
+    # The warehouse's own code for the article, shared by every Oracle code
+    # that names the same thing. Assigned on creation so no item can exist
+    # without one; the migration gives the existing rows theirs.
+    internal_group = models.ForeignKey(
+        ItemGroup,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="items",
+    )
     last_updated = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)  # Soft-delete flag
 
     def __str__(self):
         return f"{self.sku} ({'Active' if self.is_active else 'Inactive'})"
+
+    @property
+    def internal_code(self):
+        return self.internal_group.code if self.internal_group_id else ""
 
     def save(self, *args, **kwargs):
         """
@@ -90,6 +150,13 @@ class Item(models.Model):
             )
 
         self.retail_price = dec
+        if self.internal_group_id is None:
+            self.internal_group = ItemGroup.create_next()
+            # A targeted save (`update_fields`) must carry the new group too,
+            # or the row would be saved without the code it was just given.
+            update_fields = kwargs.get("update_fields")
+            if update_fields is not None:
+                kwargs["update_fields"] = list(update_fields) + ["internal_group"]
         super().save(*args, **kwargs)
 
 
@@ -420,6 +487,8 @@ class AuditEvent(models.Model):
     ITEM_CREATED = "item_created"
     ITEM_UPDATED = "item_updated"
     ITEM_DELETED = "item_deleted"
+    ITEM_GROUPED = "item_grouped"
+    ITEM_UNGROUPED = "item_ungrouped"
     TRANSFER_SENT = "transfer_sent"
     TRANSFER_COMPLETED = "transfer_completed"
     DATA_IMPORTED = "data_imported"
@@ -448,6 +517,8 @@ class AuditEvent(models.Model):
         (ITEM_CREATED, _lazy("Item created")),
         (ITEM_UPDATED, _lazy("Item changed")),
         (ITEM_DELETED, _lazy("Item deleted")),
+        (ITEM_GROUPED, _lazy("Oracle codes grouped under an internal code")),
+        (ITEM_UNGROUPED, _lazy("Oracle code moved to another internal code")),
         (TRANSFER_SENT, _lazy("Transfer requested")),
         (TRANSFER_COMPLETED, _lazy("Transfer dispatched")),
         (DATA_IMPORTED, _lazy("Spreadsheet imported")),
@@ -487,6 +558,8 @@ class AuditEvent(models.Model):
         ITEM_CREATED: "items",
         ITEM_UPDATED: "items",
         ITEM_DELETED: "items",
+        ITEM_GROUPED: "items",
+        ITEM_UNGROUPED: "items",
         TRANSFER_SENT: "transfers",
         TRANSFER_COMPLETED: "transfers",
         DATA_IMPORTED: "data",

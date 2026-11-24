@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from django.db.models import Count, Sum
+
 from .models import Item, ShopItem, TransferItem
 from django.contrib.auth.models import User
 import re
@@ -11,9 +13,48 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class ItemSerializer(serializers.ModelSerializer):
+    internal_code = serializers.SerializerMethodField()
+    group_total = serializers.SerializerMethodField()
+    group_size = serializers.SerializerMethodField()
+
     class Meta:
         model = Item
-        fields = ["sku", "description", "retail_price", "quantity", "unit"]
+        fields = [
+            "sku",
+            "description",
+            "retail_price",
+            "quantity",
+            "unit",
+            "internal_code",
+            "group_total",
+            "group_size",
+        ]
+
+    def get_internal_code(self, obj):
+        return obj.internal_code
+
+    def get_group_total(self, obj):
+        if not obj.internal_group_id:
+            return obj.quantity
+        annotated = getattr(obj, "group_total", None)
+        if annotated is not None:
+            return annotated
+        return (
+            Item.objects.filter(
+                internal_group_id=obj.internal_group_id, is_active=True
+            ).aggregate(total=Sum("quantity"))["total"]
+            or 0
+        )
+
+    def get_group_size(self, obj):
+        if not obj.internal_group_id:
+            return 1
+        annotated = getattr(obj, "group_size", None)
+        if annotated is not None:
+            return annotated
+        return Item.objects.filter(
+            internal_group_id=obj.internal_group_id, is_active=True
+        ).count()
 
     def validate_quantity(self, value):
         if not re.match(r"^\d+$", str(value)):

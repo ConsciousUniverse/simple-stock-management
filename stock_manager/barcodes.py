@@ -1,8 +1,9 @@
 """Code 128 barcodes for item labels.
 
-The barcode carries the item identifier the company uses (the item SKU), so a
-label printed here can be scanned by the site application and matched back to
-the same item without a lookup table.
+A label carries the warehouse's own internal code when the item has one, so a
+single barcode stands for every Oracle code of the same article. The Oracle
+codes are printed as text under it. An item without a group falls back to its
+Oracle code, exactly as before.
 """
 
 import io
@@ -16,6 +17,11 @@ MAX_CODE_LENGTH = 48
 
 class BarcodeError(ValueError):
     """The value cannot be rendered as a Code 128 barcode."""
+
+
+def barcode_value(item):
+    """The value a label's barcode carries: our internal code when there is one."""
+    return item.internal_code or item.sku
 
 
 def normalise_barcode_value(value):

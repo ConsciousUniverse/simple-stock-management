@@ -5,9 +5,11 @@ import pytest
 from stock_manager.barcodes import (
     MAX_CODE_LENGTH,
     BarcodeError,
+    barcode_value,
     normalise_barcode_value,
     render_barcode_svg,
 )
+from stock_manager import item_codes
 
 pytestmark = pytest.mark.django_db
 
@@ -65,8 +67,46 @@ class TestBarcodeEndpoint:
 
         assert response.status_code == 400
 
+    def test_two_oracle_codes_of_one_item_answer_with_one_barcode(
+        self, manager_client, make_item
+    ):
+        first = make_item(sku="ORACLE-A", quantity=5)
+        second = make_item(sku="ORACLE-B", quantity=7)
+        group = item_codes.merge_codes([first.sku, second.sku])
+
+        one = manager_client.get(f"/api/items/{first.sku}/barcode.svg").content.decode()
+        two = manager_client.get(f"/api/items/{second.sku}/barcode.svg").content.decode()
+
+        assert one == two
+        assert one == render_barcode_svg(group.code)
+
 
 class TestLabelSheet:
+    def test_barcode_value_prefers_the_internal_code(self, make_item):
+        first = make_item(sku="ORACLE-A")
+        second = make_item(sku="ORACLE-B")
+        group = item_codes.merge_codes([first.sku, second.sku])
+        first.refresh_from_db()
+
+        assert barcode_value(first) == group.code
+
+    def test_the_label_barcode_covers_every_oracle_code_of_the_item(
+        self, client, manager, make_item
+    ):
+        first = make_item(sku="ORACLE-A", description="Nail 3in", quantity=5)
+        second = make_item(sku="ORACLE-B", description="Nail 3in", quantity=7)
+        group = item_codes.merge_codes([first.sku, second.sku])
+        client.force_login(manager)
+
+        html = client.get(f"/labels/?skus={first.sku}").content.decode()
+
+        assert html.count('class="label"') == 1
+        assert group.code in html
+        assert first.sku in html
+        assert second.sku in html
+        assert render_barcode_svg(group.code) in html
+        assert render_barcode_svg(first.sku) not in html
+
     def test_prints_one_label_per_item_and_copy(self, client, manager, make_item):
         make_item(sku="NSCOM-1001", description="Circuit breaker")
         make_item(sku="NSCOM-1002", description="Cable tray")

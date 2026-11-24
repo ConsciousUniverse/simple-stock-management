@@ -35,7 +35,13 @@ from .views import (
     stock_documents_api,
     decide_stock_document_api,
 )
-from stock_manager.pages import android_page, audit_page, labels_page, users_page
+from stock_manager.pages import (
+    android_page,
+    audit_page,
+    item_groups_page,
+    labels_page,
+    users_page,
+)
 from stock_manager import mobile_api
 from django.conf.urls.static import static
 from django.conf import settings
@@ -95,6 +101,8 @@ urlpatterns = [
     path("api/sites/", list_sites, name="list_sites"),
     # The picker; with ?skus= it renders the printable sheet instead.
     path("labels/", labels_page, name="print_labels"),
+    # Our own code over several Oracle codes: read it, merge, and move.
+    path("items/groups/", item_groups_page, name="item_groups_page"),
     path("users/", users_page, name="users_page"),
     path("android/", android_page, name="android_page"),
     # The Android app's API. `version/` is public on purpose: the app asks

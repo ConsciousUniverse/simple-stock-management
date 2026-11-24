@@ -161,9 +161,9 @@ class TestWorkbook:
         sheet = workbook["Issues"]
         assert sheet["A1"].value == "Date"
         assert sheet["B2"].value == StockDocument.objects.get().number
-        assert sheet["I2"].value == 2  # quantity
+        assert sheet["J2"].value == 2  # quantity
         assert sheet["A4"].value == "Total"
-        assert sheet["I4"].value == 2
+        assert sheet["J4"].value == 2
 
 
 class TestReportPage:

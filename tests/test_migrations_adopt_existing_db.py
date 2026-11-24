@@ -70,6 +70,21 @@ def _columns(db_path: Path, table: str) -> set:
         return {row[1] for row in connection.execute(f"pragma table_info({table})")}
 
 
+def _insert_item(db_path: Path, sku: str, quantity: int) -> None:
+    with sqlite3.connect(db_path) as connection:
+        connection.execute(
+            "INSERT INTO stock_manager_item "
+            "(sku, description, retail_price, quantity, unit, last_updated, is_active) "
+            "VALUES (?, 'Widget', 10, ?, '', datetime('now'), 1)",
+            (sku, quantity),
+        )
+
+
+def _forget_stock_manager_migrations(db_path: Path) -> None:
+    with sqlite3.connect(db_path) as connection:
+        connection.execute("DELETE FROM django_migrations WHERE app = 'stock_manager'")
+
+
 @pytest.fixture()
 def legacy_database(tmp_path):
     """A migrated database whose schema has drifted, with no migration record."""
@@ -102,7 +117,34 @@ def test_the_new_tables_arrive_on_the_same_run(legacy_database):
     tables = _tables(legacy_database)
     assert "stock_manager_auditevent" in tables
     assert "stock_manager_apprelease" in tables
+    assert "stock_manager_itemgroup" in tables
     assert "unit" in _columns(legacy_database, "stock_manager_item")
+    assert "internal_group_id" in _columns(legacy_database, "stock_manager_item")
+
+
+def test_every_existing_item_gets_its_own_internal_code(tmp_path):
+    """The migration, not a later click, gives the existing catalogue its codes."""
+    db_path = tmp_path / "legacy.sqlite3"
+    assert _migrate(db_path).returncode == 0
+    _insert_item(db_path, "ORACLE-A", 5)
+    _insert_item(db_path, "ORACLE-B", 7)
+    _forget_stock_manager_migrations(db_path)
+
+    result = _migrate(db_path)
+
+    assert result.returncode == 0, result.stderr[-3000:]
+    with sqlite3.connect(db_path) as connection:
+        rows = list(
+            connection.execute(
+                "SELECT i.sku, g.code FROM stock_manager_item i "
+                "LEFT JOIN stock_manager_itemgroup g ON g.id = i.internal_group_id "
+                "ORDER BY i.sku"
+            )
+        )
+    assert [sku for sku, _ in rows] == ["ORACLE-A", "ORACLE-B"]
+    codes = [code for _, code in rows]
+    assert all(codes)
+    assert len(set(codes)) == 2
 
 
 def test_a_second_run_changes_nothing(legacy_database):
@@ -132,9 +174,11 @@ def test_a_fresh_database_still_gets_every_table(tmp_path):
         "stock_manager_stockdocumentline",
         "stock_manager_auditevent",
         "stock_manager_apprelease",
+        "stock_manager_itemgroup",
     ):
         assert table in tables, table
     assert "unit" in _columns(db_path, "stock_manager_item")
+    assert "internal_group_id" in _columns(db_path, "stock_manager_item")
 
 
 def teardown_module(module):

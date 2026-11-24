@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 
 from django.conf import settings
 from django.contrib.auth.views import LoginView
@@ -20,6 +21,7 @@ from .models import (
     GoodsReceipt,
     GoodsReceiptLine,
     Item,
+    ItemGroup,
     ShopItem,
     StockDocument,
     StockDocumentLine,
@@ -32,7 +34,7 @@ from . import documents as stock_documents
 from . import issue_report
 from . import reconciliation
 from . import permits as company_permits
-from .barcodes import BarcodeError, render_barcode_svg
+from .barcodes import BarcodeError, barcode_value, render_barcode_svg
 from .ui_strings import js_messages
 from .serializers import ItemSerializer, ShopItemSerializer, TransferItemSerializer
 from .pagination import CustomPagination
@@ -49,7 +51,8 @@ from django.db import transaction
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils.translation import gettext as _
 from decimal import Decimal
-from django.db.models import F, Q, Sum
+from django.db.models import Count, F, OuterRef, Q, Subquery, Sum
+from django.db.models.functions import Coalesce
 from email_service.email import SendEmail
 from .utils import SpreadsheetTools
 
@@ -64,17 +67,92 @@ class ItemViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = CustomPagination
 
+    @staticmethod
+    def with_group_totals(queryset):
+        """Attach the summed quantity of the internal code to every row.
+
+        The group total is read from the member rows, never stored, so a
+        quantity cannot be counted twice.
+        """
+        totals = (
+            Item.objects.filter(
+                internal_group=OuterRef("internal_group"), is_active=True
+            )
+            .values("internal_group")
+            .annotate(total=Sum("quantity"))
+            .values("total")
+        )
+        sizes = (
+            Item.objects.filter(
+                internal_group=OuterRef("internal_group"), is_active=True
+            )
+            .values("internal_group")
+            .annotate(total=Count("pk"))
+            .values("total")
+        )
+        return queryset.select_related("internal_group").annotate(
+            group_total=Coalesce(Subquery(totals), 0),
+            group_size=Coalesce(Subquery(sizes), 0),
+        )
+
     def get_queryset(self):
-        queryset = Item.objects.filter(is_active=True)
+        queryset = self.with_group_totals(Item.objects.filter(is_active=True))
         search_query = self.request.query_params.get("search", None)
         if search_query:
             queryset = queryset.filter(
-                Q(description__icontains=search_query) | Q(sku__icontains=search_query)
+                Q(description__icontains=search_query)
+                | Q(sku__icontains=search_query)
+                | Q(internal_group__code__icontains=search_query)
             )  # 🔍 Search filter
         return apply_ordering(
             queryset,
             self.request.query_params.get("ordering"),
             natural_key=lambda row: row.sku,
+        )
+
+    def list(self, request, *args, **kwargs):
+        """The table can ask for pages of *internal codes*, not of rows.
+
+        A group split across a page boundary would print its code and total
+        twice, so the stock table paginates by group when it asks to. Other
+        callers (the phone, a script) keep the flat page they always had.
+        """
+        if request.query_params.get("grouped") != "1":
+            return super().list(request, *args, **kwargs)
+
+        items = list(self.get_queryset().order_by("internal_group__code", "sku"))
+        groups, order = {}, []
+        for item in items:
+            key = item.internal_group_id or f"sku:{item.sku}"
+            if key not in groups:
+                groups[key] = []
+                order.append(key)
+            groups[key].append(item)
+
+        paginator = self.pagination_class()
+        page_size = paginator.get_page_size(request)
+        pager = Paginator(order, page_size)
+        page = pager.get_page(request.query_params.get("page") or 1)
+        selected = [item for key in page.object_list for item in groups[key]]
+
+        before = sum(len(groups[key]) for key in order[: page.start_index() - 1])
+        return Response(
+            {
+                "results": self.get_serializer(selected, many=True).data,
+                "count": len(items),
+                "current_page": page.number,
+                "total_pages": pager.num_pages,
+                "first_row": before + 1 if selected else 0,
+                "last_row": before + len(selected),
+                "previous": None,
+                "next": None,
+                "previous_page_number": page.previous_page_number()
+                if page.has_previous()
+                else None,
+                "next_page_number": page.next_page_number()
+                if page.has_next()
+                else None,
+            }
         )
 
     def create(self, request, *args, **kwargs):
@@ -660,6 +738,10 @@ def _parse_receipt_lines(raw_lines):
         sku = str(raw.get("sku") or "").strip()
         if not sku:
             continue
+        if sku.isdigit() and not Item.objects.filter(sku=sku).exists():
+            member = stock_documents.resolve_internal_code(sku)
+            if member is not None:
+                sku = member.sku
         try:
             quantity = int(str(raw.get("quantity")))
         except (TypeError, ValueError):
@@ -813,9 +895,16 @@ def list_sites(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def item_barcode(request, sku):
-    """The Code 128 barcode for one item, as a standalone SVG document."""
+    """The Code 128 barcode for one item, as a standalone SVG document.
+
+    A grouped item answers with its internal code, so the same barcode covers
+    every Oracle code of the article. An unknown value is still rendered as
+    given, which keeps the endpoint usable for a code that is not in the
+    catalogue yet.
+    """
+    item = Item.objects.filter(sku=sku).select_related("internal_group").first()
     try:
-        svg = render_barcode_svg(sku)
+        svg = render_barcode_svg(barcode_value(item) if item else sku)
     except BarcodeError as exc:
         return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
     response = HttpResponse(svg, content_type="image/svg+xml")
@@ -825,7 +914,11 @@ def item_barcode(request, sku):
 
 @login_required
 def print_labels(request):
-    """Printable label sheet: one barcode per item, ``copies`` labels each."""
+    """Printable label sheet: one barcode per selected item, ``copies`` each.
+
+    The barcode carries the internal code, so one label covers every Oracle code
+    of the article; the Oracle codes themselves are printed under it.
+    """
     raw = request.GET.get("skus") or request.GET.get("sku") or ""
     skus = [value.strip() for value in raw.split(",") if value.strip()]
     try:
@@ -835,18 +928,41 @@ def print_labels(request):
 
     items, errors = [], []
     if skus:
-        found = {item.sku: item for item in Item.objects.filter(sku__in=skus)}
+        selected = list(
+            Item.objects.filter(sku__in=skus).select_related("internal_group")
+        )
+        found = {item.sku: item for item in selected}
+        group_ids = {
+            item.internal_group_id for item in selected if item.internal_group_id
+        }
+        codes_by_group = defaultdict(list)
+        for group_id, code in (
+            Item.objects.filter(internal_group_id__in=group_ids, is_active=True)
+            .order_by("sku")
+            .values_list("internal_group_id", "sku")
+        ):
+            codes_by_group[group_id].append(code)
+
         for sku in skus:
             item = found.get(sku)
             if item is None:
                 errors.append(_("Item %(sku)s was not found.") % {"sku": sku})
                 continue
+            value = barcode_value(item)
             try:
-                svg = render_barcode_svg(item.sku)
+                svg = render_barcode_svg(value)
             except BarcodeError as exc:
                 errors.append(f"{sku}: {exc}")
                 continue
-            items.append({"item": item, "svg": svg})
+            items.append(
+                {
+                    "item": item,
+                    "internal_code": item.internal_code,
+                    "oracle_codes": codes_by_group.get(item.internal_group_id)
+                    or [item.sku],
+                    "svg": svg,
+                }
+            )
 
     return render(
         request,
@@ -996,7 +1112,7 @@ def _form_date(raw):
 def stock_page(request):
     """The warehouse and site stock, on their own page."""
     site_rows = (
-        ShopItem.objects.select_related("item", "shop_user")
+        ShopItem.objects.select_related("item", "item__internal_group", "shop_user")
         .filter(quantity__gt=0)
         .order_by("shop_user__username", Lower("item__sku"))[:300]
     )
@@ -1007,6 +1123,12 @@ def stock_page(request):
             "js_messages": js_messages(),
             "site_rows": site_rows,
             "total_items": Item.objects.filter(is_active=True).count(),
+            "internal_count": (
+                ItemGroup.objects.filter(items__is_active=True).distinct().count()
+                + Item.objects.filter(
+                    is_active=True, internal_group__isnull=True
+                ).count()
+            ),
             "total_quantity": Item.objects.filter(is_active=True).aggregate(
                 total=Sum("quantity")
             )["total"]
@@ -1171,7 +1293,7 @@ def document_detail(request, pk):
         "pages/document_detail.html",
         {
             "document": document,
-            "lines": document.lines.select_related("item").all(),
+            "lines": document.lines.select_related("item__internal_group").all(),
             "has_photo": bool(document.photo),
             "is_manager": is_warehouse_manager(request.user),
             "back_url": request.GET.get("next")
