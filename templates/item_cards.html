@@ -1,0 +1,180 @@
+{% load static i18n %}{% get_current_language as CURRENT_LANGUAGE %}<!DOCTYPE html>
+<html lang="{{ CURRENT_LANGUAGE }}" dir="{% if CURRENT_LANGUAGE == 'ar' %}rtl{% else %}ltr{% endif %}">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{% trans "Item cards" %}</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 1rem;
+            font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+            background: #f4f6f8;
+            color: #1d2d3e;
+        }
+
+        .cards-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .cards-toolbar h1 { font-size: 1.1rem; margin: 0; }
+
+        .cards-toolbar button {
+            padding: 0.5rem 1rem;
+            border: 0;
+            border-radius: 0.4rem;
+            background: #0a6ed1;
+            color: #fff;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .cards-error { color: #bb0000; font-size: 0.9rem; }
+
+        /* One card per item, the same block as the stock card sheet. */
+        .card {
+            width: 190mm;
+            max-width: 100%;
+            margin: 0 auto 6mm;
+            background: #fff;
+            border: 1px solid #b8c4cf;
+            padding: 4mm 5mm;
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+
+        .card__head {
+            display: flex;
+            align-items: center;
+            gap: 4mm;
+            border-bottom: 2px solid #003d7d;
+            padding-bottom: 3mm;
+            margin-bottom: 3mm;
+        }
+
+        .card__logo { height: 14mm; width: auto; }
+
+        .card__project {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            gap: 4mm;
+            background: #e9edf1;
+            padding: 1.5mm 3mm;
+            font-style: italic;
+            font-size: 10pt;
+        }
+
+        .card__rows { margin: 0; }
+
+        .card__row {
+            display: grid;
+            grid-template-columns: 38mm 1fr;
+            column-gap: 3mm;
+            align-items: start;
+            margin-bottom: 2.5mm;
+        }
+
+        .card__rows dt {
+            font-weight: 700;
+            font-size: 10pt;
+        }
+
+        .card__rows dt::after { content: " :"; }
+
+        .card__rows dd {
+            margin: 0;
+            font-size: 10pt;
+            overflow-wrap: anywhere;
+        }
+
+        .card__rows .mono {
+            font-family: "Courier New", monospace;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }
+
+        .card__barcode { margin-top: 1.5mm; }
+        .card__barcode svg { height: 13mm; width: auto; max-width: 100%; }
+
+        .card__arabic {
+            font-size: 14pt;
+            font-weight: 700;
+        }
+
+        @page { size: A4; margin: 10mm; }
+
+        @media print {
+            body { background: #fff; padding: 0; }
+            .cards-toolbar { display: none; }
+            .card { border: 0; margin: 0 0 6mm; padding: 2mm 0; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="cards-toolbar">
+        <h1>{% trans "Item cards" %}</h1>
+        <button type="button" onclick="window.print()">{% trans "Print / Save as PDF" %}</button>
+        <span>{{ cards|length }} {% trans "cards" %}</span>
+    </div>
+
+    {% for error in errors %}
+    <p class="cards-error">{{ error }}</p>
+    {% endfor %}
+
+    {% for card in cards %}
+    <section class="card">
+        <header class="card__head">
+            <img class="card__logo" src="{% static 'img/company-logo.png' %}" alt="">
+            <div class="card__project">
+                <span>{{ project.name|default:"—" }}</span>
+                <span>{% trans "Code" %} : {{ project.code|default:"—" }}</span>
+            </div>
+        </header>
+
+        <dl class="card__rows">
+            <div class="card__row">
+                <dt>{% trans "Sub Inventory" %}</dt>
+                <dd>{{ card.item.sub_inventory|default:"—" }}</dd>
+            </div>
+            <div class="card__row">
+                <dt>{% trans "Internal Code" %}</dt>
+                <dd>
+                    <span class="mono">{{ card.internal_code|default:"—" }}</span>
+                    {% if card.internal_code %}
+                    <div class="card__barcode">{{ card.barcode_svg|safe }}</div>
+                    {% endif %}
+                </dd>
+            </div>
+            <div class="card__row">
+                <dt>{% trans "Item Code" %}</dt>
+                <dd>{% for code in card.oracle_codes %}<div class="mono">{{ code }}</div>{% endfor %}</dd>
+            </div>
+            <div class="card__row">
+                <dt>{% trans "Unit" %}</dt>
+                <dd>{{ card.item.unit|default:"—" }}</dd>
+            </div>
+            <div class="card__row">
+                <dt>{% trans "Item Description" %}</dt>
+                <dd>{{ card.item.description }}</dd>
+            </div>
+            <div class="card__row">
+                <dt>{% trans "Arabic Item" %}</dt>
+                <dd class="card__arabic" dir="rtl">{{ card.item.arabic_name|default:"—" }}</dd>
+            </div>
+        </dl>
+    </section>
+    {% endfor %}
+
+    {% if not cards %}
+    <p class="cards-error">{% trans "Select at least one item to print its card." %}</p>
+    {% endif %}
+</body>
+
+</html>

@@ -19,6 +19,10 @@ class Admin(models.Model):
     allow_upload_deletions = models.BooleanField(default=False)
     allow_email_notifications = models.BooleanField(default=False)
     records_per_page = models.IntegerField(default=25, validators=[MinValueValidator(1)])
+    # The project printed at the top of every item card. Entered once here, on
+    # the App Configuration page, instead of being typed on each card.
+    project_name = models.CharField(max_length=120, blank=True, default="", db_default="")
+    project_code = models.CharField(max_length=20, blank=True, default="", db_default="")
 
     class Meta:
         verbose_name = "App Configuration"
@@ -51,6 +55,14 @@ class Admin(models.Model):
     def get_records_per_page():
         config = Admin.objects.first()
         return config.records_per_page if config else 25
+
+    @staticmethod
+    def get_project():
+        """``{"name": ..., "code": ...}`` for the item card header."""
+        config = Admin.objects.first()
+        if config is None:
+            return {"name": "", "code": ""}
+        return {"name": config.project_name, "code": config.project_code}
 
     def __str__(self):
         return f"Configuration Options"
@@ -108,6 +120,10 @@ class Item(models.Model):
     # Unit of measure as the operator writes it (قطعة / متر / كجم ...). A unit
     # is data, not an enum: the catalogue mixes Arabic and English articles.
     unit = models.CharField(max_length=20, blank=True, default="")
+    # The item card's "Sub Inventory" line (e.g. كهرباء) and its Arabic name
+    # (e.g. كابل نحاس 3*10مم). Both are printed on the card only.
+    sub_inventory = models.CharField(max_length=120, blank=True, default="", db_default="")
+    arabic_name = models.CharField(max_length=250, blank=True, default="", db_default="")
     # The warehouse's own code for the article, shared by every Oracle code
     # that names the same thing. Assigned on creation so no item can exist
     # without one; the migration gives the existing rows theirs.

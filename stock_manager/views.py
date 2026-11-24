@@ -971,6 +971,79 @@ def print_labels(request):
     )
 
 
+@login_required
+def print_item_cards(request):
+    """Printable item cards, laid out like the stock card sheet.
+
+    ``/labels/cards/?cards=SKU:COPIES,…`` renders each selected Oracle code as
+    many cards as it has copies; ``?skus=…`` is one copy each. The card shows the
+    project from the App Configuration page, the internal code with its own
+    barcode, every Oracle code that belongs to that internal code, the unit, the
+    description and the Arabic name. The browser's print dialog prints them or
+    saves them as a PDF.
+    """
+    requested = []  # [(sku, copies)] in the order the operator picked them
+    spec = (request.GET.get("cards") or "").strip()
+    if spec:
+        for part in spec.split(","):
+            sku, _sep, count = part.strip().rpartition(":")
+            if not sku:
+                continue
+            try:
+                copies = min(max(int(count), 0), 60)
+            except ValueError:
+                copies = 1
+            requested.append((sku.strip(), copies))
+    else:
+        raw = request.GET.get("skus") or request.GET.get("sku") or ""
+        requested = [(v.strip(), 1) for v in raw.split(",") if v.strip()]
+
+    skus = [sku for sku, _copies in requested]
+    cards, errors = [], []
+    if skus:
+        selected = list(
+            Item.objects.filter(sku__in=skus).select_related("internal_group")
+        )
+        found = {item.sku: item for item in selected}
+        group_ids = {
+            item.internal_group_id for item in selected if item.internal_group_id
+        }
+        codes_by_group = defaultdict(list)
+        for group_id, code in (
+            Item.objects.filter(internal_group_id__in=group_ids, is_active=True)
+            .order_by("sku")
+            .values_list("internal_group_id", "sku")
+        ):
+            codes_by_group[group_id].append(code)
+
+        for sku, copies in requested:
+            item = found.get(sku)
+            if item is None:
+                errors.append(_("Item %(sku)s was not found.") % {"sku": sku})
+                continue
+            if copies == 0:
+                continue
+            try:
+                svg = render_barcode_svg(barcode_value(item))
+            except BarcodeError as exc:
+                errors.append(f"{sku}: {exc}")
+                continue
+            card = {
+                "item": item,
+                "internal_code": item.internal_code,
+                "oracle_codes": codes_by_group.get(item.internal_group_id)
+                or [item.sku],
+                "barcode_svg": svg,
+            }
+            cards.extend([card] * copies)
+
+    return render(
+        request,
+        "item_cards.html",
+        {"cards": cards, "errors": errors, "project": Admin.get_project()},
+    )
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def issue_to_site(request):

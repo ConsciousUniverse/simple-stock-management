@@ -16,6 +16,7 @@
                 <input class="sap-input sap-input--narrow" type="number" name="copies" value="1" min="1" max="60">
             </label>
             <button class="sap-btn sap-btn--emphasized" type="submit" id="printLabelsBtn">{% trans "Print" %}</button>
+            <button class="sap-btn" type="submit" id="printCardsBtn" formaction="{% url 'print_item_cards' %}">{% trans "Print item cards" %}</button>
         </div>
     </div>
     <div class="sap-card__body">
@@ -25,6 +26,7 @@
             <button class="sap-btn sap-btn--ghost" type="submit">{% trans "Search" %}</button>
         </div>
         <input type="hidden" name="skus" id="labelSkus" value="">
+        <input type="hidden" name="cards" id="cardSpec" value="">
         <div class="sap-tablewrap">
             <table class="sap-table" id="labelItemsTable">
                 <thead>
@@ -35,6 +37,7 @@
                         <th>{% trans "Description" %}</th>
                         <th>{% trans "Unit" %}</th>
                         <th>{% trans "Quantity" %}</th>
+                        <th>{% trans "Item card copies" %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -46,10 +49,11 @@
                         <td>{{ item.description }}</td>
                         <td>{{ item.unit|default:"—" }}</td>
                         <td>{{ item.quantity }}</td>
+                        <td><input class="sap-input sap-input--narrow cardCopies" type="number" min="0" max="60" value="1" aria-label="{% trans 'Item card copies' %}"></td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="sap-empty">
+                        <td colspan="7" class="sap-empty">
                             <span class="sap-empty__title">{% trans "No items match this search." %}</span>
                         </td>
                     </tr>
@@ -83,6 +87,19 @@
                 return;
             }
             hidden.value = chosen.join(",");
+            // The card button sends each item with its own number of copies;
+            // a row set to 0 is left out of the printout.
+            if (event.submitter && event.submitter.id === "printCardsBtn") {
+                var spec = boxes.filter(function (box) { return box.checked; }).map(function (box) {
+                    var copies = parseInt(box.closest("tr").querySelector(".cardCopies").value, 10);
+                    return copies > 0 ? box.value + ":" + copies : "";
+                }).filter(Boolean);
+                if (!spec.length) {
+                    event.preventDefault();
+                    return;
+                }
+                document.getElementById("cardSpec").value = spec.join(",");
+            }
         });
     })();
 </script>

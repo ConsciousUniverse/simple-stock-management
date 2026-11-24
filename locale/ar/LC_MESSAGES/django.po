@@ -175,6 +175,9 @@ msgstr "معتمد"
 msgid "Approved by"
 msgstr "اعتمده"
 
+msgid "Arabic Item"
+msgstr "اسم الصنف بالعربي"
+
 msgid "Area"
 msgstr "المجال"
 
@@ -652,6 +655,9 @@ msgstr "غير نشط"
 msgid "Install the app"
 msgstr "تنصيب التطبيق"
 
+msgid "Internal Code"
+msgstr "الكود الداخلي"
+
 msgid "Internal code"
 msgstr "الكود الداخلي"
 
@@ -720,6 +726,18 @@ msgstr "الصرف معطّل أثناء أعمال الصيانة على الم
 
 msgid "Item %(sku)s was not found."
 msgstr "الصنف %(sku)s غير موجود."
+
+msgid "Item Code"
+msgstr "كود الصنف"
+
+msgid "Item Description"
+msgstr "وصف الصنف"
+
+msgid "Item card copies"
+msgstr "نسخ الكارت"
+
+msgid "Item cards"
+msgstr "كروت الأصناف"
 
 msgid "Item changed"
 msgstr "تعديل صنف"
@@ -1138,11 +1156,17 @@ msgstr "نسخ سابقة"
 msgid "Print"
 msgstr "طباعة"
 
+msgid "Print / Save as PDF"
+msgstr "طباعة / حفظ PDF"
+
 msgid "Print a Code 128 label per item. The barcode carries the item code used in the company system."
 msgstr "اطبع ملصق Code 128 لكل صنف. الباركود يحمل كود الصنف المستخدم في نظام الشركة."
 
 msgid "Print a label sheet for the items you pick"
 msgstr "طبع ورقة ملصقات للأصناف التي تختارها."
+
+msgid "Print item cards"
+msgstr "طباعة كروت الأصناف"
 
 msgid "Print labels"
 msgstr "طباعة الملصقات"
@@ -1348,6 +1372,9 @@ msgstr "اختر صنفًا أولًا."
 msgid "Select at least one item to label."
 msgstr "اختر صنفًا واحدًا على الأقل للطباعة."
 
+msgid "Select at least one item to print its card."
+msgstr "اختر صنفًا واحدًا على الأقل لطباعة كارته."
+
 msgid "Select the items to label"
 msgstr "اختر الأصناف المطلوب طباعة ملصقاتها"
 
@@ -1515,6 +1542,9 @@ msgstr "حركة المخزون متاحة"
 
 msgid "Stock overview"
 msgstr "نظرة عامة على المخزون"
+
+msgid "Sub Inventory"
+msgstr "المخزن الفرعي"
 
 msgid "Submitted at"
 msgstr "وقت الإرسال"
@@ -1947,6 +1977,9 @@ msgstr "حساب"
 
 msgid "all"
 msgstr "الكل"
+
+msgid "cards"
+msgstr "كارت"
 
 msgid "changed from the users page"
 msgstr "من صفحة المستخدمين"

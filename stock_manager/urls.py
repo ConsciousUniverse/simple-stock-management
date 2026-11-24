@@ -18,6 +18,7 @@ from .views import (
     list_receipts,
     list_sites,
     item_barcode,
+    print_item_cards,
     print_labels,
     issue_to_site,
     stock_page,
@@ -101,6 +102,8 @@ urlpatterns = [
     path("api/sites/", list_sites, name="list_sites"),
     # The picker; with ?skus= it renders the printable sheet instead.
     path("labels/", labels_page, name="print_labels"),
+    # The printable item cards (the stock card layout) for the same selection.
+    path("labels/cards/", print_item_cards, name="print_item_cards"),
     # Our own code over several Oracle codes: read it, merge, and move.
     path("items/groups/", item_groups_page, name="item_groups_page"),
     path("users/", users_page, name="users_page"),
