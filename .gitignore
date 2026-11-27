@@ -19,3 +19,4 @@ spreadsheet_convert.py
 requirements.txt
 .pytest_cache/
 Pipfile.lock
+ssm.log
