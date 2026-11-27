@@ -82,3 +82,16 @@ counts above (3 + 2 + 2 = 7) are impact counts, not 7 separate issues.
 - Technical debt and complexity values
 - Per-file coverage of stock_manager/views.py (Sonar Code tab) compared with coverage report
 - Complexity of complete_transfer from SonarQube or radon, compared with hand value 12
+| Technical debt | 10 min (email_service 5 min, stock_manager 5 min, ssm 0); debt ratio 0.0%; maintainability rating A |
+### Cyclomatic complexity comparison
+- Hand calculation (CFG, complete_transfer): N = 22, E = 32, V(G) = 12; decisions + 1 = 12.
+- radon (function level, run 2026-11-27): complete_transfer = 12 (grade C). Agrees with hand value.
+  Next highest: transfer_to_shop 9, transfer_item 8, submit_transfer_request 4.
+- SonarQube (file level only): views.py = 73; project total 240 (stock_manager 213,
+  email_service 20, ssm 7). Cognitive complexity total 404.
+- SonarQube's 73 is a sum over every function in views.py, so it cannot be compared directly
+  with the single-function value 12.
+- Difference between tools: to add after checking one small function (index or get_user)
+  by hand against radon and SonarQube.
+- Conclusion: complete_transfer is the most complex function in views.py, which supports
+  choosing it as the critical function for MCC and MC/DC.

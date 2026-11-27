@@ -20,3 +20,6 @@ requirements.txt
 .pytest_cache/
 Pipfile.lock
 ssm.log
+coverage.xml
+.coverage
+.scannerwork/
