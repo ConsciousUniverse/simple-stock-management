@@ -25,3 +25,4 @@ MC/DC pairs (only one condition changes and the outcome changes):
 Minimal set: rows 2, 3, 4, 7 (n + 1 = 4 tests).
 
 Tests: tests/team/test_mcc_permission.py (one test per row, ids MCC-row1 to MCC-row8).
+results: 45 passed,1 failed
