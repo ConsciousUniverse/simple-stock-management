@@ -25,4 +25,6 @@ MC/DC pairs (only one condition changes and the outcome changes):
 Minimal set: rows 2, 3, 4, 7 (n + 1 = 4 tests).
 
 Tests: tests/team/test_mcc_permission.py (one test per row, ids MCC-row1 to MCC-row8).
-results: 45 passed,1 failed
+Result: 45 passed, 1 failed in 4.99s (run on 2026-11-27, Python 3.13, Windows).
+The failure is test_candidate_defect_json_boolean_cancel_is_treated_as_cancel (expected).
+Evidence: docs/evidence/2026-11-27_team_tests_45pass_1fail.png
