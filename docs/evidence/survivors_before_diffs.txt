@@ -1,0 +1,64 @@
+=== x_transfer_to_shop__mutmut_3
+-    item, shop_user, transfer_quantity, complete=False, cancel=False, manager=False
++    item, shop_user, transfer_quantity, complete=False, cancel=False, manager=True
+=== x_transfer_to_shop__mutmut_6
+-            "Transfers are disabled as the warehouse is being maintained. Please try again later."
++            None
+=== x_transfer_to_shop__mutmut_7
+-            "Transfers are disabled as the warehouse is being maintained. Please try again later."
++            "XXTransfers are disabled as the warehouse is being maintained. Please try again later.XX"
+=== x_transfer_to_shop__mutmut_8
+-            "Transfers are disabled as the warehouse is being maintained. Please try again later."
++            "transfers are disabled as the warehouse is being maintained. please try again later."
+=== x_transfer_to_shop__mutmut_9
+-            "Transfers are disabled as the warehouse is being maintained. Please try again later."
++            "TRANSFERS ARE DISABLED AS THE WAREHOUSE IS BEING MAINTAINED. PLEASE TRY AGAIN LATER."
+=== x_transfer_to_shop__mutmut_13
+-            item=item, shop_user=shop_user
++            shop_user=shop_user
+=== x_transfer_to_shop__mutmut_14
+-            item=item, shop_user=shop_user
+-        ).delete()
++            item=item, ).delete()
+=== x_transfer_to_shop__mutmut_20
+-            raise ValueError("Transfer quantity must be greater than zero.")
++            raise ValueError("XXTransfer quantity must be greater than zero.XX")
+=== x_transfer_to_shop__mutmut_21
+-            raise ValueError("Transfer quantity must be greater than zero.")
++            raise ValueError("transfer quantity must be greater than zero.")
+=== x_transfer_to_shop__mutmut_24
+-            raise ValueError("Not enough stock to transfer")
++            raise ValueError(None)
+=== x_transfer_to_shop__mutmut_25
+-            raise ValueError("Not enough stock to transfer")
++            raise ValueError("XXNot enough stock to transferXX")
+=== x_transfer_to_shop__mutmut_26
+-            raise ValueError("Not enough stock to transfer")
++            raise ValueError("not enough stock to transfer")
+=== x_transfer_to_shop__mutmut_27
+-            raise ValueError("Not enough stock to transfer")
++            raise ValueError("NOT ENOUGH STOCK TO TRANSFER")
+=== x_transfer_to_shop__mutmut_34
+-                    "This item has already been ordered and is awaiting dispatch. Please contact the warehouse manager if you wish to amend your order."
++                    None
+=== x_transfer_to_shop__mutmut_35
+-                    "This item has already been ordered and is awaiting dispatch. Please contact the warehouse manager if you wish to amend your order."
++                    "XXThis item has already been ordered and is awaiting dispatch. Please contact the warehouse manager if you wish to amend your order.XX"
+=== x_transfer_to_shop__mutmut_36
+-                    "This item has already been ordered and is awaiting dispatch. Please contact the warehouse manager if you wish to amend your order."
++                    "this item has already been ordered and is awaiting dispatch. please contact the warehouse manager if you wish to amend your order."
+=== x_transfer_to_shop__mutmut_37
+-                    "This item has already been ordered and is awaiting dispatch. Please contact the warehouse manager if you wish to amend your order."
++                    "THIS ITEM HAS ALREADY BEEN ORDERED AND IS AWAITING DISPATCH. PLEASE CONTACT THE WAREHOUSE MANAGER IF YOU WISH TO AMEND YOUR ORDER."
+=== x_transfer_to_shop__mutmut_45
+-                    pk=item.pk, quantity__gte=transfer_quantity
++                    quantity__gte=transfer_quantity
+=== x_transfer_to_shop__mutmut_53
+-                    raise ValueError("Not enough stock to transfer")
++                    raise ValueError("XXNot enough stock to transferXX")
+=== x_transfer_to_shop__mutmut_69
+-                TransferItem.objects.filter(item=item, shop_user=shop_user).delete()
++                TransferItem.objects.filter(shop_user=shop_user).delete()
+=== x_transfer_to_shop__mutmut_70
+-                TransferItem.objects.filter(item=item, shop_user=shop_user).delete()
++                TransferItem.objects.filter(item=item, ).delete()
