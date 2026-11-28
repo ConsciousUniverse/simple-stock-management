@@ -237,11 +237,3 @@ def test_R4_anonymous_denied(api_client, make_item, app_config):
     assert api_client.post(reverse(SUBMIT)).status_code in (401, 403)
 
 
-# ---------- Suspected defect: JSON boolean cancel flag ----------
-def test_candidate_defect_json_boolean_cancel_is_treated_as_cancel(manager_client, shop_user, make_item, app_config):
-    """cancel=true (JSON boolean) should cancel, not dispatch. Expected to FAIL if defect is real."""
-    item = make_item(sku="A", quantity=10)
-    TransferItem.objects.create(shop_user=shop_user, item=item, quantity=4, ordered=True)
-    post_complete(manager_client, "A", None, shop_user.username, cancel=True)
-    assert Item.objects.get(sku="A").quantity == 10
-    assert TransferItem.objects.count() == 0

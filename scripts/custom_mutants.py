@@ -152,7 +152,8 @@ def main():
     for r in rows:
         lines.append(f"| {r[0]} | {r[1]} | {r[2]} | {r[3]} | `{r[4].replace('|', '/')}` | {r[5]} |")
     out.write_text("\n".join(lines) + "\n")
-    print(f"killed {killed}/{total} ({killed / total:.0%}); report: {out}")
+    print(f"killed {killed}/{total} ({killed / total:.0%}); report: {out}")    required = float(sys.argv[1]) if len(sys.argv) > 1 else 90.0
+    sys.exit(0 if 100.0 * killed / total >= required else 1)
 
 
 if __name__ == "__main__":
