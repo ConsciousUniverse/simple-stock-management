@@ -125,3 +125,22 @@ def test_dispatch_keeps_other_users_pending_same_item(manager_client, shop_user,
     TransferItem.objects.create(shop_user=other_shop_user, item=a, quantity=3, ordered=True)
     complete(manager_client, "A", 2, shop_user.username)
     assert TransferItem.objects.filter(shop_user=other_shop_user, item=a).exists()
+
+
+# custom operator LIMIT_BOUNDARY in complete_transfer (quantity <= 0): quantity 0 must be
+# rejected by the dispatch check itself, with the dispatch-specific message
+def test_dispatch_zero_quantity_rejected_with_dispatch_message(manager_client, shop_user, make_item, app_config):
+    item = make_item(sku="A", quantity=10)
+    TransferItem.objects.create(shop_user=shop_user, item=item, quantity=4, ordered=True)
+    r = complete(manager_client, "A", 0, shop_user.username)
+    assert r.status_code == 400
+    assert r.json()["detail"] == "Quantity must be a positive integer."
+    assert Item.objects.get(sku="A").quantity == 10
+
+
+# custom operator LIMIT_BOUNDARY in transfer_item (quantity <= 0): the check runs before the
+# item lookup, so quantity 0 for an unknown SKU is a 400 (rule), not a 404 (lookup)
+def test_request_zero_quantity_checked_before_item_lookup(shop_client, app_config):
+    r = shop_client.post(reverse("transfer_item"), {"sku": "NOPE", "transfer_quantity": 0}, format="json")
+    assert r.status_code == 400
+    assert r.json()["detail"] == "Transfer quantity must be greater than zero."
