@@ -19,3 +19,11 @@ spreadsheet_convert.py
 requirements.txt
 .pytest_cache/
 Pipfile.lock
+ssm.log
+coverage.xml
+.coverage
+.scannerwork/mutants/
+.venv/
+coverage.json
+coverage.xml
+.coverage

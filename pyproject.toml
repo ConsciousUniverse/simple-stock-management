@@ -1,0 +1,5 @@
+[tool.mutmut]
+source_paths = ["stock_manager/"]
+only_mutate = ["stock_manager/views.py"]
+also_copy = ["ssm/", "email_service/", "templates/", "static/", "manage.py", "pytest.ini", ".env"]
+pytest_add_cli_args_test_selection = ["tests/team"]

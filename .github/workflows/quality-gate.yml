@@ -1,0 +1,50 @@
+name: quality-gate
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  tests-and-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install django djangorestframework python-dotenv dotenv gunicorn "django-axes[ipware]" "django-anymail[sparkpost]" openpyxl pytz pandas natsort pytest pytest-django coverage
+      - name: Team tests with coverage
+        run: |
+          coverage run --branch -m pytest tests/team -q
+          coverage json
+          coverage xml
+      - name: Coverage gate (transfer logic must be 100%)
+        run: python scripts/check_coverage.py 100
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: |
+            coverage.xml
+            coverage.json
+
+  mutation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install django djangorestframework python-dotenv dotenv gunicorn "django-axes[ipware]" "django-anymail[sparkpost]" openpyxl pytz pandas natsort pytest pytest-django coverage mutmut
+      - name: mutmut on transfer_to_shop (single process, shared test database file)
+        run: mutmut run --max-children 1 "stock_manager.views.x_transfer_to_shop*"
+      - name: Mutation gate (score at least 95%)
+        run: python scripts/check_mutation.py 95
+      - name: Custom operators on the decorated rule functions (score at least 90%)
+        run: python scripts/custom_mutants.py 90

@@ -1,0 +1,5 @@
+[run]
+branch = True
+relative_files = True
+source = stock_manager,ssm,email_service
+omit = */migrations/*

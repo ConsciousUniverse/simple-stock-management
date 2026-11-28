@@ -20,6 +20,8 @@ natsort = "*"
 pytest = "*"
 pytest-django = "*"
 pytest-playwright = "*"
+coverage = "*"
+radon = "*"
 
 [requires]
 python_version = "3.13"
