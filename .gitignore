@@ -22,4 +22,8 @@ Pipfile.lock
 ssm.log
 coverage.xml
 .coverage
-.scannerwork/
+.scannerwork/mutants/
+.venv/
+coverage.json
+coverage.xml
+.coverage
